@@ -2,8 +2,6 @@ import sublime, sublime_plugin
 import http.client
 import threading
 import json
-import re
-
 import logging
 
 class OpenAIWorker(threading.Thread):
