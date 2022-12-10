@@ -1,0 +1,16 @@
+[
+	{
+		"caption": "OpenAI Complete",
+		"command": "openai",
+		"args": {
+			"mode": "completion"
+		}
+	},
+	{
+		"caption": "OpenAI Insert",
+		"command": "openai",
+		"args": {
+			"mode": "insertion"
+		}
+	}
+]

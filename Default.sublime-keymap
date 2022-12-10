@@ -1,0 +1,9 @@
+[
+  {
+    "keys": [
+      "super+k",
+      "super+c"
+    ],
+    "command": "openai"
+  },
+]

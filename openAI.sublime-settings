@@ -1,0 +1,25 @@
+{
+    // The model which will generate the completion. Some models are suitable for natural language tasks, others specialize in code. [Learn more](https://beta.openai.com/docs/models).
+    // Note that not all models available within all modes.
+    "model": "text-davinci-003",
+    // Controls randomness: Lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.
+    "temperature": 0.7,
+    // The maximum number of tokens to generate. Requests can use up to 2,048 or 4,000 tokens shared between prompt and completion. The exact limit varies by model. (One token is roughly 4 characters for normal English text)
+    "max_tokens": 256,
+    // Which external terminal should be used when an adapter requests an external terminal
+    // "platform" (default) uses Terminal on MacOS, CMD (Not tested) on Windows, (Unimplemented) on Linux
+    // "terminus" Opens a new terminal view using terminus. The terminus package must be installed https://github.com/randy3k/Terminus
+    "top_p": 1,
+    // Controls the minimum height of the debugger output panels in lines
+    "frequency_penalty": 0,
+    // Some new features are locked behind this flag
+    "presence_penalty": 0,
+    // placeholder for insert mode. You should to put it in the place where you want to code to be prompted.
+    // e.g.
+    // def get_bitcoin_price():
+    //    [insert]
+    //    print(bitcoin_price)
+    "placeholder": "[insert]",
+    // Your openAI token
+    "token": "",
+}
