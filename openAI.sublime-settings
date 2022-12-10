@@ -6,9 +6,8 @@
     "temperature": 0.7,
     // The maximum number of tokens to generate. Requests can use up to 2,048 or 4,000 tokens shared between prompt and completion. The exact limit varies by model. (One token is roughly 4 characters for normal English text)
     "max_tokens": 256,
-    // Which external terminal should be used when an adapter requests an external terminal
-    // "platform" (default) uses Terminal on MacOS, CMD (Not tested) on Windows, (Unimplemented) on Linux
-    // "terminus" Opens a new terminal view using terminus. The terminus package must be installed https://github.com/randy3k/Terminus
+    // Controls diversity via nucleus sampling:
+    // 0.5 means half of all likelihood-weighted options are considered.
     "top_p": 1,
     // Controls the minimum height of the debugger output panels in lines
     "frequency_penalty": 0,
