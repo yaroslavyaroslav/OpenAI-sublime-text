@@ -1,6 +1,6 @@
 {
     // The model which will generate the completion. Some models are suitable for natural language tasks, others specialize in code. [Learn more](https://beta.openai.com/docs/models).
-    // Note that not all models available within all modes.
+    // Note that not each model compatiable with each mode.
     "model": "text-davinci-003",
     // Controls randomness: Lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.
     "temperature": 0.7,
