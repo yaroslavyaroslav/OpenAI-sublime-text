@@ -12,5 +12,12 @@
 		"args": {
 			"mode": "insertion"
 		}
+	},
+	{
+		"caption": "OpenAI Edit",
+		"command": "openai",
+		"args": {
+			"mode": "edition"
+		}
 	}
 ]
