@@ -75,9 +75,12 @@ class OpenAIWorker(threading.Thread):
         }
         json_payload = json.dumps(payload)
 
+        token = self.settings.get('token')
+
+
         headers = {
             'Content-Type': "application/json",
-            'Authorization': f'Bearer {self.settings.get("token")}',
+            'Authorization': 'Bearer {}'.format(token),
             'cache-control': "no-cache",
         }
         conn.request("POST", "/v1/completions", json_payload, headers)
@@ -106,9 +109,11 @@ class OpenAIWorker(threading.Thread):
         }
         json_payload = json.dumps(payload)
 
+        token = self.settings.get('token')
+
         headers = {
             'Content-Type': "application/json",
-            'Authorization': f'Bearer {self.settings.get("token")}',
+            'Authorization': 'Bearer {}'.format(token),
             'cache-control': "no-cache",
         }
         conn.request("POST", "/v1/completions", json_payload, headers)
@@ -125,9 +130,11 @@ class OpenAIWorker(threading.Thread):
         }
         json_payload = json.dumps(payload)
 
+        token = self.settings.get('token')
+
         headers = {
             'Content-Type': "application/json",
-            'Authorization': f'Bearer {self.settings.get("token")}',
+            'Authorization': 'Bearer {}'.format(token),
             'cache-control': "no-cache",
         }
         conn.request("POST", "/v1/edits", json_payload, headers)
