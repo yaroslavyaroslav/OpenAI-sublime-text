@@ -1,16 +1,18 @@
 import sublime, sublime_plugin
+import functools
 import http.client
 import threading
 import json
 import logging
 
 class OpenAIWorker(threading.Thread):
-    def __init__(self, edit, region, text, view, mode):
-        self.mode = mode
+    def __init__(self, edit, region, text, view, mode, command):
         self.edit = edit
         self.region = region
         self.text = text
         self.view = view
+        self.mode = mode
+        self.command = command # optional
         self.settings = sublime.load_settings("openAI.sublime-settings")
         super(OpenAIWorker, self).__init__()
 
@@ -27,39 +29,41 @@ class OpenAIWorker(threading.Thread):
         if self.mode == 'completion':
             region = self.view.sel()[0]
             if region.a <= region.b:
-                region.b -= 1
+                region.a = region.b
             else:
-                region.a -= 1
+                region.b = region.a
 
-            self.view.sel().subtract(region)
+            self.view.sel().clear()
+            self.view.sel().add(region)
             # Replace the placeholder with the specified replacement text
             self.view.run_command("insert_snippet", {"contents": completion})
             return
 
-    def exec_net_request(self, payload, headers):
-        while True:
-            try:
-                conn = http.client.HTTPSConnection("api.openai.com")
-                json_payload = json.dumps(payload)
+        if self.mode == 'edition': # it's just replacing all given text for now.
+            region = self.view.sel()[0]
+            self.view.run_command("insert_snippet", {"contents": completion})
+            return
 
-                conn.request("POST", "/v1/completions", json_payload, headers)
-                res = conn.getresponse()
+    def exec_net_request(self, connect: http.client.HTTPSConnection):
+        try:
+            res = connect.getresponse()
+            data = res.read()
+            data_decoded = data.decode('utf-8')
+            connect.close()
+            completion = json.loads(data_decoded)['choices'][0]['text']
+            self.prompt_completion(completion)
+        except KeyError:
+            sublime.error_message("Exception\n" + "The OpenAI response couldn't be decoded. Please check whether there's any problem on their side.")
+            logging.exception("Exception: " + str(ex))
+            return
 
-                data = res.read()
-                data_decoded = data.decode('utf-8')
-                conn.close()
-
-                completion = json.loads(data_decoded)['choices'][0]['text']
-                self.prompt_completion(completion)
-                return
-
-            except Exception as ex:
-                print("Exception")
-                sublime.error_message("Exception: " + str(ex))
-                logging.exception("Exception")
-                return
+        except Exception as ex:
+            sublime.error_message("Error\n" + str(ex))
+            logging.exception("Exception: " + str(ex))
+            return
 
     def complete(self):
+        conn = http.client.HTTPSConnection("api.openai.com")
         payload = {
             "prompt": self.text,
             "model": self.settings.get("model"),
@@ -69,17 +73,26 @@ class OpenAIWorker(threading.Thread):
             "frequency_penalty": self.settings.get("frequency_penalty"),
             "presence_penalty": self.settings.get("presence_penalty")
         }
+        json_payload = json.dumps(payload)
 
         headers = {
             'Content-Type': "application/json",
             'Authorization': f'Bearer {self.settings.get("token")}',
             'cache-control': "no-cache",
         }
-        self.exec_net_request(payload=payload, headers=headers)
+        conn.request("POST", "/v1/completions", json_payload, headers)
+        self.exec_net_request(connect=conn)
 
     def insert(self):
+        conn = http.client.HTTPSConnection("api.openai.com")
         parts = self.text.split(self.settings.get('placeholder'))
-        if not len(parts) == 2: return
+        try:
+            if not len(parts) == 2:
+                raise AssertionError("There's no placeholder within selected text, there's has to be exact one.")
+        except Exception as ex:
+            sublime.error_message("Exception\n" + str(ex))
+            logging.exception("Exception: " + str(ex))
+            return
 
         payload = {
             "model": self.settings.get("model"),
@@ -91,32 +104,64 @@ class OpenAIWorker(threading.Thread):
             "frequency_penalty": self.settings.get("frequency_penalty"),
             "presence_penalty": self.settings.get("presence_penalty")
         }
+        json_payload = json.dumps(payload)
 
         headers = {
             'Content-Type': "application/json",
             'Authorization': f'Bearer {self.settings.get("token")}',
             'cache-control': "no-cache",
         }
+        conn.request("POST", "/v1/completions", json_payload, headers)
+        self.exec_net_request(connect=conn)
 
-        self.exec_net_request(payload=payload, headers=headers)
+    def edit_f(self):
+        conn = http.client.HTTPSConnection("api.openai.com")
+        payload = {
+            "model": "code-davinci-edit-001", # could be text-davinci-edit-001
+            "input": self.text,
+            "instruction": "Explain this code line by line",
+            "temperature": 0.7,
+            "top_p": 1
+        }
+        json_payload = json.dumps(payload)
 
+        headers = {
+            'Content-Type': "application/json",
+            'Authorization': f'Bearer {self.settings.get("token")}',
+            'cache-control': "no-cache",
+        }
+        conn.request("POST", "/v1/edits", json_payload, headers)
+        self.exec_net_request(connect=conn)
 
     def run(self):
         settings = sublime.load_settings("openAI.sublime-settings")
-        if not settings.has("token"): return
+        try:
+            if not settings.has("token"):
+                raise AssertionError("No token provided, you have to put your OpenAI token into the settings.")
+            token = settings.get('token')
+            if len(token) < 10:
+                raise AssertionError("No token provided, you have to put your OpenAI token into the settings.")
+        except Exception as ex:
+            sublime.error_message("Exception\n" + str(ex))
+            logging.exception("Exception: " + str(ex))
+            return
 
         if self.mode == 'completion': self.complete()
         if self.mode == 'insertion': self.insert()
+        if self.mode == 'edition': self.edit_f()
 
 
 class Openai(sublime_plugin.TextCommand):
+    def on_input(self, edit, region, text, view, mode, input):
+        worker_thread = OpenAIWorker(edit, region, text, view, mode=mode, command=input)
+        worker_thread.start()
+
     """
     asyncroniously send request to https://api.openai.com/v1/completions
     with the selcted text of the view
     and inserts suggestion from within response at place of `[insert]` placeholder
     """
     def run(self, edit, **kwargs):
-
         mode = kwargs.get('mode', 'completion')
 
         # get selected text
@@ -126,6 +171,12 @@ class Openai(sublime_plugin.TextCommand):
             if not region.empty():
                 text = self.view.substr(region)
 
-            worker_thread = OpenAIWorker(edit, region, text, self.view, mode)
+        if mode == 'edition':
+            sublime.active_window().show_input_panel("Request", "Explain the given code line by line", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
+
+        else:
+            worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
             worker_thread.start()
+
+
 
