@@ -124,7 +124,7 @@ class OpenAIWorker(threading.Thread):
         payload = {
             "model": "code-davinci-edit-001", # could be text-davinci-edit-001
             "input": self.text,
-            "instruction": "Explain this code line by line",
+            "instruction": self.command,
             "temperature": 0.7,
             "top_p": 1
         }
