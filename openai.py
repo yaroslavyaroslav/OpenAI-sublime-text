@@ -54,7 +54,7 @@ class OpenAIWorker(threading.Thread):
             self.prompt_completion(completion)
         except KeyError:
             sublime.error_message("Exception\n" + "The OpenAI response couldn't be decoded. Please check whether there's any problem on their side.")
-            logging.exception("Exception: " + str(ex))
+            logging.exception("Exception: " + str(data_decoded))
             return
 
         except Exception as ex:
@@ -143,6 +143,10 @@ class OpenAIWorker(threading.Thread):
     def run(self):
         settings = sublime.load_settings("openAI.sublime-settings")
         try:
+            print(settings.get("max_tokens"))
+            print(len(self.text))
+            if (settings.get("max_tokens") + len(self.text)) > 4000:
+                raise AssertionError("OpenAI accepts 4000 at max, so the selected text AND max_tokens value must be less then 4000, which is not this time.")
             if not settings.has("token"):
                 raise AssertionError("No token provided, you have to put your OpenAI token into the settings.")
             token = settings.get('token')
