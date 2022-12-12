@@ -125,8 +125,8 @@ class OpenAIWorker(threading.Thread):
             "model": "code-davinci-edit-001", # could be text-davinci-edit-001
             "input": self.text,
             "instruction": self.command,
-            "temperature": 0.7,
-            "top_p": 1
+            "temperature": self.settings.get("temperature"),
+            "top_p": self.settings.get("top_p"),
         }
         json_payload = json.dumps(payload)
 
