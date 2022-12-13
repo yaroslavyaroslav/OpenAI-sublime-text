@@ -183,7 +183,7 @@ class Openai(sublime_plugin.TextCommand):
                 text = self.view.substr(region)
 
         if mode == 'edition':
-            sublime.active_window().show_input_panel("Request", "Explain the given code line by line", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
+            sublime.active_window().show_input_panel("Request", "Comment the given code line by line", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
 
         else:
             worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
