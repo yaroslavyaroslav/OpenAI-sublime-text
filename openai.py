@@ -28,17 +28,28 @@ class OpenAIWorker(threading.Thread):
             return
 
         if self.mode == 'completion':
-            region = self.view.sel()[0]
-            if region.a <= region.b:
-                region.a = region.b
-            else:
-                region.b = region.a
+            if self.settings.get('output_panel'):
+                window = sublime.active_window()
 
-            self.view.sel().clear()
-            self.view.sel().add(region)
-            # Replace the placeholder with the specified replacement text
-            self.view.run_command("insert_snippet", {"contents": completion})
-            return
+                # Open an output panel and print some text to it
+                output_view = window.create_output_panel("OpenAI")
+                output_view.run_command('append', {'characters': f'## {self.text}'})
+                output_view.run_command('append', {'characters': '\n------------'})
+                output_view.run_command('append', {'characters': completion})
+                output_view.run_command('append', {'characters': '\n============='})
+                window.run_command("show_panel", {"panel": "output.OpenAI"})
+            else:
+                region = self.view.sel()[0]
+                if region.a <= region.b:
+                    region.a = region.b
+                else:
+                    region.b = region.a
+
+                self.view.sel().clear()
+                self.view.sel().add(region)
+                # Replace the placeholder with the specified replacement text
+                self.view.run_command("insert_snippet", {"contents": completion})
+                return
 
         if self.mode == 'edition': # it's just replacing all given text for now.
             region = self.view.sel()[0]
@@ -160,7 +171,7 @@ class OpenAIWorker(threading.Thread):
         if self.mode == 'edition': self.edit_f()
         if self.mode == 'completion':
             if self.settings.get('multimarkdown'):
-                self.text += 'format the answer with multimarkdown markup'
+                self.text += ' format the answer with multimarkdown markup'
             self.complete()
 
 
@@ -190,6 +201,5 @@ class Openai(sublime_plugin.TextCommand):
         else:
             worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
             worker_thread.start()
-
 
 

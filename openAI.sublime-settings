@@ -27,5 +27,9 @@
     "token": "",
     // Whether to ask the AI to format its answers with multimarkdown markup
     // Affects only completion command.
-    "multimarkdown": false
+    "multimarkdown": false,
+    // Manages the place where to produce output for **completion** command
+    // false — it will prints into the view itself
+    // true — it will prints into separate output pannel "OpenAI"
+    "output_panel": false
 }
