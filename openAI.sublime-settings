@@ -25,4 +25,7 @@
     "placeholder": "[insert]",
     // Your openAI token
     "token": "",
+    // Whether to ask the AI to format its answers with multimarkdown markup
+    // Affects only completion command.
+    "multimarkdown": false
 }

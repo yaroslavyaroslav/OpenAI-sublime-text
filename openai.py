@@ -157,9 +157,12 @@ class OpenAIWorker(threading.Thread):
             logging.exception("Exception: " + str(ex))
             return
 
-        if self.mode == 'completion': self.complete()
         if self.mode == 'insertion': self.insert()
         if self.mode == 'edition': self.edit_f()
+        if self.mode == 'completion':
+            if self.settings.get('multimarkdown'):
+                self.text += 'format the answer with multimarkdown markup'
+            self.complete()
 
 
 class Openai(sublime_plugin.TextCommand):
