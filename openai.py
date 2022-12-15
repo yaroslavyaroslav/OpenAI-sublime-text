@@ -17,6 +17,7 @@ class OpenAIWorker(threading.Thread):
         super(OpenAIWorker, self).__init__()
 
     def prompt_completion(self, completion):
+        completion = completion.replace("$", "\$")
         if self.mode == 'insertion':
             result = self.view.find(self.settings.get('placeholder'), 0, 1)
             if result:
@@ -143,8 +144,6 @@ class OpenAIWorker(threading.Thread):
     def run(self):
         settings = sublime.load_settings("openAI.sublime-settings")
         try:
-            print(settings.get("max_tokens"))
-            print(len(self.text))
             if (settings.get("max_tokens") + len(self.text)) > 4000:
                 raise AssertionError("OpenAI accepts 4000 at max, so the selected text AND max_tokens value must be less then 4000, which is not this time.")
             if not settings.has("token"):
