@@ -5,15 +5,18 @@ import threading
 import json
 import logging
 
+settings = sublime.load_settings("openAI.sublime-settings")
+
 class OpenAIWorker(threading.Thread):
     def __init__(self, edit, region, text, view, mode, command):
+        global settings
         self.edit = edit
         self.region = region
         self.text = text
         self.view = view
         self.mode = mode
         self.command = command # optional
-        self.settings = sublime.load_settings("openAI.sublime-settings")
+        self.settings = settings
         super(OpenAIWorker, self).__init__()
 
     def prompt_completion(self, completion):
@@ -28,17 +31,27 @@ class OpenAIWorker(threading.Thread):
             return
 
         if self.mode == 'completion':
-            region = self.view.sel()[0]
-            if region.a <= region.b:
-                region.a = region.b
-            else:
-                region.b = region.a
+            if self.settings.get('output_panel'):
+                window = sublime.active_window()
 
-            self.view.sel().clear()
-            self.view.sel().add(region)
-            # Replace the placeholder with the specified replacement text
-            self.view.run_command("insert_snippet", {"contents": completion})
-            return
+                output_view = window.find_output_panel("OpenAI") if window.find_output_panel("OpenAI") != None else window.create_output_panel("OpenAI")
+                output_view.run_command('append', {'characters': f'## {self.text}'})
+                output_view.run_command('append', {'characters': '\n------------'})
+                output_view.run_command('append', {'characters': completion})
+                output_view.run_command('append', {'characters': '\n============\n\n'})
+                window.run_command("show_panel", {"panel": "output.OpenAI"})
+            else:
+                region = self.view.sel()[0]
+                if region.a <= region.b:
+                    region.a = region.b
+                else:
+                    region.b = region.a
+
+                self.view.sel().clear()
+                self.view.sel().add(region)
+                # Replace the placeholder with the specified replacement text
+                self.view.run_command("insert_snippet", {"contents": completion})
+                return
 
         if self.mode == 'edition': # it's just replacing all given text for now.
             region = self.view.sel()[0]
@@ -142,13 +155,12 @@ class OpenAIWorker(threading.Thread):
         self.exec_net_request(connect=conn)
 
     def run(self):
-        settings = sublime.load_settings("openAI.sublime-settings")
         try:
-            if (settings.get("max_tokens") + len(self.text)) > 4000:
+            if (self.settings.get("max_tokens") + len(self.text)) > 4000:
                 raise AssertionError("OpenAI accepts 4000 at max, so the selected text AND max_tokens value must be less then 4000, which is not this time.")
-            if not settings.has("token"):
+            if not self.settings.has("token"):
                 raise AssertionError("No token provided, you have to put your OpenAI token into the settings.")
-            token = settings.get('token')
+            token = self.settings.get('token')
             if len(token) < 10:
                 raise AssertionError("No token provided, you have to put your OpenAI token into the settings.")
         except Exception as ex:
@@ -159,8 +171,10 @@ class OpenAIWorker(threading.Thread):
         if self.mode == 'insertion': self.insert()
         if self.mode == 'edition': self.edit_f()
         if self.mode == 'completion':
+            if settings.get('output_panel'):
+                self.text = self.command
             if self.settings.get('multimarkdown'):
-                self.text += 'format the answer with multimarkdown markup'
+                self.text += ' format the answer with multimarkdown markup'
             self.complete()
 
 
@@ -175,6 +189,7 @@ class Openai(sublime_plugin.TextCommand):
     and inserts suggestion from within response at place of `[insert]` placeholder
     """
     def run(self, edit, **kwargs):
+        global settings
         mode = kwargs.get('mode', 'completion')
 
         # get selected text
@@ -184,12 +199,29 @@ class Openai(sublime_plugin.TextCommand):
             if not region.empty():
                 text = self.view.substr(region)
 
-        if mode == 'edition':
-            sublime.active_window().show_input_panel("Request", "Comment the given code line by line", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
 
-        else:
+        try:
+            if region.__len__() < settings.get("minimum_selection_length"):
+                if mode == 'completion':
+                    if not settings.get('output_panel'):
+                        raise AssertionError("There's not enough selection to complete this, please expand selection")
+                else:
+                    raise AssertionError("There's not enough selection to complete this, please expand selection")
+        except Exception as ex:
+            sublime.error_message("Exception\n" + str(ex))
+            logging.exception("Exception: " + str(ex))
+            return
+
+        if mode == 'edition':
+            sublime.active_window().show_input_panel("Request:", "Comment the given code line by line", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
+
+        elif mode == 'insertion':
             worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
             worker_thread.start()
-
-
+        else: # mode == `completion`
+            if settings.get('output_panel'):
+                sublime.active_window().show_input_panel("Question:", "", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
+            else:
+                worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
+                worker_thread.start()
 

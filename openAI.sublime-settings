@@ -19,13 +19,23 @@
     "presence_penalty": 0,
     // placeholder for insert mode. You should to put it in the place where you want to code to be prompted.
     // e.g.
+    // ```python
     // def get_bitcoin_price():
     //    [insert]
     //    print(bitcoin_price)
+    // ```
     "placeholder": "[insert]",
     // Your openAI token
     "token": "",
-    // Whether to ask the AI to format its answers with multimarkdown markup
-    // Affects only completion command.
-    "multimarkdown": false
+    // Whether to ask the AI to format its answers with multimarkdown markup,
+    // By ask, i mean it. It'll literally add " format the answer with multimarkdown markup" to the question.
+    // Affects only `completion` command.
+    "multimarkdown": false,
+    // Manages whether the output of the  **completion** command will be showh within editor view or output panel.
+    // false — it will prints into the editor
+    // true — it will prints into separate output pannel "OpenAI"
+    "output_panel": false,
+    /// Minimum amount of chars selected to perform completion
+    /// Doesn't affects `completion` command if `output_panel` setting toggled on.
+    "minimum_selection_length": 20
 }
