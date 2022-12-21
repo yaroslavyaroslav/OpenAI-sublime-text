@@ -103,7 +103,7 @@ class OpenAIWorker(threading.Thread):
         parts = self.text.split(self.settings.get('placeholder'))
         try:
             if not len(parts) == 2:
-                raise AssertionError("There's no placeholder within selected text, there's has to be exact one.")
+                raise AssertionError("There's no placeholder within selected text, there's has to be exactly one.")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
             logging.exception("Exception: " + str(ex))
