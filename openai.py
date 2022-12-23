@@ -5,18 +5,16 @@ import threading
 import json
 import logging
 
-settings = sublime.load_settings("openAI.sublime-settings")
 
 class OpenAIWorker(threading.Thread):
     def __init__(self, edit, region, text, view, mode, command):
-        global settings
         self.edit = edit
         self.region = region
         self.text = text
         self.view = view
         self.mode = mode
         self.command = command # optional
-        self.settings = settings
+        self.settings = sublime.load_settings("openAI.sublime-settings")
         super(OpenAIWorker, self).__init__()
 
     def prompt_completion(self, completion):
@@ -171,7 +169,7 @@ class OpenAIWorker(threading.Thread):
         if self.mode == 'insertion': self.insert()
         if self.mode == 'edition': self.edit_f()
         if self.mode == 'completion':
-            if settings.get('output_panel'):
+            if self.settings.get('output_panel'):
                 self.text = self.command
             if self.settings.get('multimarkdown'):
                 self.text += ' format the answer with multimarkdown markup'
@@ -189,7 +187,7 @@ class Openai(sublime_plugin.TextCommand):
     and inserts suggestion from within response at place of `[insert]` placeholder
     """
     def run(self, edit, **kwargs):
-        global settings
+        settings = sublime.load_settings("openAI.sublime-settings")
         mode = kwargs.get('mode', 'completion')
 
         # get selected text
