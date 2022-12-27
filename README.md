@@ -1,7 +1,7 @@
 # OpenAI Sublime Text Plugin
 ## Abstract
 
-OpenAI Suggestion is a Sublime Text 4 plugin that uses the OpenAI natural language processing (NLP) model to provide suggestions for editing code within the Sublime Text editor.
+OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural language processing (NLP) model to provide suggestions for editing code within the Sublime Text editor.
 
 ## Features
 - Append suggested text to selected code
@@ -35,7 +35,7 @@ OpenAI Suggestion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 4. The suggestion will be modify the selected code in the editor, according to the command you ran (append, insert, or edit).
 
 ## Settings
-The OpenAI Suggestion plugin has a settings file where you can set your OpenAI API key. This is required for the plugin to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste in User settings your API key in token property, like follow:
+The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the plugin to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste in User settings your API key in token property, like follow:
 ```JSON
 {
     "token": "sk-your-token",
