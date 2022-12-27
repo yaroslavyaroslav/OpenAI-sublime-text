@@ -1,41 +1,52 @@
 {
-    // The model which will generate the completion. Some models are suitable for natural language tasks, others specialize in code. [Learn more](https://beta.openai.com/docs/models).
-    // Doesn't affects editing mode.
+    // The model which will generate the completion.
+    // Some models are suitable for natural language tasks, others specialize in code.
+    // Learn more at https://beta.openai.com/docs/models
+    // Does not affect editing mode.
     "model": "text-davinci-003",
-    // Controls randomness: Lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.
+
+    // Controls randomness: Lowering results in less random completions.
+    // As the temperature approaches zero, the model will become deterministic and repetitive.
     "temperature": 0.7,
+
     // The maximum number of tokens to generate.
     // Requests can use up to 2,048 or 4,000 tokens shared between prompt and completion.
     // The exact limit varies by model.
     // (One token is roughly 4 characters for normal English text)
-    // Not affects editing mode.
+    // Does not affect editing mode.
     "max_tokens": 256,
+
     // Controls diversity via nucleus sampling:
     // 0.5 means half of all likelihood-weighted options are considered.
     "top_p": 1,
-    // Controls the minimum height of the debugger output panels in lines
+
+    // Controls the minimum height of the debugger output panels in lines.
     "frequency_penalty": 0,
-    // Some new features are locked behind this flag
+
+    // Some new features are locked behind this flag.
     "presence_penalty": 0,
-    // placeholder for insert mode. You should to put it in the place where you want to code to be prompted.
-    // e.g.
-    // ```python
+
+    // Placeholder for insert mode. You should to put it where you want the suggestion to be inserted.
+    // e.g. (python)
     // def get_bitcoin_price():
     //    [insert]
     //    print(bitcoin_price)
-    // ```
     "placeholder": "[insert]",
+
     // Your openAI token
     "token": "",
-    // Whether to ask the AI to format its answers with multimarkdown markup,
-    // By ask, i mean it. It'll literally add " format the answer with multimarkdown markup" to the question.
+
+    // Ask the AI to format its answers with multimarkdown markup.
+    // By "ask", I mean it: it will literally add "format the answer with multimarkdown markup" to the question.
     // Affects only `completion` command.
     "multimarkdown": false,
-    // Manages whether the output of the  **completion** command will be showh within editor view or output panel.
-    // false — it will prints into the editor
-    // true — it will prints into separate output pannel "OpenAI"
+
+    // Manages where to print the output of the completion command:
+    // false — print into the editor
+    // true  — print into separate output panel (named "OpenAI")
     "output_panel": false,
-    /// Minimum amount of chars selected to perform completion
-    /// Doesn't affects `completion` command if `output_panel` setting toggled on.
+
+    // Minimum amount of characters selected to perform completion.
+    // Does not affect completion command if the "output_panel" setting is true.
     "minimum_selection_length": 20
 }

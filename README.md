@@ -32,10 +32,10 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 1. Open the Sublime Text 4 editor and select some code.
 2. Open the command palette and run the `OpenAI Append`, `OpenAI Insert`, or `OpenAI Edit` command.
 3. **The plugin will send the selected code to the OpenAI servers**, using your API key, to generate a suggestion for editing the code.
-4. The suggestion will be modify the selected code in the editor, according to the command you ran (append, insert, or edit).
+4. The suggestion will modify the selected code in the editor, according to the command you ran (append, insert, or edit).
 
 ## Settings
-The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the plugin to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste in User settings your API key in token property, like follow:
+The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the plugin to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste your API key in the token property, as follows:
 ```JSON
 {
     "token": "sk-your-token",
