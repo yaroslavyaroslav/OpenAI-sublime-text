@@ -5,18 +5,16 @@ import threading
 import json
 import logging
 
-settings = sublime.load_settings("openAI.sublime-settings")
 
 class OpenAIWorker(threading.Thread):
     def __init__(self, edit, region, text, view, mode, command):
-        global settings
         self.edit = edit
         self.region = region
         self.text = text
         self.view = view
         self.mode = mode
         self.command = command # optional
-        self.settings = settings
+        self.settings = sublime.load_settings("openAI.sublime-settings")
         super(OpenAIWorker, self).__init__()
 
     def prompt_completion(self, completion):
@@ -67,7 +65,7 @@ class OpenAIWorker(threading.Thread):
             completion = json.loads(data_decoded)['choices'][0]['text']
             self.prompt_completion(completion)
         except KeyError:
-            sublime.error_message("Exception\n" + "The OpenAI response couldn't be decoded. Please check whether there's any problem on their side.")
+            sublime.error_message("Exception\n" + "The OpenAI response couldn't be decoded. There's could be a problem on their side. Please look into the console panel for additional error info.")
             logging.exception("Exception: " + str(data_decoded))
             return
 
@@ -105,7 +103,7 @@ class OpenAIWorker(threading.Thread):
         parts = self.text.split(self.settings.get('placeholder'))
         try:
             if not len(parts) == 2:
-                raise AssertionError("There's no placeholder within selected text, there's has to be exact one.")
+                raise AssertionError("There's no placeholder within selected text, there's has to be exactly one.")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
             logging.exception("Exception: " + str(ex))
@@ -157,12 +155,12 @@ class OpenAIWorker(threading.Thread):
     def run(self):
         try:
             if (self.settings.get("max_tokens") + len(self.text)) > 4000:
-                raise AssertionError("OpenAI accepts 4000 at max, so the selected text AND max_tokens value must be less then 4000, which is not this time.")
+                raise AssertionError("OpenAI accepts 4000 tokens at max, so the selected text AND max_tokens value must be less then 4000, which is not this time.")
             if not self.settings.has("token"):
-                raise AssertionError("No token provided, you have to put your OpenAI token into the settings.")
+                raise AssertionError("No token provided, you have to set the OpenAI token into the settings to make things work.")
             token = self.settings.get('token')
             if len(token) < 10:
-                raise AssertionError("No token provided, you have to put your OpenAI token into the settings.")
+                raise AssertionError("No token provided, you have to set the OpenAI token into the settings to make things work.")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
             logging.exception("Exception: " + str(ex))
@@ -171,7 +169,7 @@ class OpenAIWorker(threading.Thread):
         if self.mode == 'insertion': self.insert()
         if self.mode == 'edition': self.edit_f()
         if self.mode == 'completion':
-            if settings.get('output_panel'):
+            if self.settings.get('output_panel'):
                 self.text = self.command
             if self.settings.get('multimarkdown'):
                 self.text += ' format the answer with multimarkdown markup'
@@ -189,7 +187,7 @@ class Openai(sublime_plugin.TextCommand):
     and inserts suggestion from within response at place of `[insert]` placeholder
     """
     def run(self, edit, **kwargs):
-        global settings
+        settings = sublime.load_settings("openAI.sublime-settings")
         mode = kwargs.get('mode', 'completion')
 
         # get selected text
@@ -204,23 +202,23 @@ class Openai(sublime_plugin.TextCommand):
             if region.__len__() < settings.get("minimum_selection_length"):
                 if mode == 'completion':
                     if not settings.get('output_panel'):
-                        raise AssertionError("There's not enough selection to complete this, please expand selection")
+                        raise AssertionError("There's not enough text selected to complete request, please expand selection")
                 else:
-                    raise AssertionError("There's not enough selection to complete this, please expand selection")
+                    raise AssertionError("There's not enough text selected to complete request, please expand selection")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
             logging.exception("Exception: " + str(ex))
             return
 
         if mode == 'edition':
-            sublime.active_window().show_input_panel("Request:", "Comment the given code line by line", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
+            sublime.active_window().show_input_panel("Request: ", "Comment the given code line by line", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
 
         elif mode == 'insertion':
             worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
             worker_thread.start()
         else: # mode == `completion`
             if settings.get('output_panel'):
-                sublime.active_window().show_input_panel("Question:", "", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
+                sublime.active_window().show_input_panel("Question: ", "", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
             else:
                 worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
                 worker_thread.start()
