@@ -1,0 +1,38 @@
+[
+    //     {
+    //     "keys": [
+    //         "super+shift+;"
+    //     ],
+    //     "command": "show_panel",
+    //     "args": {
+    //         "panel": "output.OpenAI"
+    //     }
+    // },
+    // {
+    //     "keys": [
+    //         "super+shift+'"
+    //     ],
+    //     "command": "openai",
+    //     "args": {
+    //         "mode": "completion"
+    //     }
+    // },
+    // {
+    //     "keys": [
+    //         "super+shift+'"
+    //     ],
+    //     "command": "openai",
+    //     "args": {
+    //         "mode": "edition"
+    //     }
+    // },
+    // {
+    //     "keys": [
+    //         "super+shift+'"
+    //     ],
+    //     "command": "openai",
+    //     "args": {
+    //         "mode": "insertion"
+    //     }
+    // },
+]
