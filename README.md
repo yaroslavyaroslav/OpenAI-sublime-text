@@ -31,6 +31,7 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 ## Usage
 1. Open the Sublime Text 4 editor and select some code.
 2. Open the command palette and run the `OpenAI Append`, `OpenAI Insert`, or `OpenAI Edit` command.
+    - To use the `OpenAI Insert` command, the selected code should include a placeholder `[insert]`. This can be modified in the settings.
 3. **The plugin will send the selected code to the OpenAI servers**, using your API key, to generate a suggestion for editing the code.
 4. The suggestion will modify the selected code in the editor, according to the command you ran (append, insert, or edit).
 
