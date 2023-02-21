@@ -17,7 +17,7 @@
                                 "command": "edit_settings",
                                 "args": {
                                     "base_file": "${packages}/OpenAI completion/openAI.sublime-settings",
-                                    "default": "// Settings in here override those in \"openAI/openAI.sublime-settings\"\n{\n\t$0\n}\n"
+                                    "default": "// Settings in here override those in \"OpenAI completion/openAI.sublime-settings\"\n{\n\t\"token\": \"$0\"\n}\n"
                                 }
                             },
                             {

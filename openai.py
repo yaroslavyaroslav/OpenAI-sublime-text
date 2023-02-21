@@ -60,6 +60,7 @@ class OpenAIWorker(threading.Thread):
         try:
             res = connect.getresponse()
             data = res.read()
+            status = res.status
             data_decoded = data.decode('utf-8')
             connect.close()
             completion = json.loads(data_decoded)['choices'][0]['text']
@@ -70,8 +71,7 @@ class OpenAIWorker(threading.Thread):
             return
 
         except Exception as ex:
-            sublime.error_message("Error\n" + str(ex))
-            logging.exception("Exception: " + str(ex))
+            sublime.error_message(f"Server Error: {str(status)}\n{ex}")
             return
 
     def complete(self):
