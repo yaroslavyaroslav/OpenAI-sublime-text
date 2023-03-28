@@ -34,7 +34,7 @@ class OpenAIWorker(threading.Thread):
 
                 output_view = window.find_output_panel("OpenAI") if window.find_output_panel("OpenAI") != None else window.create_output_panel("OpenAI")
                 output_view.run_command('append', {'characters': f'## {self.text}'})
-                output_view.run_command('append', {'characters': '\n------------'})
+                output_view.run_command('append', {'characters': '\n\n'})
                 output_view.run_command('append', {'characters': completion})
                 output_view.run_command('append', {'characters': '\n============\n\n'})
                 window.run_command("show_panel", {"panel": "output.OpenAI"})
@@ -63,13 +63,15 @@ class OpenAIWorker(threading.Thread):
             status = res.status
             data_decoded = data.decode('utf-8')
             connect.close()
-            completion = json.loads(data_decoded)['choices'][0]['text']
+            response = json.loads(data_decoded)
+            print(data_decoded)
+            completion = response['choices'][0]['message']['content']
+            completion = completion.strip()  # Remove leading and trailing spaces
             self.prompt_completion(completion)
         except KeyError:
             sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
             logging.exception("Exception: " + str(data_decoded))
             return
-
         except Exception as ex:
             sublime.error_message(f"Server Error: {str(status)}\n{ex}")
             return
@@ -77,25 +79,23 @@ class OpenAIWorker(threading.Thread):
     def complete(self):
         conn = http.client.HTTPSConnection("api.openai.com")
         payload = {
-            "prompt": self.text,
-            "model": self.settings.get("model"),
+            # Todo add uniq name for each output panel (e.g. each window)
+            "messages": [{"role": "system", "content": "You are a code assistant."}, {"role": "user", "content": self.text}],
+            "model": "gpt-4",
             "temperature": self.settings.get("temperature"),
             "max_tokens": self.settings.get("max_tokens"),
             "top_p": self.settings.get("top_p"),
-            "frequency_penalty": self.settings.get("frequency_penalty"),
-            "presence_penalty": self.settings.get("presence_penalty")
         }
         json_payload = json.dumps(payload)
 
         token = self.settings.get('token')
-
 
         headers = {
             'Content-Type': "application/json",
             'Authorization': 'Bearer {}'.format(token),
             'cache-control': "no-cache",
         }
-        conn.request("POST", "/v1/completions", json_payload, headers)
+        conn.request("POST", "/v1/chat/completions", json_payload, headers)
         self.exec_net_request(connect=conn)
 
     def insert(self):
@@ -154,8 +154,8 @@ class OpenAIWorker(threading.Thread):
 
     def run(self):
         try:
-            if (self.settings.get("max_tokens") + len(self.text)) > 4000:
-                raise AssertionError("OpenAI accepts max. 4000 tokens, so the selected text and the max_tokens setting must be lower than 4000.")
+            # if (self.settings.get("max_tokens") + len(self.text)) > 4000:
+            #     raise AssertionError("OpenAI accepts max. 4000 tokens, so the selected text and the max_tokens setting must be lower than 4000.")
             if not self.settings.has("token"):
                 raise AssertionError("No token provided, you have to set the OpenAI token into the settings to make things work.")
             token = self.settings.get('token')
