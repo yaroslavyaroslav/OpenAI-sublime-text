@@ -7,12 +7,15 @@ import logging
 
 
 class OpenAIWorker(threading.Thread):
+    message = {}
+
     def __init__(self, region, text, view, mode, command):
         self.region = region
         self.text = text
         self.view = view
         self.mode = mode
         self.command = command # optional
+        self.message = {"role": "user", "content": self.command, 'name': 'OpenAI_completion'}
         self.settings = sublime.load_settings("openAI.sublime-settings")
         super(OpenAIWorker, self).__init__()
 
@@ -38,7 +41,8 @@ class OpenAIWorker(threading.Thread):
             ## Guess needed to be cached.
             output_panel = window.find_output_panel("OpenAI Chat") if window.find_output_panel("OpenAI Chat") != None else window.create_output_panel("OpenAI Chat")
             output_panel.set_read_only(False)
-            output_panel.set_syntax_file(syntax_file)
+
+            if self.settings('markdown'): output_panel.set_syntax_file(syntax_file)
 
             ## This one left here as there're could be loooong questions.
             output_panel.run_command('append', {'characters': f'\n\n## Question\n\n'})
@@ -67,6 +71,7 @@ class OpenAIWorker(threading.Thread):
             return
 
     def exec_net_request(self, connect: http.client.HTTPSConnection):
+        # TODO: Add status bar "loading" status, to make it obvious, that we're waiting the server response.
         try:
             res = connect.getresponse()
             data = res.read()
@@ -84,8 +89,13 @@ class OpenAIWorker(threading.Thread):
             completion = completion.strip()  # Remove leading and trailing spaces
             self.prompt_completion(completion)
         except KeyError:
-            sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
-            logging.exception("Exception: " + str(data_decoded))
+            # TODO: Add status bar user notification for this action.
+            if self.mode == 'chat_completion' and response['error']['code'] == 'context_length_exceeded':
+                Cacher().drop_first(4)
+                self.chat_complete()
+            else:
+                sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
+                logging.exception("Exception: " + str(data_decoded))
             return
         except Exception as ex:
             sublime.error_message(f"Server Error: {str(status)}\n{ex}")
@@ -94,9 +104,6 @@ class OpenAIWorker(threading.Thread):
     def chat_complete(self):
         cacher = Cacher()
         conn = http.client.HTTPSConnection("api.openai.com")
-
-        message = {"role": "user", "content": self.command, 'name': 'OpenAI_completion'}
-        cacher.append_to_cache([message])
 
         print(f'cache: {cacher.read_all()}')
 
@@ -137,7 +144,6 @@ class OpenAIWorker(threading.Thread):
         json_payload = json.dumps(payload)
 
         token = self.settings.get('token')
-
 
         headers = {
             'Content-Type': "application/json",
@@ -218,5 +224,7 @@ class OpenAIWorker(threading.Thread):
         if self.mode == 'insertion': self.insert()
         if self.mode == 'edition': self.edit_f()
         if self.mode == 'completion': self.complete()
-        if self.mode == 'chat_completion': self.chat_complete()
+        if self.mode == 'chat_completion':
+            Cacher().append_to_cache([self.message])
+            self.chat_complete()
 

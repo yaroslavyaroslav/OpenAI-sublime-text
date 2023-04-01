@@ -42,10 +42,10 @@
     // Your openAI token
     "token": "",
 
-    // Ask the AI to format its answers with multimarkdown markup.
-    // By "ask", I mean it: it will literally add "format the answer with multimarkdown markup" to the question.
-    // Affects only `completion` command.
-    "multimarkdown": false,
+    // Apply Sublime Text markdown syntax highligh to OpenAI completion output panel text.
+    // Affects only `chat_completion` command.
+    "markdown": true,
+
     // Minimum amount of characters selected to perform completion.
     // Does not affect completion command if the "output_panel" setting is true.
     "minimum_selection_length": 20
