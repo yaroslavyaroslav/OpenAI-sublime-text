@@ -42,7 +42,10 @@ class OpenAIWorker(threading.Thread):
             output_panel = window.find_output_panel("OpenAI Chat") if window.find_output_panel("OpenAI Chat") != None else window.create_output_panel("OpenAI Chat")
             output_panel.set_read_only(False)
 
-            if self.settings('markdown'): output_panel.set_syntax_file(syntax_file)
+            if self.settings.get('markdown'): output_panel.set_syntax_file(syntax_file)
+
+            num_lines = get_number_of_lines(output_panel)
+            print(num_lines)
 
             ## This one left here as there're could be loooong questions.
             output_panel.run_command('append', {'characters': f'\n\n## Question\n\n'})
@@ -50,6 +53,9 @@ class OpenAIWorker(threading.Thread):
             output_panel.run_command('append', {'characters': '\n\n## Answer\n\n'})
             output_panel.run_command('append', {'characters': completion})
             window.run_command("show_panel", {"panel": "output.OpenAI Chat"})
+            point = output_panel.text_point(num_lines + 8, 0) # +8 is that much from last line of a past answer and the first line of a next one.
+
+            output_panel.show_at_center(point)
             output_panel.set_read_only(True)
 
         if self.mode == 'completion':
@@ -227,4 +233,8 @@ class OpenAIWorker(threading.Thread):
         if self.mode == 'chat_completion':
             Cacher().append_to_cache([self.message])
             self.chat_complete()
+
+def get_number_of_lines(view):
+        last_line_num = view.rowcol(view.size())[0] + 1
+        return last_line_num
 
