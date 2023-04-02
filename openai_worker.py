@@ -2,6 +2,7 @@ import sublime, sublime_plugin
 import http.client
 import threading
 from .cacher import Cacher
+from .outputpanel import get_number_of_lines
 import json
 import logging
 
@@ -105,6 +106,7 @@ class OpenAIWorker(threading.Thread):
             return
         except Exception as ex:
             sublime.error_message(f"Server Error: {str(status)}\n{ex}")
+            logging.exception("Exception: " + str(data_decoded))
             return
 
     def chat_complete(self):
@@ -233,8 +235,3 @@ class OpenAIWorker(threading.Thread):
         if self.mode == 'chat_completion':
             Cacher().append_to_cache([self.message])
             self.chat_complete()
-
-def get_number_of_lines(view):
-        last_line_num = view.rowcol(view.size())[0] + 1
-        return last_line_num
-
