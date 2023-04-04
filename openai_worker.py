@@ -2,7 +2,7 @@ import sublime, sublime_plugin
 import http.client
 import threading
 from .cacher import Cacher
-from .outputpanel import get_number_of_lines
+from .outputpanel import get_number_of_lines, SharedOutputPanelListener
 import json
 import logging
 
@@ -32,32 +32,16 @@ class OpenAIWorker(threading.Thread):
             return
 
         if self.mode == 'chat_completion':
+            from .outputpanel import SharedOutputPanelListener
             window = sublime.active_window()
-
-            ## TODO: Make this costumizable.
-            syntax_file = "Packages/MarkdownEditing/syntaxes/MultiMarkdown.sublime-syntax"
-
-            ## FIXME: It opens new panel if the response came when user switched to new window.
-            ## It should be the same window where it started.
-            ## Guess needed to be cached.
-            output_panel = window.find_output_panel("OpenAI Chat") if window.find_output_panel("OpenAI Chat") != None else window.create_output_panel("OpenAI Chat")
-            output_panel.set_read_only(False)
-
-            if self.settings.get('markdown'): output_panel.set_syntax_file(syntax_file)
-
-            num_lines = get_number_of_lines(output_panel)
-            print(num_lines)
-
-            ## This one left here as there're could be loooong questions.
-            output_panel.run_command('append', {'characters': f'\n\n## Question\n\n'})
-            output_panel.run_command('append', {'characters': self.command})
-            output_panel.run_command('append', {'characters': '\n\n## Answer\n\n'})
-            output_panel.run_command('append', {'characters': completion})
-            window.run_command("show_panel", {"panel": "output.OpenAI Chat"})
-            point = output_panel.text_point(num_lines + 8, 0) # +8 is that much from last line of a past answer and the first line of a next one.
-
-            output_panel.show_at_center(point)
-            output_panel.set_read_only(True)
+            ## FIXME: This setting applies only in one way none -> markdown
+            listner = SharedOutputPanelListener()
+            listner.rewrite_output_panel(
+                window=window,
+                markdown=self.settings.get('markdown'),
+                syntax_path=self.settings.get('syntax_path')
+                )
+            listner.show_panel(window=window)
 
         if self.mode == 'completion':
             region = self.view.sel()[0]
@@ -89,7 +73,8 @@ class OpenAIWorker(threading.Thread):
 
             if self.mode == 'chat_completion':
                 Cacher().append_to_cache([response['choices'][0]['message']])
-                completion = response['choices'][0]['message']['content']
+                completion = ""
+                print(f"token number: {response['usage']['total_tokens']}")
             else:
                 completion = json.loads(data_decoded)['choices'][0]['text']
 
@@ -112,8 +97,6 @@ class OpenAIWorker(threading.Thread):
     def chat_complete(self):
         cacher = Cacher()
         conn = http.client.HTTPSConnection("api.openai.com")
-
-        print(f'cache: {cacher.read_all()}')
 
         payload = {
             # Todo add uniq name for each output panel (e.g. each window)

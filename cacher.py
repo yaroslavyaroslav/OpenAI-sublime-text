@@ -11,12 +11,11 @@ class Cacher():
             os.makedirs(plugin_cache_dir)
 
         # Create the file path to store the data
-        self.cache_file = os.path.join(plugin_cache_dir, "chat_history.jl")
-
+        self.history_file = os.path.join(plugin_cache_dir, "chat_history.jl")
 
     def read_all(self):
         json_objects = []
-        reader = jl.reader(self.cache_file)
+        reader = jl.reader(self.history_file)
         for json_object in reader:
             json_objects.append(json_object)
 
@@ -24,7 +23,7 @@ class Cacher():
 
     def append_to_cache(self, cache_lines):
         # Create a new JSON Lines writer for output.jl
-        writer = jl.writer(self.cache_file)
+        writer = jl.writer(self.history_file)
         next(writer)
         writer.send(cache_lines[0])
         # for line in cache_lines:
@@ -32,16 +31,16 @@ class Cacher():
 
     def drop_first(self, number = 4):
         # Read all lines from the JSON Lines file
-        with open(self.cache_file, "r") as file:
+        with open(self.history_file, "r") as file:
             lines = file.readlines()
 
         # Remove the specified number of lines from the beginning
         lines = lines[number:]
 
         # Write the remaining lines back to the cache file
-        with open(self.cache_file, "w") as file:
+        with open(self.history_file, "w") as file:
             file.writelines(lines)
 
     def drop_all(self):
-        with open(self.cache_file, "w") as file:
+        with open(self.history_file, "w") as file:
             pass # Truncate the file by opening it in 'w' mode and doing nothing

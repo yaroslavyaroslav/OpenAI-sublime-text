@@ -44,9 +44,13 @@
 
     // Apply Sublime Text markdown syntax highligh to OpenAI completion output panel text.
     // Affects only `chat_completion` command.
-    "markdown": true,
+    "markdown": false,
 
-    // Minimum amount of characters selected to perform completion.
+     // Apply custom syntax highlight to OpenAI completion output panel text.
+    // e.g.: "Packages/MarkdownEditing/syntaxes/MultiMarkdown.sublime-syntax"
+    "syntax_path": "",
+
+     // Minimum amount of characters selected to perform completion.
     // Does not affect completion command if the "output_panel" setting is true.
     "minimum_selection_length": 20
 }
