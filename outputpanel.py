@@ -25,6 +25,13 @@ class SharedOutputPanelListener(sublime_plugin.EventListener):
             output_panel.run_command('append', {'characters': line['content']})
 
         output_panel.set_read_only(True)
+        num_lines = get_number_of_lines(output_panel)
+        print(num_lines)
+
+        ## FIXME: To calibrate scroll.
+        point = output_panel.text_point(num_lines, 0) # +8 is that much from last line of a past answer and the first line of a next one.
+
+        output_panel.show_at_center(point)
 
     def clear_output_panel(self, window):
         output_panel = self.get_output_panel(window=window)
@@ -43,14 +50,6 @@ class SharedOutputPanelListener(sublime_plugin.EventListener):
                 )
 
     def show_panel(self, window):
-        output_panel = self.get_output_panel(window=window)
-        num_lines = get_number_of_lines(output_panel)
-        print(num_lines)
-
-        ## FIXME: To calibrate scroll.
-        point = output_panel.text_point(num_lines, 0) # +8 is that much from last line of a past answer and the first line of a next one.
-
-        output_panel.show_at_center(point)
         window.run_command("show_panel", {"panel": f"output.{self.OUTPUT_PANEL_NAME}"})
 
 def get_number_of_lines(view):
