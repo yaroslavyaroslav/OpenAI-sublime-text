@@ -32,7 +32,7 @@ class Openai(sublime_plugin.TextCommand):
         # Cheching that user select some text
         try:
             if region.__len__() < settings.get("minimum_selection_length"):
-                if mode != 'chat_completion' and mode != 'reset_char_history':
+                if mode != 'chat_completion' and mode != 'reset_chat_history' and mode != 'refresh_output_panel':
                     raise AssertionError("Not enough text selected to complete the request, please expand the selection.")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
@@ -47,13 +47,23 @@ class Openai(sublime_plugin.TextCommand):
         elif mode == 'completion': # mode == `completion`
             worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
             worker_thread.start()
-        elif mode == 'reset_char_history':
+        elif mode == 'reset_chat_history':
             Cacher().drop_all()
             output_panel = sublime.active_window().find_output_panel("OpenAI Chat")
             output_panel.set_read_only(False)
             region = sublime.Region(0, output_panel.size())
             output_panel.erase(edit, region)
             output_panel.set_read_only(True)
+        elif mode == 'refresh_output_panel':
+            from .outputpanel import SharedOutputPanelListener
+            window = sublime.active_window()
+            listner = SharedOutputPanelListener()
+            listner.refresh_output_panel(
+                window=window,
+                markdown=settings.get('markdown'),
+                syntax_path=settings.get('syntax_path')
+            )
+            listner.show_panel(window=window)
         else: # mode 'chat_completion', always in panel
             sublime.active_window().show_input_panel("Question: ", "", functools.partial(self.on_input, edit, "region", "text", self.view, mode), None, None)
 

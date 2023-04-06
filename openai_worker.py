@@ -36,11 +36,11 @@ class OpenAIWorker(threading.Thread):
             window = sublime.active_window()
             ## FIXME: This setting applies only in one way none -> markdown
             listner = SharedOutputPanelListener()
-            listner.rewrite_output_panel(
+            listner.refresh_output_panel(
                 window=window,
                 markdown=self.settings.get('markdown'),
                 syntax_path=self.settings.get('syntax_path')
-                )
+            )
             listner.show_panel(window=window)
 
         if self.mode == 'completion':

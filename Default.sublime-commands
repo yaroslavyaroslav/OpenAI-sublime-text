@@ -14,10 +14,17 @@
 		}
 	},
 	{
-		"caption": "OpenAI: Reset Chat History ",
+		"caption": "OpenAI: Reset Chat History",
 		"command": "openai",
 		"args": {
-			"mode": "reset_char_history"
+			"mode": "reset_chat_history"
+		}
+	},
+	{
+		"caption": "OpenAI: Refresh Chat",
+		"command": "openai",
+		"args": {
+			"mode": "refresh_output_panel"
 		}
 	},
 	{
