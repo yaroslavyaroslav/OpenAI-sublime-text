@@ -46,11 +46,19 @@
     // Affects only `chat_completion` command.
     "markdown": false,
 
-     // Apply custom syntax highlight to OpenAI completion output panel text.
+    // Apply custom syntax highlight to OpenAI completion output panel text.
     // e.g.: "Packages/MarkdownEditing/syntaxes/MultiMarkdown.sublime-syntax"
     "syntax_path": "",
 
-     // Minimum amount of characters selected to perform completion.
+    // Minimum amount of characters selected to perform completion.
     // Does not affect completion command if the "output_panel" setting is true.
-    "minimum_selection_length": 20
+    "minimum_selection_length": 20,
+
+    // Proxy setting
+    "proxy": {
+        // Proxy address
+        "address": "",
+        // Proxy port
+        "port": 8080
+    }
 }

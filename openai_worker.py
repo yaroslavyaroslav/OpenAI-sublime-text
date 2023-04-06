@@ -96,7 +96,13 @@ class OpenAIWorker(threading.Thread):
 
     def chat_complete(self):
         cacher = Cacher()
-        conn = http.client.HTTPSConnection("api.openai.com")
+        proxy = self.settings.get('proxy')['address']
+        port = self.settings.get('proxy')['port']
+        if len(proxy) > 0:
+            conn = http.client.HTTPSConnection(host=proxy, port=port)
+            conn.set_tunnel("api.openai.com")
+        else:
+            conn = http.client.HTTPSConnection("api.openai.com")
 
         payload = {
             # Todo add uniq name for each output panel (e.g. each window)
