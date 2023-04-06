@@ -39,15 +39,15 @@ class SharedOutputPanelListener(sublime_plugin.EventListener):
         output_panel.run_command("right_delete")
 
     # This works pretty well. It shows the same output panel within any view.
-    def on_activated(self, view):
-        window = view.window()
-        settings = sublime.load_settings("openAI.sublime-settings")
-        if window:
-            self.rewrite_output_panel(
-                window=window,
-                markdown=settings.get('markdown'),
-                syntax_path=settings.get('syntax_path')
-            )
+    # def on_activated(self, view):
+    #     window = view.window()
+    #     settings = sublime.load_settings("openAI.sublime-settings")
+    #     if window:
+    #         self.rewrite_output_panel(
+    #             window=window,
+    #             markdown=settings.get('markdown'),
+    #             syntax_path=settings.get('syntax_path')
+    #         )
 
     def show_panel(self, window):
         window.run_command("show_panel", {"panel": f"output.{self.OUTPUT_PANEL_NAME}"})
