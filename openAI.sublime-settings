@@ -1,14 +1,20 @@
 {
-    // The model which will generate the completion.
+    // The model which will generate the code edition.
     // Some models are suitable for natural language tasks, others specialize in code.
     // Learn more at https://beta.openai.com/docs/models
-    // Does not affect editing mode.
-    "model": "text-davinci-003",
+    // ____Affects only edition mode.____
+    "edit_model": "code-davinci-edit-001",
 
     // The model which will generate the completion.
     // Some models are suitable for natural language tasks, others specialize in code.
     // Learn more at https://beta.openai.com/docs/models
-    // Does not affect editing mode.
+    // ____Affects only completion and inserting modes.____
+    "model": "text-davinci-003",
+
+    // The model which will generate the chat completion.
+    // Some models are suitable for natural language tasks, others specialize in code.
+    // Learn more at https://beta.openai.com/docs/models
+    // ____Affects only chat completion mode___
     "chat_model": "gpt-3.5-turbo",
 
     // Controls randomness: Lowering results in less random completions.

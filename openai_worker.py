@@ -186,7 +186,7 @@ class OpenAIWorker(threading.Thread):
     def edit_f(self):
         conn = http.client.HTTPSConnection("api.openai.com")
         payload = {
-            "model": "code-davinci-edit-001", # could be text-davinci-edit-001
+            "model": self.settings.get('edit_model'),
             "input": self.text,
             "instruction": self.command,
             "temperature": self.settings.get("temperature"),
