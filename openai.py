@@ -6,7 +6,7 @@ from .openai_worker import OpenAIWorker
 
 
 class Openai(sublime_plugin.TextCommand):
-    def on_input(self, edit, region, text, view, mode, input):
+    def on_input(self, region, text, view, mode, input):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
         worker_thread = OpenAIWorker(region, text, view, mode=mode, command=input)
@@ -40,12 +40,12 @@ class Openai(sublime_plugin.TextCommand):
             return
 
         if mode == 'edition':
-            sublime.active_window().show_input_panel("Request: ", "Comment the given code line by line", functools.partial(self.on_input, edit, region, text, self.view, mode), None, None)
+            sublime.active_window().show_input_panel("Request: ", "Comment the given code line by line", functools.partial(self.on_input, region, text, self.view, mode), None, None)
         elif mode == 'insertion':
-            worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
+            worker_thread = OpenAIWorker(region, text, self.view, mode, "")
             worker_thread.start()
         elif mode == 'completion': # mode == `completion`
-            worker_thread = OpenAIWorker(edit, region, text, self.view, mode, "")
+            worker_thread = OpenAIWorker(region, text, self.view, mode, "")
             worker_thread.start()
         elif mode == 'reset_chat_history':
             Cacher().drop_all()
