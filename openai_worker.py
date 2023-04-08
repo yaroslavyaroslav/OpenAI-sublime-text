@@ -17,7 +17,10 @@ class OpenAIWorker(threading.Thread):
         self.mode = mode
         self.command = command # optional
         self.message = {"role": "user", "content": self.command, 'name': 'OpenAI_completion'}
-        self.settings = sublime.load_settings("openAI.sublime-settings")
+        settings = sublime.load_settings("openAI.sublime-settings")
+        self.settings = settings
+        self.proxy = settings.get('proxy')['address']
+        self.port = settings.get('proxy')['port']
         super(OpenAIWorker, self).__init__()
 
     def prompt_completion(self, completion):
@@ -94,15 +97,18 @@ class OpenAIWorker(threading.Thread):
             logging.exception("Exception: " + str(data_decoded))
             return
 
+    def create_connection(self) -> http.client.HTTPSConnection:
+        if len(self.proxy) > 0:
+            connection = http.client.HTTPSConnection(host=self.proxy, port=self.port)
+            connection.set_tunnel("api.openai.com")
+            return connection
+        else:
+            return http.client.HTTPSConnection("api.openai.com")
+
     def chat_complete(self):
         cacher = Cacher()
-        proxy = self.settings.get('proxy')['address']
-        port = self.settings.get('proxy')['port']
-        if len(proxy) > 0:
-            conn = http.client.HTTPSConnection(host=proxy, port=port)
-            conn.set_tunnel("api.openai.com")
-        else:
-            conn = http.client.HTTPSConnection("api.openai.com")
+
+        conn = self.create_connection()
 
         payload = {
             # Todo add uniq name for each output panel (e.g. each window)
@@ -128,7 +134,8 @@ class OpenAIWorker(threading.Thread):
         self.exec_net_request(connect=conn)
 
     def complete(self):
-        conn = http.client.HTTPSConnection("api.openai.com")
+        conn = self.create_connection()
+
         payload = {
             "prompt": self.text,
             "model": self.settings.get("model"),
@@ -151,7 +158,7 @@ class OpenAIWorker(threading.Thread):
         self.exec_net_request(connect=conn)
 
     def insert(self):
-        conn = http.client.HTTPSConnection("api.openai.com")
+        conn = self.create_connection()
         parts = self.text.split(self.settings.get('placeholder'))
         try:
             if not len(parts) == 2:
@@ -184,7 +191,7 @@ class OpenAIWorker(threading.Thread):
         self.exec_net_request(connect=conn)
 
     def edit_f(self):
-        conn = http.client.HTTPSConnection("api.openai.com")
+        conn = self.create_connection()
         payload = {
             "model": self.settings.get('edit_model'),
             "input": self.text,
@@ -206,6 +213,7 @@ class OpenAIWorker(threading.Thread):
 
     def run(self):
         try:
+            # FIXME: It's better to have such check locally, but it's pretty complicated with all those different modes and models
             # if (self.settings.get("max_tokens") + len(self.text)) > 4000:
             #     raise AssertionError("OpenAI accepts max. 4000 tokens, so the selected text and the max_tokens setting must be lower than 4000.")
             if not self.settings.has("token"):
