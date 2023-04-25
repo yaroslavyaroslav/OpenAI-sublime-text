@@ -5,10 +5,6 @@
 
 ## ChatGPT mode
 
-Comprehensive ChatGPT API support with a bunch of new commands.
-
-### Summary
-
 ChatGPT mode works the following way:
 1. Run the `OpenAI: New Message` command
 2. Wait until OpenAI performs a response (be VERY patient in the case of the GPT-4 model it's way slower than you could imagine).
