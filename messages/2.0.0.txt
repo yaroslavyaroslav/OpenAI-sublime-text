@@ -1,0 +1,49 @@
+=> 2.0.0
+
+# Features summary
+- ChatGPT mode support.
+- [Multi]Markdown syntax with syntax highlight support (ChatGPT mode only).
+- Proxy support.
+
+## ChatGPT mode
+
+Comprehensive ChatGPT API support with a bunch of new commands.
+
+### Summary
+
+ChatGPT mode works the following way:
+1. Run the `OpenAI: New Message` command
+2. Wait until OpenAI performs a response (be VERY patient in the case of the GPT-4 model it's way slower than you could imagine).
+3. On the Response plugin opens the `OpenAI completion` output panel with the whole log of your chat at [any] active Window.
+4. If you would like to feth chat history to another window manually, you can do that by running the `OpenAI: Refresh Chat` command.
+5. When you're done or want to start all over you should run the `OpenAI: Reset Chat History` command, which deletes the chat cache.
+
+> You can bind both of the most usable commands `OpenAI: New Message` and `OpenAI: Show output panel`, to do that please follow `Settings`->`Package Control`->`OpenAI completion`->`Key Bindings`.
+
+> As for now there's just a single history instance. I guess this limitation would disappear sometime, but highly likely it wouldn't be soon.
+
+## [Multi]Markdown syntax with syntax highlight support (ChatGPT mode only).
+
+ChatGPT output panel supports markdown syntax highlight. It should just work (if it's not please report an issue).
+
+Although it's highly recommended to install the [`MultimarkdownEditing`](https://sublimetext-markdown.github.io/MarkdownEditing/) to apply syntax highlighting for code snippets provided by ChatGPT. `OpenAI completion` should just pick it up implicitly for the output panel content.
+
+## Proxy support
+
+That's it. Now you can set up a proxy for this plugin.
+You can setup it up by overriding the proxy property in the `OpenAI completion` settings like follow:
+
+```json
+// Proxy setting
+"proxy": {
+    // Proxy address
+    "address": "127.0.0.1",
+
+    // Proxy port
+    "port": 9898
+}
+```
+
+## Disclaimer
+
+Unfortunately, this version hasn't got covered with comprehensive testing, so there could be bugs. Please report them, so I'd be happy to release a patch.
