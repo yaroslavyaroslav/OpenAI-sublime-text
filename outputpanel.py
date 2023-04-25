@@ -5,7 +5,7 @@ from .cacher import Cacher
 class SharedOutputPanelListener(sublime_plugin.EventListener):
     OUTPUT_PANEL_NAME = "OpenAI Chat"
 
-    def get_output_panel(self, window):
+    def get_output_panel(self, window: sublime.Window):
         return window.find_output_panel(self.OUTPUT_PANEL_NAME) if window.find_output_panel(self.OUTPUT_PANEL_NAME) != None else window.create_output_panel(self.OUTPUT_PANEL_NAME)
 
     def refresh_output_panel(self, window, markdown: bool, syntax_path: str):
@@ -28,8 +28,9 @@ class SharedOutputPanelListener(sublime_plugin.EventListener):
         num_lines = get_number_of_lines(output_panel)
         print(f'num_lines: {num_lines}')
 
-        ## FIXME: To calibrate scroll.
-        point = output_panel.text_point(num_lines, 0) # +8 is that much from last line of a past answer and the first line of a next one.
+        ## Hardcoded to -10 lines from the end, just completely randrom number.
+        ## TODO: Here's some complex scrolling logic based on the content (## Answer) required.
+        point = output_panel.text_point(num_lines - 10, 0)
 
         output_panel.show_at_center(point)
 
@@ -37,17 +38,6 @@ class SharedOutputPanelListener(sublime_plugin.EventListener):
         output_panel = self.get_output_panel(window=window)
         output_panel.run_command("select_all")
         output_panel.run_command("right_delete")
-
-    # This works pretty well. It shows the same output panel within any view.
-    # def on_activated(self, view):
-    #     window = view.window()
-    #     settings = sublime.load_settings("openAI.sublime-settings")
-    #     if window:
-    #         self.rewrite_output_panel(
-    #             window=window,
-    #             markdown=settings.get('markdown'),
-    #             syntax_path=settings.get('syntax_path')
-    #         )
 
     def show_panel(self, window):
         window.run_command("show_panel", {"panel": f"output.{self.OUTPUT_PANEL_NAME}"})

@@ -42,7 +42,7 @@ class OpenAIWorker(threading.Thread):
             listner.refresh_output_panel(
                 window=window,
                 markdown=self.settings.get('markdown'),
-                syntax_path=self.settings.get('syntax_path')
+                syntax_path="Packages/Markdown/MultiMarkdown.sublime-syntax"
             )
             listner.show_panel(window=window)
 

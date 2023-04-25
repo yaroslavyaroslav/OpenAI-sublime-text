@@ -42,5 +42,5 @@ class Cacher():
             file.writelines(lines)
 
     def drop_all(self):
-        with open(self.history_file, "w") as file:
+        with open(self.history_file, "w") as _:
             pass # Truncate the file by opening it in 'w' mode and doing nothing

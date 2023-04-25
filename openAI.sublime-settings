@@ -50,11 +50,8 @@
 
     // Apply Sublime Text markdown syntax highligh to OpenAI completion output panel text.
     // Affects only `chat_completion` command.
-    "markdown": false,
-
-    // Apply custom syntax highlight to OpenAI completion output panel text.
-    // e.g.: "Packages/MarkdownEditing/syntaxes/MultiMarkdown.sublime-syntax"
-    "syntax_path": "",
+    // `MultimarkdownEditing` package highly recommended to apply syntax highlight for a code snippets.
+    "markdown": true,
 
     // Minimum amount of characters selected to perform completion.
     // Does not affect completion command if the "output_panel" setting is true.
@@ -64,6 +61,7 @@
     "proxy": {
         // Proxy address
         "address": "",
+
         // Proxy port
         "port": 8080
     }
