@@ -1,20 +1,41 @@
 [
 	{
-		"caption": "OpenAI Complete",
+		"caption": "OpenAI: Complete",
 		"command": "openai",
 		"args": {
 			"mode": "completion"
 		}
 	},
 	{
-		"caption": "OpenAI Insert",
+		"caption": "OpenAI: New Message",
+		"command": "openai",
+		"args": {
+			"mode": "chat_completion"
+		}
+	},
+	{
+		"caption": "OpenAI: Reset Chat History",
+		"command": "openai",
+		"args": {
+			"mode": "reset_chat_history"
+		}
+	},
+	{
+		"caption": "OpenAI: Refresh Chat",
+		"command": "openai",
+		"args": {
+			"mode": "refresh_output_panel"
+		}
+	},
+	{
+		"caption": "OpenAI: Insert",
 		"command": "openai",
 		"args": {
 			"mode": "insertion"
 		}
 	},
 	{
-		"caption": "OpenAI Edit",
+		"caption": "OpenAI: Edit",
 		"command": "openai",
 		"args": {
 			"mode": "edition"
