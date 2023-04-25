@@ -1,9 +1,21 @@
 {
+    // The model which will generate the code edition.
+    // Some models are suitable for natural language tasks, others specialize in code.
+    // Learn more at https://beta.openai.com/docs/models
+    // ____Affects only edition mode.____
+    "edit_model": "code-davinci-edit-001",
+
     // The model which will generate the completion.
     // Some models are suitable for natural language tasks, others specialize in code.
     // Learn more at https://beta.openai.com/docs/models
-    // Does not affect editing mode.
+    // ____Affects only completion and inserting modes.____
     "model": "text-davinci-003",
+
+    // The model which will generate the chat completion.
+    // Some models are suitable for natural language tasks, others specialize in code.
+    // Learn more at https://beta.openai.com/docs/models
+    // ____Affects only chat completion mode___
+    "chat_model": "gpt-3.5-turbo",
 
     // Controls randomness: Lowering results in less random completions.
     // As the temperature approaches zero, the model will become deterministic and repetitive.
@@ -36,17 +48,21 @@
     // Your openAI token
     "token": "",
 
-    // Ask the AI to format its answers with multimarkdown markup.
-    // By "ask", I mean it: it will literally add "format the answer with multimarkdown markup" to the question.
-    // Affects only `completion` command.
-    "multimarkdown": false,
-
-    // Manages where to print the output of the completion command:
-    // false — print into the editor
-    // true  — print into separate output panel (named "OpenAI")
-    "output_panel": false,
+    // Apply Sublime Text markdown syntax highligh to OpenAI completion output panel text.
+    // Affects only `chat_completion` command.
+    // `MultimarkdownEditing` package highly recommended to apply syntax highlight for a code snippets.
+    "markdown": true,
 
     // Minimum amount of characters selected to perform completion.
     // Does not affect completion command if the "output_panel" setting is true.
-    "minimum_selection_length": 20
+    "minimum_selection_length": 20,
+
+    // Proxy setting
+    "proxy": {
+        // Proxy address
+        "address": "",
+
+        // Proxy port
+        "port": 8080
+    }
 }
