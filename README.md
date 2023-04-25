@@ -69,8 +69,8 @@ ChatGPT mode works the following way:
 ### Single shot completion usage
 
 1. Open the Sublime Text 4 editor and select some code.
-2. Open the command palette and run the `OpenAI Append`, `OpenAI Insert`, or `OpenAI Edit` commands.
-    - To use the `OpenAI Insert` command, the selected code should include a placeholder `[insert]`. This can be modified in the settings.
+2. Open the command palette and run the `OpenAI: Complete`, `OpenAI: Insert`, or `OpenAI: Edit` commands.
+    - To use the `OpenAI: Insert` command, the selected code should include a placeholder `[insert]`. This can be modified in the settings.
 3. **The plugin will send the selected code to the OpenAI servers**, using your API key, to generate a suggestion for editing the code.
 4. The suggestion will modify the selected code in the editor, according to the command you ran (append, insert, or edit).
 
@@ -88,12 +88,8 @@ That's it. Now you can set up a proxy for this plugin.
 You can setup it up by overriding the proxy property in the `OpenAI completion` settings like follow:
 
 ```json
-// Proxy setting
 "proxy": {
-    // Proxy address
     "address": "127.0.0.1",
-
-    // Proxy port
     "port": 9898
 }
 ```
@@ -103,7 +99,7 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 > **Note**
 > You have to have access to the `GPT-4` model within your account, to use that feature.
 
-It should just work, just set the `chat_model` setting to `GPT-4`. Please be patient while working with it. (1) It's **very** slow and an answer would appear only after it finishes its prompt. It could take up to 10 seconds easily.
+It should just work, just set the `chat_model` setting to `GPT-4`. Please be patient while working with it. (1) It's **very** slow and (2) an answer would appear only after it finishes its prompt. It could take up to 10 seconds easily.
 
 
 ## Settings
@@ -115,11 +111,12 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
 }
 ```
 
-## Note
-Please note that OpenAI is a paid service, and you will need to have an API key and sufficient credit to use the plugin.
+## Disclaimers
+
+> **Note**
+> Please note that OpenAI is a paid service, and you will need to have an API key and sufficient credit to use this plugin.
 
 > **Warning**
-> **All selected code will be sent to the OpenAI servers for processing, so make sure you have the necessary permissions to do so**.
+> **All selected code will be sent to the OpenAI servers for processing, so make sure you have all necessary permissions to do so**.
 
-## Disclamer
-This one was at 80% written by that thing itself including this readme. I was here mostly for debugging purposes, rather than designing and researching. This is pure magic, I swear.
+> This one was at 80% written by that thing itself including this readme. I was here mostly for debugging purposes, rather than designing and researching. This is pure magic, I swear.
