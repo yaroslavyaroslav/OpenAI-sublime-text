@@ -39,6 +39,7 @@ class Openai(sublime_plugin.TextCommand):
             logging.exception("Exception: " + str(ex))
             return
 
+        from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
         if mode == 'edition':
             sublime.active_window().show_input_panel("Request: ", "Comment the given code line by line", functools.partial(self.on_input, region, text, self.view, mode), None, None)
         elif mode == 'insertion':
