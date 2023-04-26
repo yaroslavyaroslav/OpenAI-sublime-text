@@ -2,7 +2,6 @@ import sublime, sublime_plugin
 import functools
 from .cacher import Cacher
 import logging
-from .openai_worker import OpenAIWorker
 
 
 class Openai(sublime_plugin.TextCommand):
