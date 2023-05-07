@@ -61,7 +61,6 @@ class Openai(sublime_plugin.TextCommand):
             listner.refresh_output_panel(
                 window=window,
                 markdown=settings.get('markdown'),
-                syntax_path=settings.get('syntax_path')
             )
             listner.show_panel(window=window)
         else: # mode 'chat_completion', always in panel
