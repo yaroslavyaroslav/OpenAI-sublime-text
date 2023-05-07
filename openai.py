@@ -2,7 +2,6 @@ import sublime, sublime_plugin
 import functools
 from .cacher import Cacher
 import logging
-from .openai_worker import OpenAIWorker
 
 
 class Openai(sublime_plugin.TextCommand):
@@ -62,7 +61,6 @@ class Openai(sublime_plugin.TextCommand):
             listner.refresh_output_panel(
                 window=window,
                 markdown=settings.get('markdown'),
-                syntax_path=settings.get('syntax_path')
             )
             listner.show_panel(window=window)
         else: # mode 'chat_completion', always in panel
