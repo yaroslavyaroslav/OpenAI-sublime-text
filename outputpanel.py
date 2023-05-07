@@ -8,12 +8,12 @@ class SharedOutputPanelListener(sublime_plugin.EventListener):
     def get_output_panel(self, window: sublime.Window):
         return window.find_output_panel(self.OUTPUT_PANEL_NAME) if window.find_output_panel(self.OUTPUT_PANEL_NAME) != None else window.create_output_panel(self.OUTPUT_PANEL_NAME)
 
-    def refresh_output_panel(self, window, markdown: bool, syntax_path: str):
+    def refresh_output_panel(self, window, markdown: bool):
         output_panel = self.get_output_panel(window=window)
         output_panel.set_read_only(False)
         self.clear_output_panel(window)
 
-        if markdown: output_panel.set_syntax_file(syntax_path)
+        if markdown: output_panel.set_syntax_file("Packages/Markdown/MultiMarkdown.sublime-syntax")
 
         for line in Cacher().read_all():
             if line['role'] == 'user':
