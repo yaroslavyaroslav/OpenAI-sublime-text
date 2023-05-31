@@ -107,7 +107,7 @@ class OpenAIWorker(threading.Thread):
         except KeyError:
             # TODO: Add status bar user notification for this action.
             if self.mode == 'chat_completion' and response['error']['code'] == 'context_length_exceeded':
-                Cacher().drop_first(4)
+                Cacher().drop_first(2)
                 self.chat_complete()
             else:
                 sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
