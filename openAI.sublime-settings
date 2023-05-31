@@ -17,6 +17,12 @@
     // ____Affects only chat completion mode___
     "chat_model": "gpt-3.5-turbo",
 
+    // ChatGPT model knows how to role, lol
+    // It can act as a different kind of person. Recently in this plugin it was acting
+    // like as a code assistant. With this setting you're able to set it up more precisely.
+    // E.g. "act like a (rust|python|js|whatewer) development assistant", act like a english tutor and so on.
+    "assistant_role": "You are a senior code assitant",
+
     // Controls randomness: Lowering results in less random completions.
     // As the temperature approaches zero, the model will become deterministic and repetitive.
     "temperature": 0.7,

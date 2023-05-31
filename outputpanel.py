@@ -8,6 +8,20 @@ class SharedOutputPanelListener(sublime_plugin.EventListener):
     def get_output_panel(self, window: sublime.Window):
         return window.find_output_panel(self.OUTPUT_PANEL_NAME) if window.find_output_panel(self.OUTPUT_PANEL_NAME) != None else window.create_output_panel(self.OUTPUT_PANEL_NAME)
 
+    def update_output_panel(self, text: str, window: sublime.Window):
+        output_panel = self.get_output_panel(window=window)
+        output_panel.set_read_only(False)
+        output_panel.run_command('append', {'characters': text})
+        output_panel.set_read_only(True)
+        num_lines = get_number_of_lines(output_panel)
+        print(f'num_lines: {num_lines}')
+
+        point = output_panel.text_point(num_lines, 0)
+
+        # FIXME: make me scrollable while printing in addition to following bottom edge if not scrolled.
+        output_panel.show_at_center(point)
+
+
     def refresh_output_panel(self, window, markdown: bool):
         output_panel = self.get_output_panel(window=window)
         output_panel.set_read_only(False)
