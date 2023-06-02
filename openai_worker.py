@@ -102,7 +102,6 @@ class OpenAIWorker(threading.Thread):
 
             connect.close()
             Cacher().append_to_cache([full_response_content])
-            # self.prompt_completion(completion)
 
         except KeyError:
             # TODO: Add status bar user notification for this action.
