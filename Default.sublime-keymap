@@ -14,7 +14,7 @@
     //     ],
     //     "command": "show_panel",
     //     "args": {
-    //         "panel": "output.OpenAI"
+    //         "panel": "output.OpenAI Chat"
     //     }
     // },
     // {
