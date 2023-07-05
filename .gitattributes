@@ -1,4 +1,1 @@
-image1.png export-ignore
-image2.png export-ignore
-image3.png export-ignore
-image4.png export-ignore
+/static/**/image*.png export-ignore
