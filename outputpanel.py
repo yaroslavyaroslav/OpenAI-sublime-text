@@ -1,6 +1,5 @@
 from sublime import Window, View
 from sublime_plugin import EventListener
-from typing import Optional
 from .cacher import Cacher
 
 class SharedOutputPanelListener(EventListener):
@@ -10,24 +9,29 @@ class SharedOutputPanelListener(EventListener):
         self.markdown: bool = markdown
         super().__init__()
 
-    def __get_output_panel__(self, window: Window) -> Optional[View]:
+    def __get_output_panel__(self, window: Window) -> View:
         output_panel = window.find_output_panel(self.OUTPUT_PANEL_NAME) or window.create_output_panel(self.OUTPUT_PANEL_NAME)
         if self.markdown: output_panel.set_syntax_file("Packages/Markdown/MultiMarkdown.sublime-syntax")
         return output_panel
 
+    def __scroll_to_text_point__(self, output_panel: View, num_lines: int):
+        point = output_panel.text_point(num_lines, 0)
+        # FIXME: make me scrollable while printing in addition to following bottom edge if not scrolled.
+        output_panel.show_at_center(point)
+
+    ## FIXME: This one should allow scroll while updating, yet it should follow the text if it's not
     def update_output_panel(self, text: str, window: Window):
         output_panel = self.__get_output_panel__(window=window)
         output_panel.set_read_only(False)
         output_panel.run_command('append', {'characters': text})
         output_panel.set_read_only(True)
-        num_lines = get_number_of_lines(output_panel)
+        num_lines: int = get_number_of_lines(output_panel)
         print(f'num_lines: {num_lines}')
 
-        point = output_panel.text_point(num_lines, 0)
-
-        # FIXME: make me scrollable while printing in addition to following bottom edge if not scrolled.
-        output_panel.show_at_center(point)
-
+        self.__scroll_to_text_point__(
+            output_panel=output_panel,
+            num_lines=num_lines
+        )
 
     def refresh_output_panel(self, window):
         output_panel = self.__get_output_panel__(window=window)
@@ -49,9 +53,10 @@ class SharedOutputPanelListener(EventListener):
 
         ## Hardcoded to -10 lines from the end, just completely randrom number.
         ## TODO: Here's some complex scrolling logic based on the content (## Answer) required.
-        point = output_panel.text_point(num_lines - 10, 0)
-
-        output_panel.show_at_center(point)
+        self.__scroll_to_text_point__(
+            output_panel=output_panel,
+            num_lines=num_lines - 10
+        )
 
     def clear_output_panel(self, window):
         output_panel = self.__get_output_panel__(window=window)
@@ -61,6 +66,6 @@ class SharedOutputPanelListener(EventListener):
     def show_panel(self, window):
         window.run_command("show_panel", {"panel": f"output.{self.OUTPUT_PANEL_NAME}"})
 
-def get_number_of_lines(view):
+def get_number_of_lines(view: View) -> int:
         last_line_num = view.rowcol(view.size())[0] + 1
         return last_line_num

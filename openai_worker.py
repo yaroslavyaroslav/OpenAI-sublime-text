@@ -86,6 +86,7 @@ class OpenAIWorker(threading.Thread):
             self.provider.connection.close()
             Cacher().append_to_cache([full_response_content])
 
+        ## FIXME: Make this handler handle tokens overflow error.
         except KeyError:
             # TODO: Add status bar user notification for this action.
             if self.mode == 'chat_completion' and response['error']['code'] == 'context_length_exceeded':
