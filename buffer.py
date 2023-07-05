@@ -1,4 +1,3 @@
-import sublime
 from typing import Optional
 
 class SublimeBuffer():

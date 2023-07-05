@@ -1,7 +1,7 @@
 import sublime
 import threading
 from .cacher import Cacher
-from typing import Optional, List
+from typing import List
 from .openai_network_client import NetworkClient
 from .buffer import SublimeBuffer
 import json
@@ -23,10 +23,14 @@ class OpenAIWorker(threading.Thread):
         self.buffer_manager = SublimeBuffer(self.view)
         super(OpenAIWorker, self).__init__()
 
-    def update_output_panel(self, text_chunk: str, shot_panel: bool = False):
+    def update_output_panel(self, text_chunk: str):
         from .outputpanel import SharedOutputPanelListener
         window = sublime.active_window()
-        listner = SharedOutputPanelListener()
+        markdown_setting = self.settings.get('markdown')
+        if not isinstance(markdown_setting, bool):
+            markdown_setting = True
+
+        listner = SharedOutputPanelListener(markdown=markdown_setting)
         listner.show_panel(window=window)
         listner.update_output_panel(
             text=text_chunk,
@@ -34,8 +38,14 @@ class OpenAIWorker(threading.Thread):
         )
 
     def prompt_completion(self, completion):
-        placeholder: str = self.settings.get('placeholder')
-        self.buffer_manager.prompt_completion(mode=self.mode, completion=completion, placeholder=placeholder)
+        placeholder = self.settings.get('placeholder')
+        if not isinstance(placeholder, str):
+            placeholder = "[insert]"
+        self.buffer_manager.prompt_completion(
+            mode=self.mode,
+            completion=completion,
+            placeholder=placeholder
+        )
 
     def handle_chat_completion_response(self):
         try:
@@ -116,9 +126,10 @@ class OpenAIWorker(threading.Thread):
             # FIXME: It's better to have such check locally, but it's pretty complicated with all those different modes and models
             # if (self.settings.get("max_tokens") + len(self.text)) > 4000:
             #     raise AssertionError("OpenAI accepts max. 4000 tokens, so the selected text and the max_tokens setting must be lower than 4000.")
-            if not self.settings.has("token"):
-                raise AssertionError("No token provided, you have to set the OpenAI token into the settings to make things work.")
-            if len(self.settings.get('token')) < 10:
+            token = self.settings.get('token')
+            if not isinstance(token, str):
+                raise AssertionError("The token must be a string.")
+            if len(token) < 10:
                 raise AssertionError("No token provided, you have to set the OpenAI token into the settings to make things work.")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
@@ -126,10 +137,13 @@ class OpenAIWorker(threading.Thread):
             return
 
         if self.mode == 'insertion':
+            placeholder = self.settings.get('placeholder')
+            if not isinstance(placeholder, str):
+                raise AssertionError("The placeholder must be a string.")
             parts: List[str] = self.text.split(self.settings.get('placeholder'))
             try:
                 if not len(parts) == 2:
-                    raise AssertionError("There is no placeholder '" + self.settings.get('placeholder') + "' within the selected text. There should be exactly one.")
+                    raise AssertionError("There is no placeholder '" + placeholder + "' within the selected text. There should be exactly one.")
             except Exception as ex:
                 sublime.error_message("Exception\n" + str(ex))
                 logging.exception("Exception: " + str(ex))
@@ -150,7 +164,10 @@ class OpenAIWorker(threading.Thread):
         elif self.mode == 'chat_completion':
             Cacher().append_to_cache([self.message])
             cacher = Cacher()
-            role: str = self.settings.get('assistant_role')
+            assistant_role = self.settings.get('assistant_role')
+            if not isinstance(assistant_role, str):
+                raise ValueError("The assistant_role setting must be a string.")
+            role: str = assistant_role
             self.update_output_panel("\n\n## Question\n\n")
             self.update_output_panel(cacher.read_all()[-1]["content"])
 

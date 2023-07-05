@@ -1,11 +1,11 @@
-import http.client
+from http.client import HTTPSConnection, HTTPResponse
 from typing import Optional, List
-import sublime
+from sublime import Settings
 import json
 from .cacher import Cacher
 
 class NetworkClient():
-    def __init__(self, settings: sublime.Settings) -> None:
+    def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.headers = {
             'Content-Type': "application/json",
@@ -13,21 +13,26 @@ class NetworkClient():
             'cache-control': "no-cache",
         }
 
-        if len(self.settings.get('proxy')['address']) > 0:
-            self.connection = http.client.HTTPSConnection(
-                host=self.settings.get('proxy')['address'],
-                port=self.settings.get('proxy')['port']
-            )
-            self.connection.set_tunnel("api.openai.com")
-        else:
-            self.connection = http.client.HTTPSConnection("api.openai.com")
+        proxy_settings = self.settings.get('proxy')
+        if isinstance(proxy_settings, dict):
+            address = proxy_settings.get('address')
+            port = proxy_settings.get('port')
+            if address and len(address) > 0 and port:
+                self.connection = HTTPSConnection(
+                    host=address,
+                    port=port
+                )
+                self.connection.set_tunnel("api.openai.com")
+            else:
+                self.connection = HTTPSConnection("api.openai.com")
 
     def prepare_payload(self, mode: str, text: Optional[str] = None, command: Optional[str] = None, cacher: Optional[Cacher] = None, role: Optional[str] = None, parts: Optional[List[str]] = None) -> str:
         if mode == 'insertion':
+            prompt, suffix = (parts[0], parts[1]) if parts and len(parts) >= 2 else ("Print out that input text is wrong", "Print out that input text is wrong")
             return json.dumps({
                 "model": self.settings.get("model"),
-                "prompt": parts[0],
-                "suffix": parts[1],
+                "prompt": prompt,
+                "suffix": suffix,
                 "temperature": self.settings.get("temperature"),
                 "max_tokens": self.settings.get("max_tokens"),
                 "top_p": self.settings.get("top_p"),
@@ -60,7 +65,7 @@ class NetworkClient():
                 # Todo add uniq name for each output panel (e.g. each window)
                 "messages": [
                     {"role": "system", "content": role},
-                    *cacher.read_all()
+                    *(cacher.read_all() if cacher is not None else [])
                 ],
                 "model": self.settings.get('chat_model'),
                 "temperature": self.settings.get("temperature"),
@@ -73,5 +78,5 @@ class NetworkClient():
     def prepare_request(self, gateway, json_payload):
         self.connection.request(method="POST", url=gateway, body=json_payload, headers=self.headers)
 
-    def execute_response(self) -> http.client.HTTPResponse:
+    def execute_response(self) -> HTTPResponse:
         return self.connection.getresponse()
