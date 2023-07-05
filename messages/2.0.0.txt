@@ -15,7 +15,7 @@ ChatGPT mode works the following way:
 4. If you would like to fetch chat history to another window manually, you can do that by running the `OpenAI: Refresh Chat` command.
 5. When you're done or want to start all over you should run the `OpenAI: Reset Chat History` command, which deletes the chat cache.
 
-> You can bind both of the most usable commands `OpenAI: New Message` and `OpenAI: Show output panel`, to do that please follow `Settings`->`Package Control`->`OpenAI completion`->`Key Bindings`.
+> You can bind both of the most usable commands `OpenAI: New Message` and `OpenAI: Show output panel`, to do that please follow `Settings` -> `Package Control` -> `OpenAI completion` -> `Key Bindings`.
 
 > As for now there's just a single history instance. I guess this limitation would disappear sometime, but highly likely it wouldn't be soon.
 

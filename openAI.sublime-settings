@@ -20,28 +20,38 @@
     // ChatGPT model knows how to role, lol
     // It can act as a different kind of person. Recently in this plugin it was acting
     // like as a code assistant. With this setting you're able to set it up more precisely.
-    // E.g. "act like a (rust|python|js|whatewer) development assistant", act like a english tutor and so on.
+    // E.g. "You are (rust|python|js|whatewer) developer assistant", "You are an english tutor" and so on.
     "assistant_role": "You are a senior code assitant",
 
-    // Controls randomness: Lowering results in less random completions.
-    // As the temperature approaches zero, the model will become deterministic and repetitive.
+    // What sampling temperature to use, between 0 and 2.
+    // Higher values like 0.8 will make the output more random,
+    // while lower values like 0.2 will make it more focused and deterministic.
+    //
+    // OpenAI generally recommend altering this or top_p but not both.
     "temperature": 0.7,
 
-    // The maximum number of tokens to generate.
-    // Requests can use up to 2,048 or 4,000 tokens shared between prompt and completion.
-    // The exact limit varies by model.
+    // The maximum number of tokens to generate in the completion.
+    // The token count of your prompt plus `max_tokens` cannot exceed the model's context length.
     // (One token is roughly 4 characters for normal English text)
     // Does not affect editing mode.
     "max_tokens": 256,
 
-    // Controls diversity via nucleus sampling:
-    // 0.5 means half of all likelihood-weighted options are considered.
+    // An alternative to sampling with temperature, called nucleus sampling,
+    // where the model considers the results of the tokens with `top_p` probability mass.
+    // So 0.1 means only the tokens comprising the top 10% probability mass are considered.
+    // OpenAI generally recommend altering this or temperature but not both.
     "top_p": 1,
 
-    // Controls the minimum height of the debugger output panels in lines.
+    // Number between -2.0 and 2.0.
+    // Positive values penalize new tokens based on their existing frequency in the text so far,
+    // decreasing the model's likelihood to repeat the same line verbatim.
+    // docs: https://platform.openai.com/docs/api-reference/parameter-details
     "frequency_penalty": 0,
 
-    // Some new features are locked behind this flag.
+    // Number between -2.0 and 2.0.
+    /// Positive values penalize new tokens based on whether they appear in the text so far,
+    // increasing the model's likelihood to talk about new topics.
+    // docs: https://platform.openai.com/docs/api-reference/parameter-details
     "presence_penalty": 0,
 
     // Placeholder for insert mode. You should to put it where you want the suggestion to be inserted.
