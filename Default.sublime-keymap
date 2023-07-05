@@ -1,11 +1,20 @@
 [
-    //     {
+    // {
+    //     "keys": [
+    //         "super+shift+'"
+    //     ],
+    //     "command": "openai",
+    //     "args": {
+    //         "mode": "chat_completion"
+    //     }
+    // },
+    // {
     //     "keys": [
     //         "super+shift+;"
     //     ],
     //     "command": "show_panel",
     //     "args": {
-    //         "panel": "output.OpenAI"
+    //         "panel": "output.OpenAI Chat"
     //     }
     // },
     // {
@@ -34,5 +43,5 @@
     //     "args": {
     //         "mode": "insertion"
     //     }
-    // },
+    // }
 ]
