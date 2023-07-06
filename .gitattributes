@@ -1,1 +1,2 @@
 /static/**/image*.png export-ignore
+/.github/FUNDING.yml export-ignore
