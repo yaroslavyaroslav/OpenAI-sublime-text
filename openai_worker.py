@@ -1,15 +1,16 @@
-import sublime, sublime_plugin
-import http.client
+import sublime
 import threading
 from .cacher import Cacher
-from .outputpanel import get_number_of_lines, SharedOutputPanelListener
+from typing import List
+from .openai_network_client import NetworkClient
+from .buffer import SublimeBuffer
+from .errors.OpenAIException import ContextLengthExceededException, UnknownException, present_error
 import json
 import logging
+import re
 
 
 class OpenAIWorker(threading.Thread):
-    message = {}
-
     def __init__(self, region, text, view, mode, command):
         self.region = region
         self.text = text
@@ -17,207 +18,126 @@ class OpenAIWorker(threading.Thread):
         self.mode = mode
         self.command = command # optional
         self.message = {"role": "user", "content": self.command, 'name': 'OpenAI_completion'}
-        settings = sublime.load_settings("openAI.sublime-settings")
-        self.settings = settings
-        self.proxy = settings.get('proxy')['address']
-        self.port = settings.get('proxy')['port']
+        self.settings = sublime.load_settings("openAI.sublime-settings")
+        self.provider = NetworkClient(settings=self.settings)
+
+        self.buffer_manager = SublimeBuffer(self.view)
         super(OpenAIWorker, self).__init__()
 
+    def update_output_panel(self, text_chunk: str):
+        from .outputpanel import SharedOutputPanelListener
+        window = sublime.active_window()
+        markdown_setting = self.settings.get('markdown')
+        if not isinstance(markdown_setting, bool):
+            markdown_setting = True
+
+        listner = SharedOutputPanelListener(markdown=markdown_setting)
+        listner.show_panel(window=window)
+        listner.update_output_panel(
+            text=text_chunk,
+            window=window
+        )
+
     def prompt_completion(self, completion):
-        completion = completion.replace("$", "\$")
-        if self.mode == 'insertion':
-            result = self.view.find(self.settings.get('placeholder'), 0, 1)
-            if result:
-                self.view.sel().clear()
-                self.view.sel().add(result)
-                # Replace the placeholder with the specified replacement text
-                self.view.run_command("insert_snippet", {"contents": completion})
+        placeholder = self.settings.get('placeholder')
+        if not isinstance(placeholder, str):
+            placeholder = "[insert]"
+        self.buffer_manager.prompt_completion(
+            mode=self.mode,
+            completion=completion,
+            placeholder=placeholder
+        )
+
+    def handle_chat_completion_response(self):
+        response = self.provider.execute_response()
+
+        if response is None or response.status != 200:
+            print("xxxx5")
             return
 
-        if self.mode == 'chat_completion':
-            from .outputpanel import SharedOutputPanelListener
-            window = sublime.active_window()
-            ## FIXME: This setting applies only in one way none -> markdown
-            listner = SharedOutputPanelListener()
-            listner.refresh_output_panel(
-                window=window,
-                markdown=self.settings.get('markdown'),
-            )
-            listner.show_panel(window=window)
+        decoder = json.JSONDecoder()
 
-        if self.mode == 'completion':
-            region = self.view.sel()[0]
-            if region.a <= region.b:
-                region.a = region.b
-            else:
-                region.b = region.a
+        full_response_content = {"role": "", "content": ""}
 
-            self.view.sel().clear()
-            self.view.sel().add(region)
-            # Replace the placeholder with the specified replacement text
-            self.view.run_command("insert_snippet", {"contents": completion})
+        self.update_output_panel("\n\n## Answer\n\n")
+
+        for chunk in response:
+            chunk_str = chunk.decode('utf-8')
+
+            # Check for SSE data
+            if chunk_str.startswith("data:") and not re.search(r"\[DONE\]$", chunk_str):
+                # print(chunk_str)
+                # print(re.search(r"\[DONE\]$", chunk_str))
+                chunk_str = chunk_str[len("data:"):].strip()
+
+                try:
+                    response = decoder.decode(chunk_str)
+                except ValueError as ex:
+                    sublime.error_message(f"Server Error: {str(ex)}")
+                    logging.exception("Exception: " + str(ex))
+
+                if 'delta' in response['choices'][0]:
+                    delta = response['choices'][0]['delta']
+                    if 'role' in delta:
+                        full_response_content['role'] = delta['role']
+                    elif 'content' in delta:
+                        full_response_content['content'] += delta['content']
+                        self.update_output_panel(delta['content'])
+
+        self.provider.connection.close()
+        Cacher().append_to_cache([full_response_content])
+
+    def handle_ordinary_response(self):
+        response = self.provider.execute_response()
+        if response is None or response.status != 200:
             return
+        data = response.read()
+        data_decoded = data.decode('utf-8')
+        self.provider.connection.close()
+        completion = json.loads(data_decoded)['choices'][0]['text']
+        completion = completion.strip()  # Remove leading and trailing spaces
+        self.prompt_completion(completion)
 
-        if self.mode == 'edition': # it's just replacing all given text for now.
-            region = self.view.sel()[0]
-            self.view.run_command("insert_snippet", {"contents": completion})
-            return
 
-    def exec_net_request(self, connect: http.client.HTTPSConnection):
-        # TODO: Add status bar "loading" status, to make it obvious, that we're waiting the server response.
+    def handle_response(self):
         try:
-            res = connect.getresponse()
-            data = res.read()
-            status = res.status
-            data_decoded = data.decode('utf-8')
-            connect.close()
-            response = json.loads(data_decoded)
-
+            if self.mode == "chat_completion": self.handle_chat_completion_response()
+            else: self.handle_ordinary_response()
+        except ContextLengthExceededException as error:
+            print("xxxx8")
             if self.mode == 'chat_completion':
-                Cacher().append_to_cache([response['choices'][0]['message']])
-                completion = ""
-                print(f"token number: {response['usage']['total_tokens']}")
+                # As user to delete first dialog pair,
+                do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
+                if do_delete:
+                    Cacher().drop_first(2)
+                    assistant_role = self.settings.get('assistant_role')
+                    if not isinstance(assistant_role, str):
+                        raise ValueError("The assistant_role setting must be a string.")
+                    payload = self.provider.prepare_payload(mode=self.mode, role=assistant_role)
+                    self.provider.prepare_request(gateway="/v1/chat/completions", json_payload=payload)
+                    self.handle_response()
             else:
-                completion = json.loads(data_decoded)['choices'][0]['text']
-
-            completion = completion.strip()  # Remove leading and trailing spaces
-            self.prompt_completion(completion)
+                present_error(title="OpenAI error", error=error)
         except KeyError:
-            # TODO: Add status bar user notification for this action.
             if self.mode == 'chat_completion' and response['error']['code'] == 'context_length_exceeded':
-                Cacher().drop_first(4)
-                self.chat_complete()
+                Cacher().drop_first(2)
             else:
                 sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
-                logging.exception("Exception: " + str(data_decoded))
+                logging.exception("Exception: " + str(response))
             return
         except Exception as ex:
-            sublime.error_message(f"Server Error: {str(status)}\n{ex}")
+            sublime.error_message(f"Server Error: {str(response.status)}\n{ex}")
             logging.exception("Exception: " + str(data_decoded))
             return
-
-    def create_connection(self) -> http.client.HTTPSConnection:
-        if len(self.proxy) > 0:
-            connection = http.client.HTTPSConnection(host=self.proxy, port=self.port)
-            connection.set_tunnel("api.openai.com")
-            return connection
-        else:
-            return http.client.HTTPSConnection("api.openai.com")
-
-    def chat_complete(self):
-        cacher = Cacher()
-
-        conn = self.create_connection()
-
-        payload = {
-            # Todo add uniq name for each output panel (e.g. each window)
-            "messages": [
-                {"role": "system", "content": "You are a code assistant."},
-                *cacher.read_all()
-            ],
-            "model": self.settings.get('chat_model'),
-            "temperature": self.settings.get("temperature"),
-            "max_tokens": self.settings.get("max_tokens"),
-            "top_p": self.settings.get("top_p"),
-        }
-
-        json_payload = json.dumps(payload)
-        token = self.settings.get('token')
-
-        headers = {
-            'Content-Type': "application/json",
-            'Authorization': f'Bearer {token}',
-            'cache-control': "no-cache",
-        }
-        conn.request("POST", "/v1/chat/completions", json_payload, headers)
-        self.exec_net_request(connect=conn)
-
-    def complete(self):
-        conn = self.create_connection()
-
-        payload = {
-            "prompt": self.text,
-            "model": self.settings.get("model"),
-            "temperature": self.settings.get("temperature"),
-            "max_tokens": self.settings.get("max_tokens"),
-            "top_p": self.settings.get("top_p"),
-            "frequency_penalty": self.settings.get("frequency_penalty"),
-            "presence_penalty": self.settings.get("presence_penalty")
-        }
-        json_payload = json.dumps(payload)
-
-        token = self.settings.get('token')
-
-        headers = {
-            'Content-Type': "application/json",
-            'Authorization': 'Bearer {}'.format(token),
-            'cache-control': "no-cache",
-        }
-        conn.request("POST", "/v1/completions", json_payload, headers)
-        self.exec_net_request(connect=conn)
-
-    def insert(self):
-        conn = self.create_connection()
-        parts = self.text.split(self.settings.get('placeholder'))
-        try:
-            if not len(parts) == 2:
-                raise AssertionError("There is no placeholder '" + self.settings.get('placeholder') + "' within the selected text. There should be exactly one.")
-        except Exception as ex:
-            sublime.error_message("Exception\n" + str(ex))
-            logging.exception("Exception: " + str(ex))
-            return
-
-        payload = {
-            "model": self.settings.get("model"),
-            "prompt": parts[0],
-            "suffix": parts[1],
-            "temperature": self.settings.get("temperature"),
-            "max_tokens": self.settings.get("max_tokens"),
-            "top_p": self.settings.get("top_p"),
-            "frequency_penalty": self.settings.get("frequency_penalty"),
-            "presence_penalty": self.settings.get("presence_penalty")
-        }
-        json_payload = json.dumps(payload)
-
-        token = self.settings.get('token')
-
-        headers = {
-            'Content-Type': "application/json",
-            'Authorization': 'Bearer {}'.format(token),
-            'cache-control': "no-cache",
-        }
-        conn.request("POST", "/v1/completions", json_payload, headers)
-        self.exec_net_request(connect=conn)
-
-    def edit_f(self):
-        conn = self.create_connection()
-        payload = {
-            "model": self.settings.get('edit_model'),
-            "input": self.text,
-            "instruction": self.command,
-            "temperature": self.settings.get("temperature"),
-            "top_p": self.settings.get("top_p"),
-        }
-        json_payload = json.dumps(payload)
-
-        token = self.settings.get('token')
-
-        headers = {
-            'Content-Type': "application/json",
-            'Authorization': 'Bearer {}'.format(token),
-            'cache-control': "no-cache",
-        }
-        conn.request("POST", "/v1/edits", json_payload, headers)
-        self.exec_net_request(connect=conn)
 
     def run(self):
         try:
             # FIXME: It's better to have such check locally, but it's pretty complicated with all those different modes and models
             # if (self.settings.get("max_tokens") + len(self.text)) > 4000:
             #     raise AssertionError("OpenAI accepts max. 4000 tokens, so the selected text and the max_tokens setting must be lower than 4000.")
-            if not self.settings.has("token"):
-                raise AssertionError("No token provided, you have to set the OpenAI token into the settings to make things work.")
             token = self.settings.get('token')
+            if not isinstance(token, str):
+                raise AssertionError("The token must be a string.")
             if len(token) < 10:
                 raise AssertionError("No token provided, you have to set the OpenAI token into the settings to make things work.")
         except Exception as ex:
@@ -225,9 +145,41 @@ class OpenAIWorker(threading.Thread):
             logging.exception("Exception: " + str(ex))
             return
 
-        if self.mode == 'insertion': self.insert()
-        if self.mode == 'edition': self.edit_f()
-        if self.mode == 'completion': self.complete()
-        if self.mode == 'chat_completion':
-            Cacher().append_to_cache([self.message])
-            self.chat_complete()
+        if self.mode == 'insertion':
+            placeholder = self.settings.get('placeholder')
+            if not isinstance(placeholder, str):
+                raise AssertionError("The placeholder must be a string.")
+            parts: List[str] = self.text.split(self.settings.get('placeholder'))
+            try:
+                if not len(parts) == 2:
+                    raise AssertionError("There is no placeholder '" + placeholder + "' within the selected text. There should be exactly one.")
+            except Exception as ex:
+                sublime.error_message("Exception\n" + str(ex))
+                logging.exception("Exception: " + str(ex))
+                return
+            payload = self.provider.prepare_payload(mode=self.mode, parts=parts)
+            self.provider.prepare_request(gateway="/v1/completions", json_payload=payload)
+            self.handle_response()
+
+        elif self.mode == 'edition':
+            payload = self.provider.prepare_payload(mode=self.mode, text=self.text, command=self.command)
+            self.provider.prepare_request(gateway="/v1/edits", json_payload=payload)
+            self.handle_response()
+        elif self.mode == 'completion':
+            payload = self.provider.prepare_payload(mode=self.mode, text=self.text)
+            self.provider.prepare_request(gateway="/v1/completions", json_payload=payload)
+            self.handle_response()
+
+        elif self.mode == 'chat_completion':
+            cacher = Cacher()
+            cacher.append_to_cache([self.message])
+            self.update_output_panel("\n\n## Question\n\n")
+            self.update_output_panel(cacher.read_all()[-1]["content"])
+
+            assistant_role = self.settings.get('assistant_role')
+            if not isinstance(assistant_role, str):
+                raise ValueError("The assistant_role setting must be a string.")
+
+            payload = self.provider.prepare_payload(mode=self.mode, role=assistant_role)
+            self.provider.prepare_request(gateway="/v1/chat/completions", json_payload=payload)
+            self.handle_response()

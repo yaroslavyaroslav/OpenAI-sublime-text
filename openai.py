@@ -28,7 +28,7 @@ class Openai(sublime_plugin.TextCommand):
                 text = self.view.substr(region)
 
 
-        # Cheching that user select some text
+        # Checking that user select some text
         try:
             if region.__len__() < settings.get("minimum_selection_length"):
                 if mode != 'chat_completion' and mode != 'reset_chat_history' and mode != 'refresh_output_panel':
@@ -57,11 +57,8 @@ class Openai(sublime_plugin.TextCommand):
         elif mode == 'refresh_output_panel':
             from .outputpanel import SharedOutputPanelListener
             window = sublime.active_window()
-            listner = SharedOutputPanelListener()
-            listner.refresh_output_panel(
-                window=window,
-                markdown=settings.get('markdown'),
-            )
+            listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
+            listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)
         else: # mode 'chat_completion', always in panel
             sublime.active_window().show_input_panel("Question: ", "", functools.partial(self.on_input, "region", "text", self.view, mode), None, None)
