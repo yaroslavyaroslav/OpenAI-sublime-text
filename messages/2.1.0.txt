@@ -1,0 +1,14 @@
+=> 2.1.0
+
+## Features
+
+- Completion streaming support.
+- Drop the 2 farthest replies from the plugin cache dialogue.
+
+### Completion streaming support.
+
+Yep, you've heard it that cool shiny way that you see in the original OpenAI Chat app now comes to Sublime. Embrace, behold and all that stuff. Jokes aside — this thing makes GPT-4 completion workable w/o any tradeoffs.
+
+### Drop the 2 farthest replies from the plugin cache dialogue.
+
+Now if you reach the context window limit, you're getting requested whether you or not wish to delete the 2 farthest messages (1 yours and 1 from the assistant) to fix that issue in the background. If yes, the plugin would drop them and resend all the other chat history to OpenAI servers once again. This thing is recursive and will spit the popup in your face until the chat history would fit within the model context window once again. On cancel it will do nothing, as expected.
