@@ -7,8 +7,11 @@
 
 ### Completion streaming support.
 
-Yep, you've heard it that cool shiny way that you see in the original OpenAI Chat app now comes to Sublime. Embrace, behold and all that stuff. Jokes aside — this thing makes GPT-4 completion workable w/o any tradeoffs.
+Yep, you've heard it right. That new cool shiny way that you see in the original OpenAI Chat now comes to Sublime. Embrace, behold and all that stuff. Jokes aside — this thing only makes GPT-4 completion workable, by releasing the most significant tradeoff it has — long answering time. I mean GPT-4 answering time is still the same, but now you starting to see it up to 20 seconds earlier which is matters in terms of UX.
 
 ### Drop the 2 farthest replies from the plugin cache dialogue.
 
-Now if you reach the context window limit, you're getting requested whether you or not wish to delete the 2 farthest messages (1 yours and 1 from the assistant) to fix that issue in the background. If yes, the plugin would drop them and resend all the other chat history to OpenAI servers once again. This thing is recursive and will spit the popup in your face until the chat history would fit within the model context window once again. On cancel it will do nothing, as expected.
+Now if you reach the context window limit, you're getting asked whether you or not wish to delete the 2 farthest messages (1 yours and 1 from the assistant) to shorter the chat history. If yes, the plugin would drop them and resend all the other chat history to OpenAI servers once again. This thing is recursive and will spit the popup in your face until the chat history would fit within a given model context window again. On cancel it will do nothing, as expected.
+
+PS: As usual, if you have any issues feel free to open an issue [here](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/issues).
+PS2: If you feel happy with this plugin you can drop me some coins for paying my OpenAI bills on Ethereum here (including L2 chains): 0x60843b4026Ff630b36835a8b78561eDD559ab208.
