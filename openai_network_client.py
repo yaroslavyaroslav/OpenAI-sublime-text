@@ -1,11 +1,16 @@
 from http.client import HTTPSConnection, HTTPResponse
+from os import error
+from urllib.error import HTTPError, URLError
 from typing import Optional, List
-from sublime import Settings
+import logging
+import sublime
 import json
+from .errors.OpenAIException import ContextLengthExceededException, UnknownException, present_error
 from .cacher import Cacher
 
 class NetworkClient():
-    def __init__(self, settings: Settings) -> None:
+    mode = ""
+    def __init__(self, settings: sublime.Settings) -> None:
         self.settings = settings
         self.headers = {
             'Content-Type': "application/json",
@@ -26,7 +31,8 @@ class NetworkClient():
             else:
                 self.connection = HTTPSConnection("api.openai.com")
 
-    def prepare_payload(self, mode: str, text: Optional[str] = None, command: Optional[str] = None, cacher: Optional[Cacher] = None, role: Optional[str] = None, parts: Optional[List[str]] = None) -> str:
+    def prepare_payload(self, mode: str, text: Optional[str] = None, command: Optional[str] = None, role: Optional[str] = None, parts: Optional[List[str]] = None) -> str:
+        self.mode = mode
         if mode == 'insertion':
             prompt, suffix = (parts[0], parts[1]) if parts and len(parts) >= 2 else ("Print out that input text is wrong", "Print out that input text is wrong")
             return json.dumps({
@@ -65,7 +71,7 @@ class NetworkClient():
                 # Todo add uniq name for each output panel (e.g. each window)
                 "messages": [
                     {"role": "system", "content": role},
-                    *(cacher.read_all() if cacher is not None else [])
+                    *Cacher().read_all()
                 ],
                 "model": self.settings.get('chat_model'),
                 "temperature": self.settings.get("temperature"),
@@ -78,5 +84,21 @@ class NetworkClient():
     def prepare_request(self, gateway, json_payload):
         self.connection.request(method="POST", url=gateway, body=json_payload, headers=self.headers)
 
-    def execute_response(self) -> HTTPResponse:
-        return self.connection.getresponse()
+    def execute_response(self) -> Optional[HTTPResponse]:
+        return self._execute_network_request()
+
+    def _execute_network_request(self) -> Optional[HTTPResponse]:
+        response = self.connection.getresponse()
+        # handle 400-499 client errors and 500-599 server errors
+        if 400 <= response.status < 600:
+            error_object = response.read().decode('utf-8')
+            error_data = json.loads(error_object)
+            if error_data.get('error', {}).get('code') == 'context_length_exceeded':
+                raise ContextLengthExceededException(error_data['error']['message'])
+            # raise custom exception for 'context_length_exceeded' error
+            # if error_data.get('error', {}).get('code') == 'context_length_exceeded':
+            #     raise ContextLengthExceeded(error_data['error']['message'])
+            code = error_data.get('error', {}).get('code') or error_data.get('error', {}).get('type')
+            unknown_error = UnknownException(error_data.get('error', {}).get('message'))
+            present_error(title=code, error=unknown_error)
+        return response
