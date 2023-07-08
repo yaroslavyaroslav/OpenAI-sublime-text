@@ -100,7 +100,7 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 > **Note**
 > You have to have access to the `GPT-4` model within your account, to use that feature.
 
-It should just work, just set the `chat_model` setting to `GPT-4`. Please be patient while working with it. (1) It's **very** slow and (2) an answer would appear only after it finishes its prompt. It could take up to 10 seconds easily.
+It should just work, just set the `chat_model` setting to `GPT-4`.
 
 
 ## Settings
