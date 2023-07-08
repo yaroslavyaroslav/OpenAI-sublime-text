@@ -11,6 +11,7 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 - [Multi]Markdown syntax with syntax highlight support (ChatGPT mode only).
 - Proxy support.
 - **GPT-4 support**.
+- Server Side Streaming (SSE) support
 
 ### ChatGPT completion demo
 
