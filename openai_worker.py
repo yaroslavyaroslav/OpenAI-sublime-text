@@ -20,22 +20,23 @@ class OpenAIWorker(threading.Thread):
         self.message = {"role": "user", "content": self.command, 'name': 'OpenAI_completion'}
         self.settings = sublime.load_settings("openAI.sublime-settings")
         self.provider = NetworkClient(settings=self.settings)
+        self.window = sublime.active_window()
 
-        self.buffer_manager = SublimeBuffer(self.view)
-        super(OpenAIWorker, self).__init__()
-
-    def update_output_panel(self, text_chunk: str):
-        from .outputpanel import SharedOutputPanelListener
-        window = sublime.active_window()
         markdown_setting = self.settings.get('markdown')
         if not isinstance(markdown_setting, bool):
             markdown_setting = True
 
-        listner = SharedOutputPanelListener(markdown=markdown_setting)
-        listner.show_panel(window=window)
-        listner.update_output_panel(
+        from .outputpanel import SharedOutputPanelListener
+        self.listner = SharedOutputPanelListener(markdown=markdown_setting)
+
+        self.buffer_manager = SublimeBuffer(self.view)
+        super(OpenAIWorker, self).__init__()
+
+    # This method appears redundant.
+    def update_output_panel(self, text_chunk: str):
+        self.listner.update_output_panel(
             text=text_chunk,
-            window=window
+            window=self.window
         )
 
     def prompt_completion(self, completion):
@@ -60,6 +61,9 @@ class OpenAIWorker(threading.Thread):
         full_response_content = {"role": "", "content": ""}
 
         self.update_output_panel("\n\n## Answer\n\n")
+
+        # TODO: This is temporary solution and should be implemented in a better way.
+        self.listner.show_panel(window=self.window)
 
         for chunk in response:
             chunk_str = chunk.decode('utf-8')

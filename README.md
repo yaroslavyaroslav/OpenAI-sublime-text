@@ -11,6 +11,7 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 - [Multi]Markdown syntax with syntax highlight support (ChatGPT mode only).
 - Proxy support.
 - **GPT-4 support**.
+- Server Side Streaming (SSE) support
 
 ### ChatGPT completion demo
 
@@ -54,9 +55,10 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 ### ChatGPT usage
 
 ChatGPT mode works the following way:
+
 1. Run the `OpenAI: New Message` command
-2. Wait until OpenAI performs a response (be VERY patient in the case of the GPT-4 model it's way slower than you could imagine).
-3. On the Response plugin opens the `OpenAI completion` output panel with the whole log of your chat at [any] active Window.
+2. Right after that the plug-in will open the output panel and start printing the model response into it.
+3. Wait until the model stop to transferring its answer (currently there's no way how to abort transmission or hide the output panel within that process).
 4. If you would like to fetch chat history to another window manually, you can do that by running the `OpenAI: Refresh Chat` command.
 5. When you're done or want to start all over you should run the `OpenAI: Reset Chat History` command, which deletes the chat cache.
 
@@ -99,7 +101,7 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 > **Note**
 > You have to have access to the `GPT-4` model within your account, to use that feature.
 
-It should just work, just set the `chat_model` setting to `GPT-4`. Please be patient while working with it. (1) It's **very** slow and (2) an answer would appear only after it finishes its prompt. It could take up to 10 seconds easily.
+It should just work, just set the `chat_model` setting to `GPT-4`.
 
 
 ## Settings
