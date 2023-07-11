@@ -1,0 +1,4 @@
+=> 2.1.1
+
+## Fixed
+- Output panel now could be hidden during OpenAI model answer prompting.
