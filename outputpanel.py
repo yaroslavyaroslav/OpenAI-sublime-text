@@ -26,7 +26,6 @@ class SharedOutputPanelListener(EventListener):
         output_panel.run_command('append', {'characters': text})
         output_panel.set_read_only(True)
         num_lines: int = get_number_of_lines(output_panel)
-        print(f'num_lines: {num_lines}')
 
         self.__scroll_to_text_point__(
             output_panel=output_panel,
