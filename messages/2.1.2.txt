@@ -1,0 +1,4 @@
+=> 2.1.2
+
+## Fixed
+- Fixed debug output console spamming.
