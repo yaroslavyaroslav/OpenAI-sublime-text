@@ -88,7 +88,6 @@ class OpenAIWorker(threading.Thread):
                         self.update_output_panel(delta['content'])
 
         self.provider.connection.close()
-        self.listner.toggle_overscroll(window=self.window, enabled=True)
         Cacher().append_to_cache([full_response_content])
 
     def handle_ordinary_response(self):
