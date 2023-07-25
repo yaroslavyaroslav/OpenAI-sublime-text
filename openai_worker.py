@@ -98,7 +98,7 @@ class OpenAIWorker(threading.Thread):
         data_decoded = data.decode('utf-8')
         self.provider.connection.close()
         completion = json.loads(data_decoded)['choices'][0]['text']
-        completion = completion.strip()  # Remove leading and trailing spaces
+        completion = completion.strip()  # Removing leading and trailing spaces
         self.prompt_completion(completion)
 
 
@@ -108,7 +108,7 @@ class OpenAIWorker(threading.Thread):
             else: self.handle_ordinary_response()
         except ContextLengthExceededException as error:
             if self.mode == 'chat_completion':
-                # As user to delete first dialog pair,
+                # Ask user if it's ok to delete first dialog pair?
                 do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
                 if do_delete:
                     Cacher().drop_first(2)
@@ -137,11 +137,11 @@ class OpenAIWorker(threading.Thread):
             # FIXME: It's better to have such check locally, but it's pretty complicated with all those different modes and models
             # if (self.settings.get("max_tokens") + len(self.text)) > 4000:
             #     raise AssertionError("OpenAI accepts max. 4000 tokens, so the selected text and the max_tokens setting must be lower than 4000.")
-            token = self.settings.get('token')
-            if not isinstance(token, str):
+            api_token = self.settings.get('token')
+            if not isinstance(api_token, str):
                 raise AssertionError("The token must be a string.")
-            if len(token) < 10:
-                raise AssertionError("No token provided, you have to set the OpenAI token into the settings to make things work.")
+            if len(api_token) < 10:
+                raise AssertionError("No API token provided, you have to set the OpenAI token into the settings to make things work.")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
             logging.exception("Exception: " + str(ex))
