@@ -1,4 +1,4 @@
 => 2.1.3
 
 ## Fixed
-- Fixed fragile output panel scrolling behavior, now it is handled by Sublime Text itself. As for now for the sake of convenience, the overscroll is toggling back right after the prompting has ended, which in its turn could lead to a scrolling position jump at this point if the scrolling action was happening while prompting happened. I'm not sure about this one so far, but let's keep it that way for a while and if you're unhappy with that behavior raise an issue. #14
+- Fixed fragile output panel scrolling behavior, now it is handled by Sublime Text itself. Therefore over scroll behavior for the output panel has been disabled.
