@@ -14,10 +14,10 @@ class SharedOutputPanelListener(EventListener):
         if self.markdown: output_panel.set_syntax_file("Packages/Markdown/MultiMarkdown.sublime-syntax")
         return output_panel
 
-    def __scroll_to_text_point__(self, output_panel: View, num_lines: int):
-        point = output_panel.text_point(num_lines, 0)
-        # FIXME: make me scrollable while printing in addition to following bottom edge if not scrolled.
-        output_panel.show_at_center(point)
+    def toggle_overscroll(self, window: Window, enabled: bool):
+        output_panel = self.__get_output_panel__(window=window)
+        # scroll_past_end = output_panel.settings().get("scroll_past_end")
+        output_panel.settings().set("scroll_past_end", enabled)
 
     ## FIXME: This one should allow scroll while updating, yet it should follow the text if it's not
     def update_output_panel(self, text: str, window: Window):
@@ -26,12 +26,6 @@ class SharedOutputPanelListener(EventListener):
         output_panel.run_command('append', {'characters': text})
         output_panel.set_read_only(True)
         num_lines: int = get_number_of_lines(output_panel)
-        print(f'num_lines: {num_lines}')
-
-        self.__scroll_to_text_point__(
-            output_panel=output_panel,
-            num_lines=num_lines
-        )
 
     def refresh_output_panel(self, window):
         output_panel = self.__get_output_panel__(window=window)
@@ -48,15 +42,6 @@ class SharedOutputPanelListener(EventListener):
             output_panel.run_command('append', {'characters': line['content']})
 
         output_panel.set_read_only(True)
-        num_lines = get_number_of_lines(output_panel)
-        print(f'num_lines: {num_lines}')
-
-        ## Hardcoded to -10 lines from the end, just completely randrom number.
-        ## TODO: Here's some complex scrolling logic based on the content (## Answer) required.
-        self.__scroll_to_text_point__(
-            output_panel=output_panel,
-            num_lines=num_lines - 10
-        )
 
     def clear_output_panel(self, window):
         output_panel = self.__get_output_panel__(window=window)

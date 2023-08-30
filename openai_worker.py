@@ -4,7 +4,7 @@ from .cacher import Cacher
 from typing import List
 from .openai_network_client import NetworkClient
 from .buffer import SublimeBuffer
-from .errors.OpenAIException import ContextLengthExceededException, UnknownException, present_error
+from .errors.OpenAIException import ContextLengthExceededException, present_error
 import json
 import logging
 import re
@@ -20,22 +20,23 @@ class OpenAIWorker(threading.Thread):
         self.message = {"role": "user", "content": self.command, 'name': 'OpenAI_completion'}
         self.settings = sublime.load_settings("openAI.sublime-settings")
         self.provider = NetworkClient(settings=self.settings)
+        self.window = sublime.active_window()
 
-        self.buffer_manager = SublimeBuffer(self.view)
-        super(OpenAIWorker, self).__init__()
-
-    def update_output_panel(self, text_chunk: str):
-        from .outputpanel import SharedOutputPanelListener
-        window = sublime.active_window()
         markdown_setting = self.settings.get('markdown')
         if not isinstance(markdown_setting, bool):
             markdown_setting = True
 
-        listner = SharedOutputPanelListener(markdown=markdown_setting)
-        listner.show_panel(window=window)
-        listner.update_output_panel(
+        from .outputpanel import SharedOutputPanelListener
+        self.listner = SharedOutputPanelListener(markdown=markdown_setting)
+
+        self.buffer_manager = SublimeBuffer(self.view)
+        super(OpenAIWorker, self).__init__()
+
+    # This method appears redundant.
+    def update_output_panel(self, text_chunk: str):
+        self.listner.update_output_panel(
             text=text_chunk,
-            window=window
+            window=self.window
         )
 
     def prompt_completion(self, completion):
@@ -52,7 +53,6 @@ class OpenAIWorker(threading.Thread):
         response = self.provider.execute_response()
 
         if response is None or response.status != 200:
-            print("xxxx5")
             return
 
         decoder = json.JSONDecoder()
@@ -60,6 +60,9 @@ class OpenAIWorker(threading.Thread):
         full_response_content = {"role": "", "content": ""}
 
         self.update_output_panel("\n\n## Answer\n\n")
+
+        self.listner.show_panel(window=self.window)
+        self.listner.toggle_overscroll(window=self.window, enabled=False)
 
         for chunk in response:
             chunk_str = chunk.decode('utf-8')
@@ -85,6 +88,7 @@ class OpenAIWorker(threading.Thread):
                         self.update_output_panel(delta['content'])
 
         self.provider.connection.close()
+        self.listner.toggle_overscroll(window=self.window, enabled=True)
         Cacher().append_to_cache([full_response_content])
 
     def handle_ordinary_response(self):
@@ -104,7 +108,6 @@ class OpenAIWorker(threading.Thread):
             if self.mode == "chat_completion": self.handle_chat_completion_response()
             else: self.handle_ordinary_response()
         except ContextLengthExceededException as error:
-            print("xxxx8")
             if self.mode == 'chat_completion':
                 # As user to delete first dialog pair,
                 do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
