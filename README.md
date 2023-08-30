@@ -50,6 +50,12 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 - [OpenAI](https://beta.openai.com/account) API key (paid service)
 - Internet connection
 
+## Installation
+
+1. Install the Sublime Text [Package Control](https://packagecontrol.io/installation) plugin if you have done this before.
+2. Open the command palette and type `Package Control: Install Package`.
+3. Type `OpenAI` and press `Enter`.
+
 ## Usage
 
 ### ChatGPT usage
