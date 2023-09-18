@@ -41,6 +41,9 @@ class SharedOutputPanelListener(EventListener):
 
             output_panel.run_command('append', {'characters': line['content']})
 
+        # scrolling panel to the bottom.
+        point = output_panel.text_point(get_number_of_lines(view=output_panel), 0)
+        output_panel.show_at_center(point)
         output_panel.set_read_only(True)
 
     def clear_output_panel(self, window):

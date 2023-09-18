@@ -3,12 +3,16 @@
     // Some models are suitable for natural language tasks, others specialize in code.
     // Learn more at https://beta.openai.com/docs/models
     // ____Affects only edition mode.____
+    //
+    // DEPRECATED: would be deleted at 3.0.0
     "edit_model": "code-davinci-edit-001",
 
     // The model which will generate the completion.
     // Some models are suitable for natural language tasks, others specialize in code.
     // Learn more at https://beta.openai.com/docs/models
     // ____Affects only completion and inserting modes.____
+    //
+    // DEPRECATED: would be deleted at 3.0.0
     "model": "text-davinci-003",
 
     // The model which will generate the chat completion.
@@ -21,6 +25,8 @@
     // It can act as a different kind of person. Recently in this plugin it was acting
     // like as a code assistant. With this setting you're able to set it up more precisely.
     // E.g. "You are (rust|python|js|whatewer) developer assistant", "You are an english tutor" and so on.
+    //
+    // DEPRECATED: would be deleted at 3.0.0
     "assistant_role": "You are a senior code assitant",
 
     // What sampling temperature to use, between 0 and 2.
@@ -70,7 +76,6 @@
     "markdown": true,
 
     // Minimum amount of characters selected to perform completion.
-    // Does not affect completion command if the "output_panel" setting is true.
     "minimum_selection_length": 20,
 
     // Proxy setting
