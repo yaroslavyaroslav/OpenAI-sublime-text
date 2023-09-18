@@ -1,0 +1,8 @@
+=> 2.1.4
+
+## Updated
+- Changed "Refresh chat" command behavior: now it scrolls output panel to the bottom on call.
+
+Please raise an issue or a post to that discussion[1] if you're against it.
+
+[1]: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/discussions/24
