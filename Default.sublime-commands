@@ -1,5 +1,9 @@
 [
 	{
+		"caption": "OpenAI: Palete",
+		"command": "openai_panel",
+	},
+	{
 		"caption": "OpenAI: Complete",
 		"command": "openai",
 		"args": {

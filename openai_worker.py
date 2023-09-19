@@ -1,19 +1,19 @@
 import sublime
+from sublime import View, Region
 import threading
 from .cacher import Cacher
 from typing import List, Optional
 from .openai_network_client import NetworkClient
 from .buffer import SublimeBuffer
 from .errors.OpenAIException import ContextLengthExceededException, present_error
-from .assistant_settings import AssistantSettings
-from .assistant_settings import DEFAULT_ASSISTANT_SETTINGS
+from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS
 import json
 import logging
 import re
 
 
 class OpenAIWorker(threading.Thread):
-    def __init__(self, region, text: Optional[str], view, mode, command):
+    def __init__(self, region: Optional[Region], text: Optional[str], view: View, mode: str, command: Optional[str], assistant: Optional[AssistantSettings] = None):
         self.region = region
         self.text = text
         self.view = view
@@ -21,6 +21,7 @@ class OpenAIWorker(threading.Thread):
         self.command = command # optional
         self.message = {"role": "user", "content": self.command, 'name': 'OpenAI_completion'}
         self.settings = sublime.load_settings("openAI.sublime-settings")
+        self.assistant = assistant if assistant is not None else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **self.settings.get('assistants')[0]})
         self.provider = NetworkClient(settings=self.settings)
         self.window = sublime.active_window()
 
@@ -115,8 +116,8 @@ class OpenAIWorker(threading.Thread):
                     assistant_role = self.settings.get('assistants')[0]["assistant_role"]
                     if not isinstance(assistant_role, str):
                         raise ValueError("The assistant_role setting must be a string.")
-                    payload = self.provider.prepare_payload_deprecated(mode=self.mode, role=assistant_role)
-                    self.provider.prepare_request_deprecated(gateway="/v1/chat/completions", json_payload=payload)
+                    payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text)
+                    self.provider.prepare_request(json_payload=payload)
                     self.handle_response()
             else:
                 present_error(title="OpenAI error", error=error)
@@ -180,10 +181,9 @@ class OpenAIWorker(threading.Thread):
 
             # Unpacking both dictionaries, combine them while overwriting default values with user setup and then initialize
             # with a complete dict AssistantSettings struct.
-            assistant = AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **self.settings.get('assistants')[0]})
 
-            print(f"xxxx {assistant}")
+            print(f"xxxx {self.assistant}")
 
-            payload = self.provider.prepare_payload(assitant_setting=assistant, text=self.text)
+            payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text)
             self.provider.prepare_request(json_payload=payload)
             self.handle_response()

@@ -1,13 +1,11 @@
 from http.client import HTTPSConnection, HTTPResponse
-from os import error
-from urllib.error import HTTPError, URLError
 from typing import Optional, List
-import logging
 import sublime
 import json
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException, present_error
 from .cacher import Cacher
 from .assistant_settings import AssistantSettings
+import ssl
 
 class NetworkClient():
     mode = ""
@@ -19,6 +17,11 @@ class NetworkClient():
             'cache-control': "no-cache",
         }
 
+        # ctx = ssl.create_default_context()
+        # ctx.check_hostname = False
+        # ctx.verify_mode = ssl.CERT_NONE
+
+
         proxy_settings = self.settings.get('proxy')
         if isinstance(proxy_settings, dict):
             address = proxy_settings.get('address')
@@ -26,11 +29,15 @@ class NetworkClient():
             if address and len(address) > 0 and port:
                 self.connection = HTTPSConnection(
                     host=address,
-                    port=port
+                    port=port,
+                    # context=ctx
                 )
                 self.connection.set_tunnel("api.openai.com")
             else:
-                self.connection = HTTPSConnection("api.openai.com")
+                self.connection = HTTPSConnection(
+                    "api.openai.com",
+                    # context=ctx
+                    )
 
     def prepare_payload(self, assitant_setting: AssistantSettings, text: Optional[str]):
         # FIXME: Avoid duplication.
