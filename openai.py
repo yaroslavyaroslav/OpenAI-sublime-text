@@ -1,3 +1,4 @@
+from typing import Optional
 import sublime, sublime_plugin
 import functools
 from .cacher import Cacher
@@ -5,7 +6,13 @@ import logging
 
 
 class Openai(sublime_plugin.TextCommand):
-    def on_input(self, region, text, view, mode, input):
+    def on_input_deprecated(self, region, text, view, mode, input):
+        from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
+
+        worker_thread = OpenAIWorker(region, text, view, mode=mode, command=input)
+        worker_thread.start()
+
+    def on_input(self, region, text: Optional[None], view, mode, input):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
         worker_thread = OpenAIWorker(region, text, view, mode=mode, command=input)
@@ -27,7 +34,6 @@ class Openai(sublime_plugin.TextCommand):
             if not region.empty():
                 text = self.view.substr(region)
 
-
         # Checking that user select some text
         try:
             if region.__len__() < settings.get("minimum_selection_length"):
@@ -40,7 +46,7 @@ class Openai(sublime_plugin.TextCommand):
 
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
         if mode == 'edition':
-            sublime.active_window().show_input_panel("Request: ", "Comment the given code line by line", functools.partial(self.on_input, region, text, self.view, mode), None, None)
+            sublime.active_window().show_input_panel("Request: ", "Comment the given code line by line", functools.partial(self.on_input_deprecated, region, text, self.view, mode), None, None)
         elif mode == 'insertion':
             worker_thread = OpenAIWorker(region, text, self.view, mode, "")
             worker_thread.start()
@@ -61,5 +67,4 @@ class Openai(sublime_plugin.TextCommand):
             listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)
         else: # mode 'chat_completion', always in panel
-            sublime.active_window().show_input_panel("Question: ", "", functools.partial(self.on_input, "region", "text", self.view, mode), None, None)
-
+            sublime.active_window().show_input_panel("Question: ", "", functools.partial(self.on_input, "region", None, self.view, mode), None, None)

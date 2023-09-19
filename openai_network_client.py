@@ -7,6 +7,7 @@ import sublime
 import json
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException, present_error
 from .cacher import Cacher
+from .assistant_settings import AssistantSettings
 
 class NetworkClient():
     mode = ""
@@ -31,7 +32,37 @@ class NetworkClient():
             else:
                 self.connection = HTTPSConnection("api.openai.com")
 
-    def prepare_payload(self, mode: str, text: Optional[str] = None, command: Optional[str] = None, role: Optional[str] = None, parts: Optional[List[str]] = None) -> str:
+    def prepare_payload(self, assitant_setting: AssistantSettings, text: Optional[str]):
+        # FIXME: Avoid duplication.
+        if text is not None:
+            return json.dumps({
+                # Todo add uniq name for each output panel (e.g. each window)
+                "messages": [
+                    {"role": "system", "content": assitant_setting.assistant_role},
+                    {"role": "user", "content": text }
+                ],
+                "model": assitant_setting.chat_model,
+                "temperature": assitant_setting.temperature,
+                "max_tokens": assitant_setting.max_tokens,
+                "top_p": assitant_setting.top_p,
+                "stream": True
+            })
+        # FIXME: This is temporary and wrong solution — it shouldn't send all cache text as a default value for any instruction call.
+        else:
+            return json.dumps({
+                    # Todo add uniq name for each output panel (e.g. each window)
+                    "messages": [
+                        {"role": "system", "content": assitant_setting.assistant_role},
+                        *Cacher().read_all()
+                    ],
+                    "model": assitant_setting.chat_model,
+                    "temperature": assitant_setting.temperature,
+                    "max_tokens": assitant_setting.max_tokens,
+                    "top_p": assitant_setting.top_p,
+                    "stream": True
+                })
+
+    def prepare_payload_deprecated(self, mode: str, text: Optional[str] = None, command: Optional[str] = None, role: Optional[str] = None, parts: Optional[List[str]] = None) -> str:
         self.mode = mode
         if mode == 'insertion':
             prompt, suffix = (parts[0], parts[1]) if parts and len(parts) >= 2 else ("Print out that input text is wrong", "Print out that input text is wrong")
@@ -81,7 +112,10 @@ class NetworkClient():
             })
         else: raise Exception("Undefined mode")
 
-    def prepare_request(self, gateway, json_payload):
+    def prepare_request(self, json_payload):
+        self.connection.request(method="POST", url="/v1/chat/completions", body=json_payload, headers=self.headers)
+
+    def prepare_request_deprecated(self, gateway, json_payload):
         self.connection.request(method="POST", url=gateway, body=json_payload, headers=self.headers)
 
     def execute_response(self) -> Optional[HTTPResponse]:

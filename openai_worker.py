@@ -1,17 +1,19 @@
 import sublime
 import threading
 from .cacher import Cacher
-from typing import List
+from typing import List, Optional
 from .openai_network_client import NetworkClient
 from .buffer import SublimeBuffer
 from .errors.OpenAIException import ContextLengthExceededException, present_error
+from .assistant_settings import AssistantSettings
+from .assistant_settings import DEFAULT_ASSISTANT_SETTINGS
 import json
 import logging
 import re
 
 
 class OpenAIWorker(threading.Thread):
-    def __init__(self, region, text, view, mode, command):
+    def __init__(self, region, text: Optional[str], view, mode, command):
         self.region = region
         self.text = text
         self.view = view
@@ -69,8 +71,6 @@ class OpenAIWorker(threading.Thread):
 
             # Check for SSE data
             if chunk_str.startswith("data:") and not re.search(r"\[DONE\]$", chunk_str):
-                # print(chunk_str)
-                # print(re.search(r"\[DONE\]$", chunk_str))
                 chunk_str = chunk_str[len("data:"):].strip()
 
                 try:
@@ -112,11 +112,11 @@ class OpenAIWorker(threading.Thread):
                 do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
                 if do_delete:
                     Cacher().drop_first(2)
-                    assistant_role = self.settings.get('assistant_role')
+                    assistant_role = self.settings.get('assistants')[0]["assistant_role"]
                     if not isinstance(assistant_role, str):
                         raise ValueError("The assistant_role setting must be a string.")
-                    payload = self.provider.prepare_payload(mode=self.mode, role=assistant_role)
-                    self.provider.prepare_request(gateway="/v1/chat/completions", json_payload=payload)
+                    payload = self.provider.prepare_payload_deprecated(mode=self.mode, role=assistant_role)
+                    self.provider.prepare_request_deprecated(gateway="/v1/chat/completions", json_payload=payload)
                     self.handle_response()
             else:
                 present_error(title="OpenAI error", error=error)
@@ -159,17 +159,17 @@ class OpenAIWorker(threading.Thread):
                 sublime.error_message("Exception\n" + str(ex))
                 logging.exception("Exception: " + str(ex))
                 return
-            payload = self.provider.prepare_payload(mode=self.mode, parts=parts)
-            self.provider.prepare_request(gateway="/v1/completions", json_payload=payload)
+            payload = self.provider.prepare_payload_deprecated(mode=self.mode, parts=parts)
+            self.provider.prepare_request_deprecated(gateway="/v1/completions", json_payload=payload)
             self.handle_response()
 
         elif self.mode == 'edition':
-            payload = self.provider.prepare_payload(mode=self.mode, text=self.text, command=self.command)
-            self.provider.prepare_request(gateway="/v1/edits", json_payload=payload)
+            payload = self.provider.prepare_payload_deprecated(mode=self.mode, text=self.text, command=self.command)
+            self.provider.prepare_request_deprecated(gateway="/v1/edits", json_payload=payload)
             self.handle_response()
         elif self.mode == 'completion':
-            payload = self.provider.prepare_payload(mode=self.mode, text=self.text)
-            self.provider.prepare_request(gateway="/v1/completions", json_payload=payload)
+            payload = self.provider.prepare_payload_deprecated(mode=self.mode, text=self.text)
+            self.provider.prepare_request_deprecated(gateway="/v1/completions", json_payload=payload)
             self.handle_response()
 
         elif self.mode == 'chat_completion':
@@ -178,10 +178,12 @@ class OpenAIWorker(threading.Thread):
             self.update_output_panel("\n\n## Question\n\n")
             self.update_output_panel(cacher.read_all()[-1]["content"])
 
-            assistant_role = self.settings.get('assistant_role')
-            if not isinstance(assistant_role, str):
-                raise ValueError("The assistant_role setting must be a string.")
+            # Unpacking both dictionaries, combine them while overwriting default values with user setup and then initialize
+            # with a complete dict AssistantSettings struct.
+            assistant = AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **self.settings.get('assistants')[0]})
 
-            payload = self.provider.prepare_payload(mode=self.mode, role=assistant_role)
-            self.provider.prepare_request(gateway="/v1/chat/completions", json_payload=payload)
+            print(f"xxxx {assistant}")
+
+            payload = self.provider.prepare_payload(assitant_setting=assistant, text=self.text)
+            self.provider.prepare_request(json_payload=payload)
             self.handle_response()
