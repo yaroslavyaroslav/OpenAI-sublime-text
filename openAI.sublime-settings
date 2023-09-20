@@ -13,7 +13,7 @@
     // ____Affects only completion and inserting modes.____
     //
     // DEPRECATED: would be deleted at 3.0.0
-    "model": "text-davinci-003",
+    "model": "gpt-3.5-turbo-instruct",
 
     "assistants": [
         {
