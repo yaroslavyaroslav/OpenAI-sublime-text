@@ -24,7 +24,7 @@ class OpenaiPanelCommand(WindowCommand):
         worker_thread.start()
 
     def run(self):
-        self.window.show_quick_panel([f"{assistant.name} | {assistant.prompt_mode}" for assistant in self.assistants], self.on_done)
+        self.window.show_quick_panel([f"{assistant.name} | {assistant.prompt_mode} | {assistant.chat_model}" for assistant in self.assistants], self.on_done)
 
     def on_done(self, index: int):
         if index == -1: return

@@ -1,6 +1,6 @@
 [
 	{
-		"caption": "OpenAI: Palete",
+		"caption": "OpenAI: Chat Model Select",
 		"command": "openai_panel",
 	},
 	{
