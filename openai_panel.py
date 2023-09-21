@@ -31,12 +31,14 @@ class OpenaiPanelCommand(WindowCommand):
 
         region: Optional[Region] = None
         text: Optional[str] = None
+        min_selection = self.settings.get("minimum_selection_length")
         for region in self.window.active_view().sel():
             if not region.empty():
                 text = self.window.active_view().substr(region)
         try:
-            if region and len(region) <= self.settings.get("minimum_selection_length"):
-                raise AssertionError("Not enough text selected to complete the request, please expand the selection.")
+            ## If none text selected — it's ok, pass that through.
+            if region and len(region) <= min_selection:
+                raise AssertionError(f"You've selected just {len(region)} chars, while the minimal selection number is {min_selection}. Please expand the selection.")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
             logging.exception("Exception: " + str(ex))
@@ -47,8 +49,8 @@ class OpenaiPanelCommand(WindowCommand):
              "",
              functools.partial(
                 self.on_input,
-                region if region is not None else None,
-                text if text is not None else None,
+                region if region else None,
+                text if text else None,
                 self.window.active_view(),
                 CommandMode.chat_completion.value,
                 self.assistants[index]

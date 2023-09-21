@@ -2,11 +2,11 @@ import sublime
 from sublime import View, Region
 import threading
 from .cacher import Cacher
-from typing import List, Optional
+from typing import Dict, List, Optional
 from .openai_network_client import NetworkClient
 from .buffer import SublimeBuffer
 from .errors.OpenAIException import ContextLengthExceededException, present_error
-from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS
+from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, PromptMode
 import json
 import logging
 import re
@@ -15,11 +15,13 @@ import re
 class OpenAIWorker(threading.Thread):
     def __init__(self, region: Optional[Region], text: Optional[str], view: View, mode: str, command: Optional[str], assistant: Optional[AssistantSettings] = None):
         self.region = region
+        # Selected text within editor (as `user`)
         self.text = text
+        # Text from input panel (as `user`)
+        self.command = command # optional
         self.view = view
         self.mode = mode
-        self.command = command # optional
-        self.message = {"role": "user", "content": self.command, 'name': 'OpenAI_completion'}
+        # Text input from input panel
         self.settings = sublime.load_settings("openAI.sublime-settings")
         self.assistant = assistant if assistant is not None else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **self.settings.get('assistants')[0]})
         self.provider = NetworkClient(settings=self.settings)
@@ -52,7 +54,126 @@ class OpenAIWorker(threading.Thread):
             placeholder=placeholder
         )
 
-    def handle_chat_completion_response(self):
+    def update_completion(self, completion):
+        # print('xxxx12')
+        placeholder = self.settings.get('placeholder')
+        if not isinstance(placeholder, str):
+            placeholder = "[insert]"
+        print(f'{completion}')
+        self.buffer_manager.update_completion(
+            prompt_mode=self.assistant.prompt_mode,
+            completion=completion,
+            placeholder=placeholder
+        )
+
+    def handle_chat_response_with_panel(self):
+        response = self.provider.execute_response()
+
+        if response is None or response.status != 200:
+            return
+
+        decoder = json.JSONDecoder()
+
+        # without key declaration it would failt to append there later in code.
+        full_response_content = {'role': '', 'content': ''}
+
+        self.update_output_panel("\n\n## Answer\n\n")
+
+        self.listner.show_panel(window=self.window)
+        self.listner.toggle_overscroll(window=self.window, enabled=False)
+
+        for chunk in response:
+            chunk_str = chunk.decode('utf-8')
+
+            # Check for SSE data
+            if chunk_str.startswith("data:") and not re.search(r"\[DONE\]$", chunk_str):
+                chunk_str = chunk_str[len("data:"):].strip()
+
+                try:
+                    response = decoder.decode(chunk_str)
+                    if 'delta' in response['choices'][0]:
+                        delta = response['choices'][0]['delta']
+                        if 'role' in delta:
+                            full_response_content['role'] = delta['role']
+                        elif 'content' in delta:
+                            full_response_content['content'] += delta['content']
+                            self.update_output_panel(delta['content'])
+                except ValueError as ex:
+                    sublime.error_message(f"Server Error: {str(ex)}")
+                    logging.exception("Exception: " + str(ex))
+
+        self.provider.connection.close()
+        Cacher().append_to_cache([full_response_content])
+
+    def handle_chat_response_for_append(self):
+        response = self.provider.execute_response()
+
+        if response is None or response.status != 200:
+            return
+
+        decoder = json.JSONDecoder()
+
+        full_response_content = {"role": "", "content": ""}
+
+        for chunk in response:
+            chunk_str = chunk.decode('utf-8')
+
+            # Check for SSE data
+            if chunk_str.startswith("data:") and not re.search(r"\[DONE\]$", chunk_str):
+                chunk_str = chunk_str[len("data:"):].strip()
+
+                try:
+                    response = decoder.decode(chunk_str)
+                except ValueError as ex:
+                    sublime.error_message(f"Server Error: {str(ex)}")
+                    logging.exception("Exception: " + str(ex))
+
+                if 'delta' in response['choices'][0]:
+                    delta = response['choices'][0]['delta']
+                    if 'role' in delta:
+                        full_response_content['role'] = delta['role']
+                    elif 'content' in delta:
+                        full_response_content['content'] += delta['content']
+                        self.update_completion(delta['content'])
+
+        self.provider.connection.close()
+
+    def handle_chat_response_for_insert(self):
+        response = self.provider.execute_response()
+
+        if response is None or response.status != 200:
+            return
+
+        decoder = json.JSONDecoder()
+
+        full_response_content = {"role": "", "content": ""}
+
+        self.update_output_panel("\n\n## Answer\n\n")
+
+        self.listner.show_panel(window=self.window)
+        self.listner.toggle_overscroll(window=self.window, enabled=False)
+
+        for chunk in response:
+            chunk_str = chunk.decode('utf-8')
+            # Check for SSE data
+            if chunk_str.startswith("data:") and not re.search(r"\[DONE\]$", chunk_str):
+                chunk_str = chunk_str[len("data:"):].strip()
+
+                try:
+                    response = decoder.decode(chunk_str)
+                except ValueError as ex:
+                    sublime.error_message(f"Server Error: {str(ex)}")
+                    logging.exception("Exception: " + str(ex))
+
+                if 'delta' in response['choices'][0]:
+                    delta = response['choices'][0]['delta']
+                    if 'role' in delta:
+                        full_response_content['role'] = delta['role']
+                    elif 'content' in delta:
+                        full_response_content['content'] += delta['content']
+                        self.update_output_panel(delta['content'])
+
+    def handle_chat_response_for_replace(self):
         response = self.provider.execute_response()
 
         if response is None or response.status != 200:
@@ -91,7 +212,7 @@ class OpenAIWorker(threading.Thread):
         self.provider.connection.close()
         Cacher().append_to_cache([full_response_content])
 
-    def handle_ordinary_response(self):
+    def handle_deprecated_response(self):
         response = self.provider.execute_response()
         if response is None or response.status != 200:
             return
@@ -102,11 +223,14 @@ class OpenAIWorker(threading.Thread):
         completion = completion.strip()  # Removing leading and trailing spaces
         self.prompt_completion(completion)
 
-
     def handle_response(self):
         try:
-            if self.mode == "chat_completion": self.handle_chat_completion_response()
-            else: self.handle_ordinary_response()
+            if self.mode == "chat_completion":
+                if self.assistant.prompt_mode == PromptMode.panel.name: self.handle_chat_response_with_panel()
+                elif self.assistant.prompt_mode == PromptMode.append.name: self.handle_chat_response_for_append()
+                elif self.assistant.prompt_mode == PromptMode.insert.name: self.handle_chat_response_for_insert()
+                elif self.assistant.prompt_mode == PromptMode.replace.name: self.handle_chat_response_for_replace()
+            else: self.handle_deprecated_response()
         except ContextLengthExceededException as error:
             if self.mode == 'chat_completion':
                 # Ask user if it's ok to delete first dialog pair?
@@ -122,6 +246,7 @@ class OpenAIWorker(threading.Thread):
             else:
                 present_error(title="OpenAI error", error=error)
         except KeyError:
+            # FIME: This code fails to execute because response object inability.
             if self.mode == 'chat_completion' and response['error']['code'] == 'context_length_exceeded':
                 Cacher().drop_first(2)
             else:
@@ -129,8 +254,9 @@ class OpenAIWorker(threading.Thread):
                 logging.exception("Exception: " + str(response))
             return
         except Exception as ex:
-            sublime.error_message(f"Server Error: {str(response.status)}\n{ex}")
-            logging.exception("Exception: " + str(data_decoded))
+            # FIME: This code fails to execute because response object inability.
+            sublime.error_message(f"Server Error: \n{ex}")
+            logging.exception(f"Exception: {ex}")
             return
 
     def run(self):
@@ -148,6 +274,7 @@ class OpenAIWorker(threading.Thread):
             logging.exception("Exception: " + str(ex))
             return
 
+        ### ---------- DEPRECATED CODE ---------- ###
         if self.mode == 'insertion':
             placeholder = self.settings.get('placeholder')
             if not isinstance(placeholder, str):
@@ -172,18 +299,57 @@ class OpenAIWorker(threading.Thread):
             payload = self.provider.prepare_payload_deprecated(mode=self.mode, text=self.text)
             self.provider.prepare_request_deprecated(gateway="/v1/completions", json_payload=payload)
             self.handle_response()
+        ### ---------- DEPRECATED CODE ---------- ###
 
         elif self.mode == 'chat_completion':
-            cacher = Cacher()
-            cacher.append_to_cache([self.message])
-            self.update_output_panel("\n\n## Question\n\n")
-            self.update_output_panel(cacher.read_all()[-1]["content"])
+            self.manage_chat_completion()
 
-            # Unpacking both dictionaries, combine them while overwriting default values with user setup and then initialize
-            # with a complete dict AssistantSettings struct.
+    def manage_chat_completion(self):
+        if self.assistant.prompt_mode == PromptMode.panel.name: self.chat_complete_panel()
+        elif self.assistant.prompt_mode == PromptMode.append.name: self.chat_complete_appent()
+        elif self.assistant.prompt_mode == PromptMode.insert.name: self.chat_complete_insert()
+        elif self.assistant.prompt_mode == PromptMode.replace.name: self.chat_complete_replace()
+        # print("xxxx-1")
 
-            print(f"xxxx {self.assistant}")
+    def chat_complete_panel(self):
+        cacher = Cacher()
+        messages = self.create_message(selected_text=self.text, command=self.command)
+        cacher.append_to_cache(messages)
+        self.update_output_panel("\n\n## Question\n\n")
+        # print(f'len(messages): {len(messages)}')
 
-            payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text)
-            self.provider.prepare_request(json_payload=payload)
-            self.handle_response()
+        # MARK: len of messages (e.g. last few)
+        questions = [value['content'] for value in cacher.read_all()[-len(messages):]]
+        # print(f"questions: {questions}")
+
+        ## MARK: \n\n for splitting command from selected text
+        ## FIXME: This logic adds redundant line breaks on a single action.
+        [self.update_output_panel(question + "\n\n") for question in questions]
+
+        # print(f"xxxx {self.assistant}")
+
+        payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text, command=self.command)
+        self.provider.prepare_request(json_payload=payload)
+        self.handle_response()
+
+    def chat_complete_appent(self):
+        payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text, command=self.command)
+        self.provider.prepare_request(json_payload=payload)
+        self.handle_response()
+
+    def chat_complete_insert(self):
+        payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text, command=self.command)
+        self.provider.prepare_request(json_payload=payload)
+        self.handle_response()
+
+    def chat_complete_replace(self):
+        payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text, command=self.command)
+        self.provider.prepare_request(json_payload=payload)
+        self.handle_response()
+
+    def create_message(self, selected_text: Optional[str], command: Optional[str] ) -> List[Dict[str, str]]:
+        messages = []
+        if selected_text: messages.append({"role": "user", "content": selected_text, 'name': 'OpenAI_completion'})
+        if command: messages.append({"role": "user", "content": command, 'name': 'OpenAI_completion'})
+        # print(f"messages: {messages}")
+        return messages

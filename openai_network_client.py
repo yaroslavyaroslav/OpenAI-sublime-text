@@ -17,16 +17,16 @@ class NetworkClient():
             'cache-control': "no-cache",
         }
 
-        # ctx = ssl.create_default_context()
-        # ctx.check_hostname = False
-        # ctx.verify_mode = ssl.CERT_NONE
-
 
         proxy_settings = self.settings.get('proxy')
         if isinstance(proxy_settings, dict):
             address = proxy_settings.get('address')
             port = proxy_settings.get('port')
             if address and len(address) > 0 and port:
+
+                # ctx = ssl.create_default_context()
+                # ctx.check_hostname = False
+                # ctx.verify_mode = ssl.CERT_NONE
                 self.connection = HTTPSConnection(
                     host=address,
                     port=port,
@@ -34,14 +34,25 @@ class NetworkClient():
                 )
                 self.connection.set_tunnel("api.openai.com")
             else:
-                self.connection = HTTPSConnection(
-                    "api.openai.com",
-                    # context=ctx
-                    )
+                self.connection = HTTPSConnection("api.openai.com")
 
-    def prepare_payload(self, assitant_setting: AssistantSettings, text: Optional[str]):
+    def prepare_payload(self, assitant_setting: AssistantSettings, text: Optional[str], command: Optional[str]):
         # FIXME: Avoid duplication.
-        if text is not None:
+        if text and command:
+            return json.dumps({
+                # Todo add uniq name for each output panel (e.g. each window)
+                "messages": [
+                    {"role": "system", "content": assitant_setting.assistant_role},
+                    {"role": "user", "content": text},
+                    {"role": "user", "content": command},
+                ],
+                "model": assitant_setting.chat_model,
+                "temperature": assitant_setting.temperature,
+                "max_tokens": assitant_setting.max_tokens,
+                "top_p": assitant_setting.top_p,
+                "stream": True
+            })
+        elif text:
             return json.dumps({
                 # Todo add uniq name for each output panel (e.g. each window)
                 "messages": [

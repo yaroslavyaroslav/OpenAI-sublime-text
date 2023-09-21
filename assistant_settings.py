@@ -1,9 +1,16 @@
 from dataclasses import dataclass
+from enum import Enum
+
+class PromptMode(Enum):
+    panel = "panel"
+    append = "append"
+    insert = "insert"
+    replace = "replace"
 
 @dataclass
 class AssistantSettings():
     name: str
-    prompt_mode: str
+    prompt_mode: PromptMode
     chat_model: str
     assistant_role: str
     temperature: int

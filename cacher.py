@@ -1,6 +1,7 @@
 import sublime
 import os
 from . import jl_utility as jl
+from typing import List, Dict, Iterator
 
 
 class Cacher():
@@ -13,9 +14,9 @@ class Cacher():
         # Create the file path to store the data
         self.history_file = os.path.join(plugin_cache_dir, "chat_history.jl")
 
-    def read_all(self):
-        json_objects = []
-        reader = jl.reader(self.history_file)
+    def read_all(self) -> List[Dict[str, str]]:
+        json_objects: List[Dict[str, str]] = []
+        reader: Iterator[Dict[str, str]] = jl.reader(self.history_file)
         for json_object in reader:
             json_objects.append(json_object)
 
@@ -25,9 +26,8 @@ class Cacher():
         # Create a new JSON Lines writer for output.jl
         writer = jl.writer(self.history_file)
         next(writer)
-        writer.send(cache_lines[0])
-        # for line in cache_lines:
-        #     writer.send(line)
+        for line in cache_lines:
+            writer.send(line)
 
     def drop_first(self, number = 4):
         # Read all lines from the JSON Lines file

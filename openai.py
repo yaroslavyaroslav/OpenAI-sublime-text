@@ -4,7 +4,6 @@ from sublime import View, Region, Edit
 import functools
 from .cacher import Cacher
 import logging
-from enum import Enum
 from .openai_panel import CommandMode
 
 class Openai(sublime_plugin.TextCommand):
@@ -30,16 +29,16 @@ class Openai(sublime_plugin.TextCommand):
         mode = kwargs.get('mode', 'chat_completion')
 
         # get selected text
-        region: Region
-        text: str
+        region: Optional[Region] = None
+        text: Optional[str] = None
         for region in self.view.sel():
             if not region.empty():
                 text = self.view.substr(region)
 
         # Checking that user select some text
         try:
-            if region.__len__() < settings.get("minimum_selection_length"):
-                if mode != 'chat_completion' and mode != 'reset_chat_history' and mode != 'refresh_output_panel':
+            if region and region.__len__() < settings.get("minimum_selection_length"):
+                if mode != 'reset_chat_history' and mode != 'refresh_output_panel':
                     raise AssertionError("Not enough text selected to complete the request, please expand the selection.")
         except Exception as ex:
             sublime.error_message("Exception\n" + str(ex))
@@ -73,11 +72,16 @@ class Openai(sublime_plugin.TextCommand):
             listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)
         else: # mode 'chat_completion', always in panel
-            sublime.active_window().show_input_panel("Question: ", "", functools.partial(self.on_input, None, None, self.view, mode), None, None)
-
-
-class PromptMode(Enum):
-    panel = "panel"
-    append = "append"
-    insert = "insert"
-    replace = "replace"
+            sublime.active_window().show_input_panel(
+                "Question: ",
+                "",
+                functools.partial(
+                    self.on_input,
+                    region if region else None,
+                    text if text else None,
+                    self.view,
+                    mode
+                ),
+                None,
+                None
+            )
