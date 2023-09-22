@@ -119,6 +119,19 @@
     // Minimum amount of characters selected to perform completion.
     "minimum_selection_length": 20,
 
+    // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistnat objects above)
+    // Possible options:
+    //  - name: User defined setup name
+    //  - prompt_mode: Model output prompt mode (panel|append|insert|replace)
+    //  - chat_model: Which OpenAI model are used within this setup.
+    //
+    // You're capable to mix these whatewer you want and the text in status bar will follow.
+    "status_hint": [
+        // "name",
+        // "prompt_mode",
+        // "chat_model"
+     ],
+
     // Proxy setting
     "proxy": {
         // Proxy address

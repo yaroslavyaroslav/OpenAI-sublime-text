@@ -1,12 +1,14 @@
-from typing import Optional
-import sublime, sublime_plugin
+from enum import Enum
+from typing import List, Optional
+import sublime
+from sublime_plugin import TextCommand, EventListener
 from sublime import View, Region, Edit
 import functools
 from .cacher import Cacher
 import logging
 from .openai_panel import CommandMode
 
-class Openai(sublime_plugin.TextCommand):
+class Openai(TextCommand):
     def on_input_deprecated(self, region: Optional[Region], text: Optional[str], view: View, mode: str, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
@@ -85,3 +87,45 @@ class Openai(sublime_plugin.TextCommand):
                 None,
                 None
             )
+
+class ActiveViewEventListener(EventListener):
+
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setting = sublime.load_settings("openAI.sublime-settings")
+
+    def on_activated(self, view: View):
+        assistant = Cacher().read_model()
+
+        status_hint_options: Optional[List[str]] = self.setting.get('status_hint', [])
+
+        if assistant and 'name' in assistant and 'prompt_mode' in assistant and 'chat_model' in assistant:
+            if status_hint_options:
+                if len(status_hint_options) > 1:
+                    if StatusBarMode._name.value in status_hint_options and StatusBarMode.prompt_mode.value in status_hint_options and StatusBarMode.chat_model.value in status_hint_options:
+                        view.set_status('openai_assistant_settings', f'{assistant["name"]} | {assistant["prompt_mode"]} | {assistant["chat_model"]}')
+                    elif StatusBarMode._name.value in status_hint_options and StatusBarMode.prompt_mode.value in status_hint_options:
+                        view.set_status('openai_assistant_settings', f'{assistant["name"]} | {assistant["prompt_mode"]}')
+                    elif StatusBarMode._name.value in status_hint_options and StatusBarMode.chat_model.value in status_hint_options:
+                        view.set_status('openai_assistant_settings', f'{assistant["name"]} | {assistant["chat_model"]}')
+                    elif StatusBarMode.prompt_mode.value in status_hint_options and StatusBarMode.chat_model.value in status_hint_options:
+                        view.set_status('openai_assistant_settings', f'{assistant["prompt_mode"]} | {assistant["chat_model"]}')
+                elif len(status_hint_options) == 1:
+                    if StatusBarMode._name.value in status_hint_options:
+                        print(f"assistant: {status_hint_options[0]}")
+                        view.set_status('openai_assistant_settings', f'{assistant["name"]}')
+                    if StatusBarMode.prompt_mode.value in status_hint_options:
+                        print(f"assistant: {status_hint_options[0]}")
+                        view.set_status('openai_assistant_settings', f'{assistant["prompt_mode"]}')
+                    if StatusBarMode.chat_model.value in status_hint_options:
+                        print(f"assistant: {status_hint_options[0]}")
+                        view.set_status('openai_assistant_settings', f'{assistant["chat_model"]}')
+                else: # status_hint_options is None or len(status_hint_options) == 0
+                    pass
+
+
+class StatusBarMode(Enum):
+    _name = "name"
+    prompt_mode = "prompt_mode"
+    chat_model = "chat_model"
