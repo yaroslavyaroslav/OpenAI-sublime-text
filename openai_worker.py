@@ -244,7 +244,7 @@ class OpenAIWorker(threading.Thread):
                     assistant_role = self.settings.get('assistants')[0]["assistant_role"]
                     if not isinstance(assistant_role, str):
                         raise ValueError("The assistant_role setting must be a string.")
-                    payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text)
+                    payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text, command=self.command)
                     self.provider.prepare_request(json_payload=payload)
                     self.handle_response()
             else:
