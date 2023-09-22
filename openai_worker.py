@@ -23,7 +23,11 @@ class OpenAIWorker(threading.Thread):
         self.mode = mode
         # Text input from input panel
         self.settings = sublime.load_settings("openAI.sublime-settings")
-        self.assistant = assistant if assistant is not None else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **self.settings.get('assistants')[0]})
+
+        opt_assistant_dict = Cacher().read_model()
+        assistant_dict = opt_assistant_dict if opt_assistant_dict else self.settings.get('assistants')[0]
+
+        self.assistant = assistant if assistant is not None else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
         self.provider = NetworkClient(settings=self.settings)
         self.window = sublime.active_window()
 

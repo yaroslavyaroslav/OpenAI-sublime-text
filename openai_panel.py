@@ -6,6 +6,7 @@ from sublime_plugin import WindowCommand
 import functools
 from enum import Enum
 from typing import Optional
+from .cacher import Cacher
 
 class OpenaiPanelCommand(WindowCommand):
     def __init__(self, window):
@@ -28,6 +29,10 @@ class OpenaiPanelCommand(WindowCommand):
 
     def on_done(self, index: int):
         if index == -1: return
+
+        assistant = self.assistants[index]
+
+        Cacher().save_model(assistant.__dict__)
 
         region: Optional[Region] = None
         text: Optional[str] = None
@@ -53,7 +58,7 @@ class OpenaiPanelCommand(WindowCommand):
                 text if text else None,
                 self.window.active_view(),
                 CommandMode.chat_completion.value,
-                self.assistants[index]
+                assistant
             ),
             None,
             None
