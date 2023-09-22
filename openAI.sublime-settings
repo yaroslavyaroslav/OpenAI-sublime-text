@@ -1,4 +1,37 @@
 {
+    // Your openAI token
+    "token": "",
+
+    // Apply Sublime Text markdown syntax highligh to OpenAI completion output panel text.
+    // Affects only `chat_completion` command.
+    // `MultimarkdownEditing` package highly recommended to apply syntax highlight for a code snippets.
+    "markdown": true,
+
+    // Minimum amount of characters selected to perform completion.
+    "minimum_selection_length": 20,
+
+    // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistnat objects above)
+    // Possible options:
+    //  - name: User defined setup name
+    //  - prompt_mode: Model output prompt mode (panel|append|insert|replace)
+    //  - chat_model: Which OpenAI model are used within this setup.
+    //
+    // You're capable to mix these whatewer you want and the text in status bar will follow.
+    "status_hint": [
+        // "name",
+        // "prompt_mode",
+        // "chat_model"
+     ],
+
+    // Proxy setting
+    "proxy": {
+        // Proxy address
+        "address": "",
+
+        // Proxy port
+        "port": 8080
+    },
+
     "assistants": [
         {
             // A string that will presented in command palete.
@@ -107,37 +140,4 @@
     // DEPRECATED: would be deleted at 3.0.0
     "presence_penalty": 0,
     ////////// ----------------------------------- LEGACY ----------------------------------- //////////
-
-    // Your openAI token
-    "token": "",
-
-    // Apply Sublime Text markdown syntax highligh to OpenAI completion output panel text.
-    // Affects only `chat_completion` command.
-    // `MultimarkdownEditing` package highly recommended to apply syntax highlight for a code snippets.
-    "markdown": true,
-
-    // Minimum amount of characters selected to perform completion.
-    "minimum_selection_length": 20,
-
-    // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistnat objects above)
-    // Possible options:
-    //  - name: User defined setup name
-    //  - prompt_mode: Model output prompt mode (panel|append|insert|replace)
-    //  - chat_model: Which OpenAI model are used within this setup.
-    //
-    // You're capable to mix these whatewer you want and the text in status bar will follow.
-    "status_hint": [
-        // "name",
-        // "prompt_mode",
-        // "chat_model"
-     ],
-
-    // Proxy setting
-    "proxy": {
-        // Proxy address
-        "address": "",
-
-        // Proxy port
-        "port": 8080
-    }
 }
