@@ -313,7 +313,6 @@ class OpenAIWorker(threading.Thread):
         elif self.assistant.prompt_mode == PromptMode.append.name: self.chat_complete_appent()
         elif self.assistant.prompt_mode == PromptMode.insert.name: self.chat_complete_insert()
         elif self.assistant.prompt_mode == PromptMode.replace.name: self.chat_complete_replace()
-        # print("xxxx-1")
 
     def chat_complete_panel(self):
         cacher = Cacher()
@@ -331,6 +330,13 @@ class OpenAIWorker(threading.Thread):
         [self.update_output_panel(question + "\n\n") for question in questions]
 
         # print(f"xxxx {self.assistant}")
+
+        # Clearing selection area, coz it's easy to forget that there's something selected during chat conversation.
+        # and it should be a one shot action rather then persistant one.
+        # 
+        # We're doing it here just in sake of more clear user flow, as it's convenient to see what have you selected
+        # while you're prompting a command to operate on that bunch of text
+        self.view.sel().clear()
 
         payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text, command=self.command)
         self.provider.prepare_request(json_payload=payload)
