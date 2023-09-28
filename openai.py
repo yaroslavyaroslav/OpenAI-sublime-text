@@ -89,16 +89,9 @@ class Openai(TextCommand):
             )
 
 class ActiveViewEventListener(EventListener):
-
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.setting = sublime.load_settings("openAI.sublime-settings")
-
     def on_activated(self, view: View):
         assistant = Cacher().read_model()
-
-        status_hint_options: Optional[List[str]] = self.setting.get('status_hint', [])
+        status_hint_options: Optional[List[str]] = settings.get('status_hint', [])
 
         if assistant and 'name' in assistant and 'prompt_mode' in assistant and 'chat_model' in assistant:
             if status_hint_options:
@@ -124,6 +117,11 @@ class ActiveViewEventListener(EventListener):
                 else: # status_hint_options is None or len(status_hint_options) == 0
                     pass
 
+settings = None
+
+def plugin_loaded():
+    global settings
+    settings = sublime.load_settings("openAI.sublime-settings")
 
 class StatusBarMode(Enum):
     _name = "name"
