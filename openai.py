@@ -68,9 +68,10 @@ class Openai(TextCommand):
             output_panel.erase(edit, region)
             output_panel.set_read_only(True)
         elif mode == CommandMode.refresh_output_panel.value:
-            from .outputpanel import SharedOutputPanelListener
+            from .outputpanel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
             window = sublime.active_window()
             listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
+            listner.toggle_overscroll(window=window, enabled=False)
             listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)
         else: # mode 'chat_completion', always in panel
