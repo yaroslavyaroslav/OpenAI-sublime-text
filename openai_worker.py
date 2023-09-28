@@ -187,11 +187,6 @@ class OpenAIWorker(threading.Thread):
 
         full_response_content = {"role": "", "content": ""}
 
-        self.update_output_panel("\n\n## Answer\n\n")
-
-        self.listner.show_panel(window=self.window)
-        self.listner.toggle_overscroll(window=self.window, enabled=False)
-
         for chunk in response:
             chunk_str = chunk.decode('utf-8')
 
@@ -211,10 +206,9 @@ class OpenAIWorker(threading.Thread):
                         full_response_content['role'] = delta['role']
                     elif 'content' in delta:
                         full_response_content['content'] += delta['content']
-                        self.update_output_panel(delta['content'])
+                        self.update_completion(delta['content'])
 
         self.provider.connection.close()
-        Cacher().append_to_cache([full_response_content])
 
     def handle_deprecated_response(self):
         response = self.provider.execute_response()
