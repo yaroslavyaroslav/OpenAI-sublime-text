@@ -35,7 +35,7 @@ class OpenAIWorker(threading.Thread):
         if not isinstance(markdown_setting, bool):
             markdown_setting = True
 
-        from .outputpanel import SharedOutputPanelListener
+        from .outputpanel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
         self.listner = SharedOutputPanelListener(markdown=markdown_setting)
 
         self.buffer_manager = SublimeBuffer(self.view)
@@ -63,13 +63,14 @@ class OpenAIWorker(threading.Thread):
         placeholder = self.settings.get('placeholder')
         if not isinstance(placeholder, str):
             placeholder = "[insert]"
-        print(f'{completion}')
+        # print(f'{completion}')
         self.buffer_manager.update_completion(
             prompt_mode=self.assistant.prompt_mode,
             completion=completion,
             placeholder=placeholder
         )
 
+    ### FIXME: THIS SHOULD BECOME ONE METHOD
     def handle_chat_response_with_panel(self):
         response = self.provider.execute_response()
 
@@ -117,8 +118,6 @@ class OpenAIWorker(threading.Thread):
 
         decoder = json.JSONDecoder()
 
-        full_response_content = {"role": "", "content": ""}
-
         for chunk in response:
             chunk_str = chunk.decode('utf-8')
 
@@ -134,14 +133,12 @@ class OpenAIWorker(threading.Thread):
 
                 if 'delta' in response['choices'][0]:
                     delta = response['choices'][0]['delta']
-                    if 'role' in delta:
-                        full_response_content['role'] = delta['role']
-                    elif 'content' in delta:
-                        full_response_content['content'] += delta['content']
+                    if 'content' in delta:
                         self.update_completion(delta['content'])
 
         self.provider.connection.close()
 
+    ## DON'T WORK
     def handle_chat_response_for_insert(self):
         response = self.provider.execute_response()
 
@@ -150,15 +147,9 @@ class OpenAIWorker(threading.Thread):
 
         decoder = json.JSONDecoder()
 
-        full_response_content = {"role": "", "content": ""}
-
-        self.update_output_panel("\n\n## Answer\n\n")
-
-        self.listner.show_panel(window=self.window)
-        self.listner.toggle_overscroll(window=self.window, enabled=False)
-
         for chunk in response:
             chunk_str = chunk.decode('utf-8')
+
             # Check for SSE data
             if chunk_str.startswith("data:") and not re.search(r"\[DONE\]$", chunk_str):
                 chunk_str = chunk_str[len("data:"):].strip()
@@ -171,21 +162,18 @@ class OpenAIWorker(threading.Thread):
 
                 if 'delta' in response['choices'][0]:
                     delta = response['choices'][0]['delta']
-                    if 'role' in delta:
-                        full_response_content['role'] = delta['role']
-                    elif 'content' in delta:
-                        full_response_content['content'] += delta['content']
-                        self.update_output_panel(delta['content'])
+                    if 'content' in delta:
+                        self.update_completion(delta['content'])
+
+        self.provider.connection.close()
 
     def handle_chat_response_for_replace(self):
         response = self.provider.execute_response()
 
-        if response is None or response.status != 200:
-            return
+        if response is None or response.status != 200: return
+
 
         decoder = json.JSONDecoder()
-
-        full_response_content = {"role": "", "content": ""}
 
         for chunk in response:
             chunk_str = chunk.decode('utf-8')
@@ -202,13 +190,11 @@ class OpenAIWorker(threading.Thread):
 
                 if 'delta' in response['choices'][0]:
                     delta = response['choices'][0]['delta']
-                    if 'role' in delta:
-                        full_response_content['role'] = delta['role']
-                    elif 'content' in delta:
-                        full_response_content['content'] += delta['content']
+                    if 'content' in delta:
                         self.update_completion(delta['content'])
 
         self.provider.connection.close()
+    ### FIXME: THIS SHOULD BECOME ONE METHOD
 
     def handle_deprecated_response(self):
         response = self.provider.execute_response()
