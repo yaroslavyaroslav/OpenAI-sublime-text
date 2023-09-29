@@ -5,10 +5,9 @@ import sublime
 import json
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException, present_error
 from .assistant_settings import AssistantSettings, PromptMode
-import ssl
 
 class NetworkClient():
-    mode = ""
+    mode = "" ## DEPRECATED
     def __init__(self, settings: sublime.Settings) -> None:
         self.settings = settings
         self.headers = {
@@ -16,7 +15,6 @@ class NetworkClient():
             'Authorization': f'Bearer {self.settings.get("token")}',
             'cache-control': "no-cache",
         }
-
 
         proxy_settings = self.settings.get('proxy')
         if isinstance(proxy_settings, dict):
@@ -107,9 +105,6 @@ class NetworkClient():
             error_data = json.loads(error_object)
             if error_data.get('error', {}).get('code') == 'context_length_exceeded':
                 raise ContextLengthExceededException(error_data['error']['message'])
-            # raise custom exception for 'context_length_exceeded' error
-            # if error_data.get('error', {}).get('code') == 'context_length_exceeded':
-            #     raise ContextLengthExceeded(error_data['error']['message'])
             code = error_data.get('error', {}).get('code') or error_data.get('error', {}).get('type')
             unknown_error = UnknownException(error_data.get('error', {}).get('message'))
             present_error(title=code, error=unknown_error)
