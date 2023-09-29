@@ -8,6 +8,7 @@ from .assistant_settings import AssistantSettings, PromptMode
 
 class NetworkClient():
     mode = "" ## DEPRECATED
+
     def __init__(self, settings: sublime.Settings) -> None:
         self.settings = settings
         self.headers = {
@@ -22,13 +23,9 @@ class NetworkClient():
             port = proxy_settings.get('port')
             if address and len(address) > 0 and port:
 
-                # ctx = ssl.create_default_context()
-                # ctx.check_hostname = False
-                # ctx.verify_mode = ssl.CERT_NONE
                 self.connection = HTTPSConnection(
                     host=address,
                     port=port,
-                    # context=ctx
                 )
                 self.connection.set_tunnel("api.openai.com")
             else:
