@@ -33,10 +33,20 @@ class SublimeBuffer():
             return
 
         elif prompt_mode == PromptMode.replace.name: # it's just replacing all given text for now.
-            json_reg = {'a': region.begin(), 'b': region.end()}
-            self.view.run_command('replace_region', {'region': json_reg, "text": completion})
+            start_of_selection = region.begin()# + self.offset
+            # print(f'completion: {completion}')
+            # print(f'offset: {self.offset}')
+            # print(f'start_of_selection: {start_of_selection}')
+            self.view.run_command("text_stream_at", {"position": start_of_selection, "text": completion})
+            self.offset += len(completion)
             return
 
+    def delete_selected_region(self):
+        region = self.view.sel()[0]
+        json_reg = {'a': region.begin(), 'b': region.end()}
+        self.view.run_command("erase_region", {"region": json_reg})
+
+    ## DEPRECATED CODE
     def prompt_completion(self, mode: str, completion: str, placeholder: Optional[str] = None):
         completion = completion.replace("$", "\$")
         if mode == 'insertion':
