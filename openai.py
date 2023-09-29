@@ -18,7 +18,7 @@ class Openai(TextCommand):
     def on_input(self, region: Optional[Region], text: Optional[str], view: View, mode: str, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
-        worker_thread = OpenAIWorker(region, text, view, mode=mode, command=input)
+        worker_thread = OpenAIWorker(region=region, text=text, view=view, mode=mode, command=input)
         worker_thread.start()
 
     """

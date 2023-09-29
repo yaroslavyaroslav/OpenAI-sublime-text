@@ -170,21 +170,15 @@ class OpenAIWorker(threading.Thread):
                 do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
                 if do_delete:
                     Cacher().drop_first(2)
-                    assistant_role = self.settings.get('assistants')[0]["assistant_role"]
-                    if not isinstance(assistant_role, str):
-                        raise ValueError("The assistant_role setting must be a string.")
-                    payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text, command=self.command)
+                    messages = self.create_message(selected_text=self.text, command=self.command)
+                    payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
                     self.provider.prepare_request(json_payload=payload)
                     self.handle_response()
             else:
                 present_error(title="OpenAI error", error=error)
-        except KeyError:
-            # FIME: This code fails to execute because response object inability.
-            if self.mode == 'chat_completion' and response['error']['code'] == 'context_length_exceeded':
-                Cacher().drop_first(2)
-            else:
-                sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
-                logging.exception("Exception: " + str(response))
+        except KeyError as err:
+            sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
+            logging.exception("Exception: " + str(err))
             return
         except Exception as ex:
             # FIME: This code fails to execute because response object inability.
@@ -193,9 +187,10 @@ class OpenAIWorker(threading.Thread):
             return
 
     def manage_chat_completion(self):
+        messages = self.create_message(selected_text=self.text, command=self.command)
         if self.assistant.prompt_mode == PromptMode.panel.name:
             cacher = Cacher()
-            messages = self.create_message(selected_text=self.text, command=self.command)
+            ## this adds additional message to cache.
             cacher.append_to_cache(messages)
             self.update_output_panel("\n\n## Question\n\n")
             # print(f'len(messages): {len(messages)}')
@@ -215,7 +210,7 @@ class OpenAIWorker(threading.Thread):
             # while you're prompting a command to operate on that bunch of text
             self.view.sel().clear()
 
-        payload = self.provider.prepare_payload(assitant_setting=self.assistant, text=self.text, command=self.command)
+        payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
         self.provider.prepare_request(json_payload=payload)
         self.handle_response()
 
