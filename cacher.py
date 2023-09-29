@@ -15,7 +15,6 @@ class Cacher():
 
         # Create the file path to store the data
         self.history_file = os.path.join(plugin_cache_dir, "chat_history.jl")
-        # self.current_model_file = os.path.join(plugin_cache_dir, "current_assistant.json")
         self.current_model_file = os.path.join(plugin_cache_dir, "current_assistant.json")
 
     def check_and_create(self, path: str):

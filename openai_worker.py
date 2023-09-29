@@ -102,7 +102,7 @@ class OpenAIWorker(threading.Thread):
         elif self.assistant.prompt_mode == PromptMode.insert.name:
             selection_region = self.view.sel()[0]
             placeholder: str = self.settings.get('placeholder', '[PLACEHOLDER]')
-            # parts: List[str] = selected_text.split(placeholder)
+            parts: List[str] = selected_text.split(placeholder)
             ## Broken code,
             ## Execution continues after error thrown.
             # try:
@@ -190,21 +190,19 @@ class OpenAIWorker(threading.Thread):
         messages = self.create_message(selected_text=self.text, command=self.command)
         if self.assistant.prompt_mode == PromptMode.panel.name:
             cacher = Cacher()
-            ## this adds additional message to cache.
             cacher.append_to_cache(messages)
             self.update_output_panel("\n\n## Question\n\n")
-            # print(f'len(messages): {len(messages)}')
 
-            # MARK: len of messages (e.g. last few)
+            # MARK: Read only last few messages from cache with a len len of messages list
             questions = [value['content'] for value in cacher.read_all()[-len(messages):]]
             # print(f"questions: {questions}")
 
-            ## MARK: \n\n for splitting command from selected text
-            ## FIXME: This logic adds redundant line breaks on a single action.
+            # MARK: \n\n for splitting command from selected text
+            # FIXME: This logic adds redundant line breaks on a single message.
             [self.update_output_panel(question + "\n\n") for question in questions]
 
-            # Clearing selection area, coz it's easy to forget that there's something selected during chat conversation.
-            # and it should be a one shot action rather then persistant one.
+            # Clearing selection area, coz it's easy to forget that there's something selected during a chat conversation.
+            # And it designed be a one shot action rather then persistant one.
             #
             # We're doing it here just in sake of more clear user flow, as it's convenient to see what have you selected
             # while you're prompting a command to operate on that bunch of text
