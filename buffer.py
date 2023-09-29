@@ -4,45 +4,20 @@ from sublime import Edit, Region, View
 from sublime_plugin import TextCommand
 from .assistant_settings import PromptMode
 
-class SublimeBuffer():
+class TextStramer():
     def __init__(self, view: View) -> None:
         self.view = view
-        self.offset = 0
 
-    def update_completion(self, prompt_mode: PromptMode, completion: str, placeholder: Optional[str] = None):
-        region = self.view.sel()[0]
+    def update_completion(self, completion: str):
+        ## TODO: Check if this line is redundant w/o `insert_snipper` command.
         completion = completion.replace("$", "\$")
-        print(f'prompt_mode: {prompt_mode}')
-        if prompt_mode == PromptMode.insert.name:
-            # print('xxx13')
-            result = self.view.find(placeholder, 0, 1)
-            if result:
-                self.view.sel().clear()
-                self.view.sel().add(result)
-                # Replace the placeholder with the specified replacement text
-                self.view.run_command("insert", {"characters": completion})
-            return
+        ## Till this line selection has to be cleared and the carret should be placed in to a desired starting point.
+        ## So begin() and end() sould be the very same carret offset.
+        start_of_selection = self.view.sel()[0].begin() ## begin() because if we point an end there — it'll start to reverse prompting.
+        self.view.run_command("text_stream_at", {"position": start_of_selection, "text": completion})
+        return
 
-        elif prompt_mode == PromptMode.append.name:
-            end_of_selection = region.end() + self.offset
-
-            self.offset += len(completion)
-
-            # Replace the placeholder with the specified replacement text
-            self.view.run_command("text_stream_at", {"position": end_of_selection, "text": completion})
-            return
-
-        elif prompt_mode == PromptMode.replace.name: # it's just replacing all given text for now.
-            start_of_selection = region.begin()# + self.offset
-            # print(f'completion: {completion}')
-            # print(f'offset: {self.offset}')
-            # print(f'start_of_selection: {start_of_selection}')
-            self.view.run_command("text_stream_at", {"position": start_of_selection, "text": completion})
-            self.offset += len(completion)
-            return
-
-    def delete_selected_region(self):
-        region = self.view.sel()[0]
+    def delete_selected_region(self, region):
         json_reg = {'a': region.begin(), 'b': region.end()}
         self.view.run_command("erase_region", {"region": json_reg})
 
@@ -75,7 +50,7 @@ class SublimeBuffer():
             region = self.view.sel()[0]
             self.view.run_command("insert_snippet", {"contents": completion})
             return
-
+    ## DEPRECATED CODE
 
 class TextStreamAtCommand(TextCommand):
     def run(self, edit: Edit, position: int, text: str):

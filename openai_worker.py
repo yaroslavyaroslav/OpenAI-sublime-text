@@ -4,7 +4,7 @@ import threading
 from .cacher import Cacher
 from typing import Dict, List, Optional
 from .openai_network_client import NetworkClient
-from .buffer import SublimeBuffer
+from .buffer import TextStramer
 from .errors.OpenAIException import ContextLengthExceededException, present_error
 from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, PromptMode
 import json
@@ -38,7 +38,7 @@ class OpenAIWorker(threading.Thread):
         from .outputpanel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
         self.listner = SharedOutputPanelListener(markdown=markdown_setting)
 
-        self.buffer_manager = SublimeBuffer(self.view)
+        self.buffer_manager = TextStramer(self.view)
         super(OpenAIWorker, self).__init__()
 
     # This method appears redundant.
@@ -58,17 +58,11 @@ class OpenAIWorker(threading.Thread):
             placeholder=placeholder
         )
 
+    def delete_selection(self, region):
+        self.buffer_manager.delete_selected_region(region=region)
+
     def update_completion(self, completion):
-        # print('xxxx12')
-        placeholder = self.settings.get('placeholder')
-        if not isinstance(placeholder, str):
-            placeholder = "[insert]"
-        # print(f'{completion}')
-        self.buffer_manager.update_completion(
-            prompt_mode=self.assistant.prompt_mode,
-            completion=completion,
-            placeholder=placeholder
-        )
+        self.buffer_manager.update_completion(completion=completion)
 
     ### FIXME: THIS SHOULD BECOME ONE METHOD
     def handle_chat_response_with_panel(self):
@@ -110,34 +104,6 @@ class OpenAIWorker(threading.Thread):
         self.provider.connection.close()
         Cacher().append_to_cache([full_response_content])
 
-    def handle_chat_response_for_append(self):
-        response = self.provider.execute_response()
-
-        if response is None or response.status != 200:
-            return
-
-        decoder = json.JSONDecoder()
-
-        for chunk in response:
-            chunk_str = chunk.decode('utf-8')
-
-            # Check for SSE data
-            if chunk_str.startswith("data:") and not re.search(r"\[DONE\]$", chunk_str):
-                chunk_str = chunk_str[len("data:"):].strip()
-
-                try:
-                    response = decoder.decode(chunk_str)
-                except ValueError as ex:
-                    sublime.error_message(f"Server Error: {str(ex)}")
-                    logging.exception("Exception: " + str(ex))
-
-                if 'delta' in response['choices'][0]:
-                    delta = response['choices'][0]['delta']
-                    if 'content' in delta:
-                        self.update_completion(delta['content'])
-
-        self.provider.connection.close()
-
     ## DON'T WORK
     def handle_chat_response_for_insert(self):
         response = self.provider.execute_response()
@@ -167,14 +133,59 @@ class OpenAIWorker(threading.Thread):
 
         self.provider.connection.close()
 
+    def handle_chat_response_for_append(self):
+        response = self.provider.execute_response()
+
+        if response is None or response.status != 200: return
+
+        ## buffer management
+        cursor_pos = self.view.sel()[0].end()
+        # clear selections
+        self.view.sel().clear()
+        # restore cursor position
+        self.view.sel().add(sublime.Region(cursor_pos, cursor_pos))
+        self.update_completion("\n")
+        ## buffer management
+
+        decoder = json.JSONDecoder()
+
+        for chunk in response:
+            chunk_str = chunk.decode('utf-8')
+
+            # Check for SSE data
+            if chunk_str.startswith("data:") and not re.search(r"\[DONE\]$", chunk_str):
+                chunk_str = chunk_str[len("data:"):].strip()
+
+                try:
+                    response = decoder.decode(chunk_str)
+                except ValueError as ex:
+                    sublime.error_message(f"Server Error: {str(ex)}")
+                    logging.exception("Exception: " + str(ex))
+
+                if 'delta' in response['choices'][0]:
+                    delta = response['choices'][0]['delta']
+                    if 'content' in delta:
+                        self.update_completion(delta['content'])
+
+        self.provider.connection.close()
+
     def handle_chat_response_for_replace(self):
         response = self.provider.execute_response()
 
         if response is None or response.status != 200: return
 
+        ## buffer management
+        self.delete_selection(region=self.view.sel()[0])
+        cursor_pos = self.view.sel()[0].begin()
+
+        # clear selections
+        self.view.sel().clear()
+
+        # restore cursor position
+        self.view.sel().add(sublime.Region(cursor_pos, cursor_pos))
+        ## buffer management
 
         decoder = json.JSONDecoder()
-
         for chunk in response:
             chunk_str = chunk.decode('utf-8')
 
