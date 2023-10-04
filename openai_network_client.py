@@ -82,7 +82,7 @@ class NetworkClient():
                 "presence_penalty": self.settings.get("presence_penalty")
             })
 
-        else: raise Exception("Undefined mode")
+        else: raise UnknownException("Undefined mode")
     ## DEPRECATED CODE
 
     def prepare_request(self, json_payload):
@@ -102,7 +102,7 @@ class NetworkClient():
             error_data = json.loads(error_object)
             if error_data.get('error', {}).get('code') == 'context_length_exceeded':
                 raise ContextLengthExceededException(error_data['error']['message'])
-            code = error_data.get('error', {}).get('code') or error_data.get('error', {}).get('type')
-            unknown_error = UnknownException(error_data.get('error', {}).get('message'))
-            present_error(title=code, error=unknown_error)
+            # code = error_data.get('error', {}).get('code') or error_data.get('error', {}).get('type')
+            raise UnknownException(error_data.get('error').get('message'))
+            # present_error(title=code, error=unknown_error)
         return response

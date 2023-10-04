@@ -5,7 +5,7 @@ from .cacher import Cacher
 from typing import Dict, List, Optional, Any
 from .openai_network_client import NetworkClient
 from .buffer import TextStramer
-from .errors.OpenAIException import ContextLengthExceededException, present_error
+from .errors.OpenAIException import ContextLengthExceededException, UnknownException, WrongUserInputException, present_error
 from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, PromptMode
 import json
 from json import JSONDecoder
@@ -100,30 +100,33 @@ class OpenAIWorker(threading.Thread):
             self.view.sel().add(Region(cursor_pos, cursor_pos))
 
         elif self.assistant.prompt_mode == PromptMode.insert.name:
+            # FIXME: Broken code,
+            # Execution continues after error thrown.
             selection_region = self.view.sel()[0]
-            placeholder: str = self.settings.get('placeholder', '[PLACEHOLDER]')
-            parts: List[str] = selected_text.split(placeholder)
-            ## Broken code,
-            ## Execution continues after error thrown.
-            # try:
-            #     if not len(parts) == 2:
-            #         raise AssertionError("There is no placeholder '" + placeholder + "' within the selected text. There should be exactly one.")
-            # except Exception as ex:
-            #     sublime.error_message("Exception\n" + str(ex))
-            #     logging.exception("Exception: " + str(ex))
-            #     return
-            placeholder_region = self.view.find(placeholder, selection_region.begin(), sublime.LITERAL)
-            placeholder_begin = placeholder_region.begin()
-            self.delete_selection(region=placeholder_region)
-            self.view.sel().clear()
-            self.view.sel().add(Region(placeholder_begin, placeholder_begin))
+            try:
+                if self.assistant.placeholder:
+                    placeholder_region = self.view.find(self.assistant.placeholder, selection_region.begin(), sublime.LITERAL)
+                    if len(placeholder_region) > 0:
+                        placeholder_begin = placeholder_region.begin()
+                        self.delete_selection(region=placeholder_region)
+                        self.view.sel().clear()
+                        self.view.sel().add(Region(placeholder_begin, placeholder_begin))
+                    else:
+                        raise WrongUserInputException("There is no placeholder '" + self.assistant.placeholder + "' within the selected text. There should be exactly one.")
+                elif not self.assistant.placeholder:
+                    raise WrongUserInputException("There is no placeholder value set for this assistant. Please add `placeholder` property in a given assistant setting.")
+            except Exception:
+                raise
 
     def handle_chat_response(self):
         response = self.provider.execute_response()
 
         if response is None or response.status != 200: return
 
-        self.prepare_to_response()
+        try:
+            self.prepare_to_response()
+        except Exception:
+            raise
 
         # without key declaration it would failt to append there later in code.
         full_response_content = {'role': '', 'content': ''}
@@ -140,9 +143,7 @@ class OpenAIWorker(threading.Thread):
                     if 'delta' in response['choices'][0]:
                         delta = response['choices'][0]['delta']
                         self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
-                except ValueError as ex:
-                    sublime.error_message(f"Server Error: {str(ex)}")
-                    logging.exception("Exception: " + str(ex))
+                except: raise
 
         self.provider.connection.close()
         if self.assistant.prompt_mode == PromptMode.panel.name:
@@ -175,14 +176,16 @@ class OpenAIWorker(threading.Thread):
                     self.handle_response()
             else:
                 present_error(title="OpenAI error", error=error)
-        except KeyError as err:
+        except WrongUserInputException as error:
+            present_error(title="OpenAI error", error=error)
+            return
+        except UnknownException as error:
+            present_error(title="OpenAI error", error=error)
+            return
+        ## TODO: Not sure if this block is necessary.
+        except Exception as err:
             sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
             logging.exception("Exception: " + str(err))
-            return
-        except Exception as ex:
-            # FIME: This code fails to execute because response object inability.
-            sublime.error_message(f"Server Error: \n{ex}")
-            logging.exception(f"Exception: {ex}")
             return
 
     def manage_chat_completion(self):
@@ -224,12 +227,11 @@ class OpenAIWorker(threading.Thread):
             #     raise AssertionError("OpenAI accepts max. 4000 tokens, so the selected text and the max_tokens setting must be lower than 4000.")
             api_token = self.settings.get('token')
             if not isinstance(api_token, str):
-                raise AssertionError("The token must be a string.")
+                raise WrongUserInputException("The token must be a string.")
             if len(api_token) < 10:
-                raise AssertionError("No API token provided, you have to set the OpenAI token into the settings to make things work.")
-        except Exception as ex:
-            sublime.error_message("Exception\n" + str(ex))
-            logging.exception("Exception: " + str(ex))
+                raise WrongUserInputException("No API token provided, you have to set the OpenAI token into the settings to make things work.")
+        except WrongUserInputException as error:
+            present_error(title="OpenAI error", error=error)
             return
 
         ### ---------- DEPRECATED CODE ---------- ###

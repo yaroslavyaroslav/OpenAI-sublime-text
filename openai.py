@@ -5,7 +5,7 @@ from sublime_plugin import TextCommand, EventListener
 from sublime import View, Region, Edit
 import functools
 from .cacher import Cacher
-import logging
+from .errors.OpenAIException import WrongUserInputException, present_error
 from .openai_panel import CommandMode
 
 class Openai(TextCommand):
@@ -41,10 +41,9 @@ class Openai(TextCommand):
         try:
             if region and region.__len__() < settings.get("minimum_selection_length"):
                 if mode != 'reset_chat_history' and mode != 'refresh_output_panel':
-                    raise AssertionError("Not enough text selected to complete the request, please expand the selection.")
-        except Exception as ex:
-            sublime.error_message("Exception\n" + str(ex))
-            logging.exception("Exception: " + str(ex))
+                    raise WrongUserInputException("Not enough text selected to complete the request, please expand the selection.")
+        except WrongUserInputException as error:
+            present_error(title="OpenAI error", error=error)
             return
 
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102

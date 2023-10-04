@@ -1,8 +1,8 @@
 from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS
 import sublime
-import logging
 from sublime import View, Region
 from sublime_plugin import WindowCommand
+from .errors.OpenAIException import WrongUserInputException, present_error
 import functools
 from enum import Enum
 from typing import Optional
@@ -43,10 +43,9 @@ class OpenaiPanelCommand(WindowCommand):
         try:
             ## If none text selected — it's ok, pass that through.
             if region and len(region) <= min_selection:
-                raise AssertionError(f"You've selected just {len(region)} chars, while the minimal selection number is {min_selection}. Please expand the selection.")
-        except Exception as ex:
-            sublime.error_message("Exception\n" + str(ex))
-            logging.exception("Exception: " + str(ex))
+                raise WrongUserInputException(f"You've selected just {len(region)} chars, while the minimal selection number is {min_selection}. Please expand the selection.")
+        except WrongUserInputException as error:
+            present_error(title="OpenAI error", error=error)
             return
 
         sublime.active_window().show_input_panel(
