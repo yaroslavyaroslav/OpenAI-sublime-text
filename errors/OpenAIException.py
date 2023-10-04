@@ -21,3 +21,7 @@ class WrongUserInputException(OpenAIException): ...
 def present_error(title: str, error: OpenAIException):
     exception(f"{title}: {error.message}")
     error_message(f"{title}\n{error.message}")
+
+def present_unknown_error(title: str, error: Exception):
+    exception(f"{title}: {error}")
+    error_message(f"{title}\n{error}")

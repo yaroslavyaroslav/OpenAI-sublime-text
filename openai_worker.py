@@ -5,7 +5,7 @@ from .cacher import Cacher
 from typing import Dict, List, Optional, Any
 from .openai_network_client import NetworkClient
 from .buffer import TextStramer
-from .errors.OpenAIException import ContextLengthExceededException, UnknownException, WrongUserInputException, present_error
+from .errors.OpenAIException import ContextLengthExceededException, UnknownException, WrongUserInputException, present_error, present_unknown_error
 from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, PromptMode
 import json
 from json import JSONDecoder
@@ -182,11 +182,6 @@ class OpenAIWorker(threading.Thread):
         except UnknownException as error:
             present_error(title="OpenAI error", error=error)
             return
-        ## TODO: Not sure if this block is necessary.
-        except Exception as err:
-            sublime.error_message("Exception\n" + "The OpenAI response could not be decoded. There could be a problem on their side. Please look in the console for additional error info.")
-            logging.exception("Exception: " + str(err))
-            return
 
     def manage_chat_completion(self):
         messages = self.create_message(selected_text=self.text, command=self.command, placeholder=self.assistant.placeholder)
@@ -211,7 +206,11 @@ class OpenAIWorker(threading.Thread):
             self.view.sel().clear()
 
         payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
-        self.provider.prepare_request(json_payload=payload)
+        try:
+            self.provider.prepare_request(json_payload=payload)
+        except Exception as error:
+            present_unknown_error(title="OpenAI error", error=error)
+            return
         self.handle_response()
 
     def create_message(self, selected_text: Optional[str], command: Optional[str], placeholder: Optional[str] = None) -> List[Dict[str, str]]:
