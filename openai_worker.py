@@ -189,7 +189,7 @@ class OpenAIWorker(threading.Thread):
             return
 
     def manage_chat_completion(self):
-        messages = self.create_message(selected_text=self.text, command=self.command)
+        messages = self.create_message(selected_text=self.text, command=self.command, placeholder=self.assistant.placeholder)
         if self.assistant.prompt_mode == PromptMode.panel.name:
             cacher = Cacher()
             cacher.append_to_cache(messages)
@@ -214,8 +214,9 @@ class OpenAIWorker(threading.Thread):
         self.provider.prepare_request(json_payload=payload)
         self.handle_response()
 
-    def create_message(self, selected_text: Optional[str], command: Optional[str] ) -> List[Dict[str, str]]:
+    def create_message(self, selected_text: Optional[str], command: Optional[str], placeholder: Optional[str] = None) -> List[Dict[str, str]]:
         messages = []
+        if selected_text: messages.append({"role": "system", "content": f'placeholder: {placeholder}', 'name': 'OpenAI_completion'})
         if selected_text: messages.append({"role": "user", "content": selected_text, 'name': 'OpenAI_completion'})
         if command: messages.append({"role": "user", "content": command, 'name': 'OpenAI_completion'})
         return messages
