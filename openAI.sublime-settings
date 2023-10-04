@@ -36,7 +36,7 @@
         {
             // A string that will presented in command palete.
             // Those assistants that are purposed to be used as a function - complete, edit, summarize etc. -
-            "name": "Default", // **REQUIRED**
+            "name": "Example", // **REQUIRED**
 
             // Mode of how plugin should promts its output, available options:
             //  - panel: prompt would be output in output panel, selected text wouldn't be affected in any way.
@@ -67,6 +67,7 @@
             // There's no need to dublicate this placeholder within assistant role property
             //
             // NOTE: Works quite unreliable with gpt-3.5-turbo model so far, but OpenAI promissed to fix this.
+            // WARNING: This property would be passed to a model if it's provided and it might be a thing that bringing a mess in your dialog and in model answers.
             "placeholder": "[PLACEHOLDER]",
 
             // What sampling temperature to use, between 0 and 2.
@@ -105,9 +106,10 @@
         {
             "name": "Insert instruction example",
             "prompt_mode": "insert",
-            "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo now.
+            "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo yet.
             "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
+            "placeholder": "## placeholder" // it's a good fit for a placeholder to be a comment.
         },
         {
             "name": "Append instruction example",
@@ -119,7 +121,7 @@
         {
             "name": "Replace instruction example",
             "prompt_mode": "replace",
-            "chat_model": "gpt-4",
+            "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo now.
             "assistant_role": "Apply the change requested by the user to the code with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },

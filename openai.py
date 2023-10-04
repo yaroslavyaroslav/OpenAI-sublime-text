@@ -106,13 +106,10 @@ class ActiveViewEventListener(EventListener):
                         view.set_status('openai_assistant_settings', f'[{assistant["prompt_mode"].title()} | {assistant["chat_model"].upper()}]')
                 elif len(status_hint_options) == 1:
                     if StatusBarMode._name.value in status_hint_options:
-                        print(f"assistant: {status_hint_options[0]}")
                         view.set_status('openai_assistant_settings', f'{assistant["name"].title}')
                     if StatusBarMode.prompt_mode.value in status_hint_options:
-                        print(f"assistant: {status_hint_options[0]}")
                         view.set_status('openai_assistant_settings', f'{assistant["prompt_mode"].title}')
                     if StatusBarMode.chat_model.value in status_hint_options:
-                        print(f"assistant: {status_hint_options[0]}")
                         view.set_status('openai_assistant_settings', f'{assistant["chat_model"].upper}')
                 else: # status_hint_options is None or len(status_hint_options) == 0
                     pass
