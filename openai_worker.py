@@ -190,9 +190,8 @@ class OpenAIWorker(threading.Thread):
             cacher.append_to_cache(messages)
             self.update_output_panel("\n\n## Question\n\n")
 
-            # MARK: Read only last few messages from cache with a len len of messages list
+            # MARK: Read only last few messages from cache with a len of a messages list
             questions = [value['content'] for value in cacher.read_all()[-len(messages):]]
-            # print(f"questions: {questions}")
 
             # MARK: \n\n for splitting command from selected text
             # FIXME: This logic adds redundant line breaks on a single message.
@@ -201,8 +200,8 @@ class OpenAIWorker(threading.Thread):
             # Clearing selection area, coz it's easy to forget that there's something selected during a chat conversation.
             # And it designed be a one shot action rather then persistant one.
             #
-            # We're doing it here just in sake of more clear user flow, as it's convenient to see what have you selected
-            # while you're prompting a command to operate on that bunch of text
+            # We're doing it here just in sake of more clear user flow, because text got captured at the very beginning of a command evaluation,
+            # convenience is in being able see current selection while writting additional input to an assistant by input panel.
             self.view.sel().clear()
 
         payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
@@ -215,7 +214,7 @@ class OpenAIWorker(threading.Thread):
 
     def create_message(self, selected_text: Optional[str], command: Optional[str], placeholder: Optional[str] = None) -> List[Dict[str, str]]:
         messages = []
-        if selected_text: messages.append({"role": "system", "content": f'placeholder: {placeholder}', 'name': 'OpenAI_completion'})
+        if placeholder: messages.append({"role": "system", "content": f'placeholder: {placeholder}', 'name': 'OpenAI_completion'})
         if selected_text: messages.append({"role": "user", "content": selected_text, 'name': 'OpenAI_completion'})
         if command: messages.append({"role": "user", "content": command, 'name': 'OpenAI_completion'})
         return messages
