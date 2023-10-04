@@ -61,5 +61,5 @@ class Openai(sublime_plugin.TextCommand):
             listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)
         else: # mode 'chat_completion', always in panel
-            sublime.active_window().show_input_panel("Question: ", "", functools.partial(self.on_input, "region", "text", self.view, mode), None, None)
+            sublime.active_window().show_input_panel("Question: ", "", functools.partial(self.on_input, region, text, self.view, mode), None, None)
 

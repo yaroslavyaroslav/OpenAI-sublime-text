@@ -174,6 +174,8 @@ class OpenAIWorker(threading.Thread):
 
         elif self.mode == 'chat_completion':
             cacher = Cacher()
+            if self.text.strip():
+                self.message['content'] = self.text + "\n\n" + self.message['content']
             cacher.append_to_cache([self.message])
             self.update_output_panel("\n\n## Question\n\n")
             self.update_output_panel(cacher.read_all()[-1]["content"])
