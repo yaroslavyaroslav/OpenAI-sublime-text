@@ -118,7 +118,6 @@ class OpenAIWorker(threading.Thread):
             self.view.sel().clear()
             self.view.sel().add(Region(placeholder_begin, placeholder_begin))
 
-
     def handle_chat_response(self):
         response = self.provider.execute_response()
 

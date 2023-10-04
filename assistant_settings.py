@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 class PromptMode(Enum):
     panel = "panel"
@@ -18,8 +19,10 @@ class AssistantSettings():
     top_p: int
     frequency_penalty: int
     presence_penalty: int
+    placeholder: Optional[str] = None
 
 DEFAULT_ASSISTANT_SETTINGS = {
+    "placeholder": None,
     "temperature": 1,
     "max_tokens": 2048,
     "top_p": 1,
