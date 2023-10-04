@@ -60,6 +60,15 @@
             // E.g. "You are (rust|python|js|whatewer) developer assistant", "You are an english tutor" and so on.
             "assistant_role": "You are a senior code assitant", // **REQUIRED**
 
+            // Placeholder requires for performing `insert` action.
+            // It got passed to OpenAI as an additional system command for additional context, to let it know
+            // what it sould replace within the user's input.
+            //
+            // There's no need to dublicate this placeholder within assistant role property
+            //
+            // NOTE: Works quite unreliable with gpt-3.5-turbo model so far, but OpenAI promissed to fix this.
+            "placeholder": "[PLACEHOLDER]",
+
             // What sampling temperature to use, between 0 and 2.
             // Higher values like 0.8 will make the output more random,
             // while lower values like 0.2 will make it more focused and deterministic.
@@ -97,14 +106,14 @@
             "name": "Insert instruction example",
             "prompt_mode": "insert",
             "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo now.
-            "assistant_role": "Insert code or whatever user will request with the following command instead of \"[PLACEHOLDER]\" with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
+            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },
         {
             "name": "Append instruction example",
             "prompt_mode": "append",
             "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo now.
-            "assistant_role": "Insert code or whatever user will request with the following command instead of \"[PLACEHOLDER]\" with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
+            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },
         {
