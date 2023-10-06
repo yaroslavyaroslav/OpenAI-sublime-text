@@ -1,10 +1,8 @@
 from typing import Optional
 from sublime import Edit, Region, View
-# from sublime_types import Point
 from sublime_plugin import TextCommand
-from .assistant_settings import PromptMode
 
-class TextStramer():
+class TextStreamer():
     def __init__(self, view: View) -> None:
         self.view = view
 
@@ -55,9 +53,6 @@ class TextStramer():
 class TextStreamAtCommand(TextCommand):
     def run(self, edit: Edit, position: int, text: str):
         self.view.insert(edit=edit, pt=position, text=text)
-
-    def append(self, point, text):
-        self.view.run_command('text_stream_at', {'text': text, 'point': point})
 
 class ReplaceRegionCommand(TextCommand):
     def run(self, edit: Edit, region, text: str):

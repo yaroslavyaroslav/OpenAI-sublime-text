@@ -4,7 +4,7 @@ import threading
 from .cacher import Cacher
 from typing import Dict, List, Optional, Any
 from .openai_network_client import NetworkClient
-from .buffer import TextStramer
+from .buffer import TextStreamer
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException, WrongUserInputException, present_error, present_unknown_error
 from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, PromptMode
 import json
@@ -40,7 +40,7 @@ class OpenAIWorker(threading.Thread):
         from .outputpanel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
         self.listner = SharedOutputPanelListener(markdown=markdown_setting)
 
-        self.buffer_manager = TextStramer(self.view)
+        self.buffer_manager = TextStreamer(self.view)
         super(OpenAIWorker, self).__init__()
 
     # This method appears redundant.

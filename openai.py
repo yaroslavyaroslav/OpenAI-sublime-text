@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Optional
 import sublime
 from sublime_plugin import TextCommand, EventListener
-from sublime import View, Region, Edit
+from sublime import Settings, View, Region, Edit
 import functools
 from .cacher import Cacher
 from .errors.OpenAIException import WrongUserInputException, present_error
@@ -27,7 +27,8 @@ class Openai(TextCommand):
     and inserts suggestion from within response at place of `[insert]` placeholder
     """
     def run(self, edit: Edit, **kwargs):
-        settings = sublime.load_settings("openAI.sublime-settings")
+        global settings
+        plugin_loaded()
         mode = kwargs.get('mode', 'chat_completion')
 
         # get selected text
@@ -90,6 +91,8 @@ class Openai(TextCommand):
 
 class ActiveViewEventListener(EventListener):
     def on_activated(self, view: View):
+        global settings
+        plugin_loaded()
         assistant = Cacher().read_model()
         status_hint_options: Optional[List[str]] = settings.get('status_hint', [])
 
@@ -114,7 +117,7 @@ class ActiveViewEventListener(EventListener):
                 else: # status_hint_options is None or len(status_hint_options) == 0
                     pass
 
-settings = None
+settings: Optional[Settings] = None
 
 def plugin_loaded():
     global settings
