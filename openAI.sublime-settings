@@ -8,7 +8,7 @@
     "markdown": true,
 
     // Minimum amount of characters selected to perform completion.
-    "minimum_selection_length": 20,
+    "minimum_selection_length": 10,
 
     // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistnat objects above)
     // Possible options:
