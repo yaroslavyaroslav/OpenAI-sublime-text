@@ -3,8 +3,9 @@ from typing import Optional, List, Dict
 from .cacher import Cacher
 import sublime
 import json
-from .errors.OpenAIException import ContextLengthExceededException, UnknownException, present_error
+from .errors.OpenAIException import ContextLengthExceededException, UnknownException
 from .assistant_settings import AssistantSettings, PromptMode
+from base64 import b64encode
 
 class NetworkClient():
     mode = "" ## DEPRECATED
@@ -21,13 +22,20 @@ class NetworkClient():
         if isinstance(proxy_settings, dict):
             address = proxy_settings.get('address')
             port = proxy_settings.get('port')
+            proxy_username = proxy_settings.get('username')
+            proxy_password = proxy_settings.get('password')
+            proxy_auth = b64encode(bytes(f'{proxy_username}:{proxy_password}', 'utf-8')).strip().decode('ascii')
+            headers = {'Proxy-Authorization': f'Basic {proxy_auth}'} if len(proxy_auth) > 0 else {}
             if address and len(address) > 0 and port:
 
                 self.connection = HTTPSConnection(
                     host=address,
                     port=port,
                 )
-                self.connection.set_tunnel("api.openai.com")
+                self.connection.set_tunnel(
+                    "api.openai.com",
+                    headers=headers
+                )
             else:
                 self.connection = HTTPSConnection("api.openai.com")
 
@@ -102,7 +110,5 @@ class NetworkClient():
             error_data = json.loads(error_object)
             if error_data.get('error', {}).get('code') == 'context_length_exceeded':
                 raise ContextLengthExceededException(error_data['error']['message'])
-            # code = error_data.get('error', {}).get('code') or error_data.get('error', {}).get('type')
             raise UnknownException(error_data.get('error').get('message'))
-            # present_error(title=code, error=unknown_error)
         return response
