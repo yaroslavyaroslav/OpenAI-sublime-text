@@ -1,7 +1,8 @@
 [
     // {
     //     "keys": [
-    //         "super+shift+'"
+    //         "super+k",
+    //         "super+'"
     //     ],
     //     "command": "openai",
     //     "args": {
@@ -10,7 +11,15 @@
     // },
     // {
     //     "keys": [
-    //         "super+shift+;"
+    //         "super+k",
+    //         "super+["
+    //     ],
+    //     "command": "openai_panel",
+    // },
+    // {
+    //     "keys": [
+    //         "super+k",
+    //         "super+;"
     //     ],
     //     "command": "show_panel",
     //     "args": {

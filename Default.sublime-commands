@@ -1,5 +1,9 @@
 [
 	{
+		"caption": "OpenAI: Chat Model Select",
+		"command": "openai_panel",
+	},
+	{
 		"caption": "OpenAI: Complete",
 		"command": "openai",
 		"args": {

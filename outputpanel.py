@@ -25,7 +25,6 @@ class SharedOutputPanelListener(EventListener):
         output_panel.set_read_only(False)
         output_panel.run_command('append', {'characters': text})
         output_panel.set_read_only(True)
-        num_lines: int = get_number_of_lines(output_panel)
 
     def refresh_output_panel(self, window):
         output_panel = self.__get_output_panel__(window=window)
