@@ -3,7 +3,7 @@ from typing import Optional, List, Dict
 from .cacher import Cacher
 import sublime
 import json
-from .errors.OpenAIException import ContextLengthExceededException, UnknownException, present_error
+from .errors.OpenAIException import ContextLengthExceededException, UnknownException
 from .assistant_settings import AssistantSettings, PromptMode
 from base64 import b64encode
 
@@ -110,7 +110,5 @@ class NetworkClient():
             error_data = json.loads(error_object)
             if error_data.get('error', {}).get('code') == 'context_length_exceeded':
                 raise ContextLengthExceededException(error_data['error']['message'])
-            # code = error_data.get('error', {}).get('code') or error_data.get('error', {}).get('type')
             raise UnknownException(error_data.get('error').get('message'))
-            # present_error(title=code, error=unknown_error)
         return response
