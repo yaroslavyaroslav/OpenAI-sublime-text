@@ -7,8 +7,6 @@ class TextStreamer():
         self.view = view
 
     def update_completion(self, completion: str):
-        ## TODO: Check if this line is redundant w/o `insert_snipper` command.
-        completion = completion.replace("$", "\$")
         ## Till this line selection has to be cleared and the carret should be placed in to a desired starting point.
         ## So begin() and end() sould be the very same carret offset.
         start_of_selection = self.view.sel()[0].begin() ## begin() because if we point an end there — it'll start to reverse prompting.
