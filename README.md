@@ -1,17 +1,27 @@
 # OpenAI Sublime Text Plugin
 ## Abstract
 
-OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural language processing (NLP) model to provide suggestions for editing code within the Sublime Text editor.
+OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural language processing (NLP) model to provide an code assistant experience within the editor.
 
 ## Features
-- Append suggested text to selected code
-- Insert suggested text instead of placeholder in selected code
-- Edit selected code according to a given command
-- **ChatGPT mode support**.
-- [Multi]Markdown syntax with syntax highlight support (ChatGPT mode only).
+
+- Code manipulation (append, insert and edit) selected code with OpenAI models.
+- Selected text capture in addition to every message.
+- **Chat mode support** powered with ChatGPT models.
+- Markdown syntax with syntax highlight support (ChatGPT mode only).
 - Proxy support.
 - **GPT-4 support**.
-- Server Side Streaming (SSE) support
+- Server Side Streaming (SSE) support (i.e. text starts presenting gradually right after user request)
+- **Multiple assistant presets**
+- Status bar badge with a currently selected assistant properties.
+
+### Multiple assistant
+
+<details><summary>Click to see screens</summary>
+
+![](static/assistant_palete/image1.png)
+
+</details>
 
 ### ChatGPT completion demo
 
@@ -76,7 +86,24 @@ ChatGPT mode works the following way:
 
 ### Single shot completion usage
 
-1. Open the Sublime Text 4 editor and select some code.
+> **Warning**
+> The `gpt-3.5-turbo` model can still be unreliable in this regard, often generating wordy responses despite specific instructions. OpenAI had promised to address this issue by the end of the year. However, the `gpt-4` model seems to handle commands more effectively.
+
+0. Configure your assistant for each text task you wish to perform (e.g., `append`, `replace`, `insert`, `panel`) in the plugin settings. You can refer to the default setup as an example.
+1. Launch the Sublime Text editor and select a block of code.
+2. Access the command palette and execute the "OpenAI: New Message" command.
+3. **The plugin will transmit the selected code to the OpenAI servers** using your API key. This action will prompt the generation of a suggested code modification based on your command (e.g., append, insert, or edit).
+4. The suggestion provided will make the necessary modifications to the selected code within the editor, following the command you issued.
+
+> **Note**
+> A more detailed manual, including various assistant configuration examples, can be found within the plugin settings.
+
+### Single shot completion usage [DEPRECATED]
+
+> **Warning**
+> OpenAI, like us, is currently in the process of phasing out their old APIs and related models in favor of the `chat/completion` API. This API supports all the initial features of the plugin, such as `complete`, `edit` and `append`. The old API and corresponding commands will become obsolete around 04.01.2024[^1]. However, even after OpenAI's APIs are deprecated, these functions will still be available in the plugin due to OpenAI chat models ability to follow instructions using in their latest release.
+
+1. Open the Sublime Text editor and select some code.
 2. Open the command palette and run the `OpenAI: Complete`, `OpenAI: Insert`, or `OpenAI: Edit` commands.
     - To use the `OpenAI: Insert` command, the selected code should include a placeholder `[insert]`. This can be modified in the settings.
 3. **The plugin will send the selected code to the OpenAI servers**, using your API key, to generate a suggestion for editing the code.
@@ -128,3 +155,5 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
 > **All selected code will be sent to the OpenAI servers for processing, so make sure you have all necessary permissions to do so**.
 
 > This one was at 80% written by that thing itself including this readme. I was here mostly for debugging purposes, rather than designing and researching. This is pure magic, I swear.
+
+[^1]: Special to USA folks: It's the 4-th January.
