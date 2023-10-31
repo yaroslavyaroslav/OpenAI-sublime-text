@@ -4,13 +4,6 @@
 		"command": "openai_panel",
 	},
 	{
-		"caption": "OpenAI: Complete",
-		"command": "openai",
-		"args": {
-			"mode": "completion"
-		}
-	},
-	{
 		"caption": "OpenAI: New Message",
 		"command": "openai",
 		"args": {
@@ -32,14 +25,21 @@
 		}
 	},
 	{
-		"caption": "OpenAI: Insert",
+		"caption": "OpenAI: Insert [DEPRECATED]",
 		"command": "openai",
 		"args": {
 			"mode": "insertion"
 		}
 	},
 	{
-		"caption": "OpenAI: Edit",
+		"caption": "OpenAI: Complete [DEPRECATED]",
+		"command": "openai",
+		"args": {
+			"mode": "completion"
+		}
+	},
+	{
+		"caption": "OpenAI: Edit [DEPRECATED]",
 		"command": "openai",
 		"args": {
 			"mode": "edition"
