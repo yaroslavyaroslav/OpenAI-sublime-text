@@ -172,7 +172,7 @@
             "name": "Corrector",
             "prompt_mode": "replace",
             "chat_model": "gpt-4-0613",
-            "assistant_role": "Fix provided text with the correct and sounds English",
+            "assistant_role": "Fix provided text with the correct and sounds English one, you are strictly forced to skip any changes in such its part that have not rules violation within them",
             "max_tokens": 4000,
         },
         {
