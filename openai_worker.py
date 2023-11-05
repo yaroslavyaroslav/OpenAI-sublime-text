@@ -185,6 +185,9 @@ class OpenAIWorker(threading.Thread):
 
     def manage_chat_completion(self):
         messages = self.create_message(selected_text=self.text, command=self.command, placeholder=self.assistant.placeholder)
+        ## FIXME: This should be here, otherwise it would duplicates the messages.
+        payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
+
         if self.assistant.prompt_mode == PromptMode.panel.name:
             cacher = Cacher()
             cacher.append_to_cache(messages)
@@ -203,8 +206,6 @@ class OpenAIWorker(threading.Thread):
             # We're doing it here just in sake of more clear user flow, because text got captured at the very beginning of a command evaluation,
             # convenience is in being able see current selection while writting additional input to an assistant by input panel.
             self.view.sel().clear()
-
-        payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
         try:
             self.provider.prepare_request(json_payload=payload)
         except Exception as error:

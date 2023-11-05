@@ -41,7 +41,9 @@ class NetworkClient():
 
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]):
         if assitant_setting.prompt_mode == PromptMode.panel.value:
-            messages = Cacher().read_all() + messages
+            ## FIXME:  This is error prone and should be rewritten
+            #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
+            messages = Cacher().read_all()[-len(messages):] + messages
         messages.append({"role": "system", "content": assitant_setting.assistant_role})
 
         return json.dumps({
