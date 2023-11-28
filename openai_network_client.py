@@ -43,15 +43,15 @@ class NetworkClient():
         if assitant_setting.prompt_mode == PromptMode.panel.value:
             ## FIXME:  This is error prone and should be rewritten
             #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
-            messages = Cacher().read_all()[-len(messages):] + messages
-        messages.append({"role": "system", "content": assitant_setting.assistant_role})
+            internal_messages = Cacher().read_all()[:-len(messages)] + messages
+        internal_messages.append({"role": "system", "content": assitant_setting.assistant_role})
 
         return json.dumps({
             # Todo add uniq name for each output panel (e.g. each window)
-            "messages": messages,
+            "messages": internal_messages,
             "model": assitant_setting.chat_model,
             "temperature": assitant_setting.temperature,
-            "max_tokens": assitant_setting.max_tokens,
+            "max_tokens": assitant_setting.max_tokens:,
             "top_p": assitant_setting.top_p,
             "stream": True
         })
