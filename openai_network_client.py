@@ -8,7 +8,6 @@ from .assistant_settings import AssistantSettings, PromptMode
 from base64 import b64encode
 
 class NetworkClient():
-    mode = "" ## DEPRECATED
 
     def __init__(self, settings: sublime.Settings) -> None:
         self.settings = settings
@@ -55,45 +54,6 @@ class NetworkClient():
             "top_p": assitant_setting.top_p,
             "stream": True
         })
-
-    ## DEPRECATED CODE
-    def prepare_payload_deprecated(self, mode: str, text: Optional[str] = None, command: Optional[str] = None, role: Optional[str] = None, parts: Optional[List[str]] = None) -> str:
-        self.mode = mode
-        if mode == 'insertion':
-            prompt, suffix = (parts[0], parts[1]) if parts and len(parts) >= 2 else ("Print out that input text is wrong", "Print out that input text is wrong")
-            return json.dumps({
-                "model": self.settings.get("model"),
-                "prompt": prompt,
-                "suffix": suffix,
-                "temperature": self.settings.get("temperature"),
-                "max_tokens": self.settings.get("max_tokens"),
-                "top_p": self.settings.get("top_p"),
-                "frequency_penalty": self.settings.get("frequency_penalty"),
-                "presence_penalty": self.settings.get("presence_penalty")
-            })
-
-        elif mode == 'edition':
-            return json.dumps({
-                "model": self.settings.get('edit_model'),
-                "input": text,
-                "instruction": command,
-                "temperature": self.settings.get("temperature"),
-                "top_p": self.settings.get("top_p"),
-            })
-
-        elif mode == 'completion':
-            return json.dumps({
-                "prompt": text,
-                "model": self.settings.get("model"),
-                "temperature": self.settings.get("temperature"),
-                "max_tokens": self.settings.get("max_tokens"),
-                "top_p": self.settings.get("top_p"),
-                "frequency_penalty": self.settings.get("frequency_penalty"),
-                "presence_penalty": self.settings.get("presence_penalty")
-            })
-
-        else: raise UnknownException("Undefined mode")
-    ## DEPRECATED CODE
 
     def prepare_request(self, json_payload):
         self.connection.request(method="POST", url="/v1/chat/completions", body=json_payload, headers=self.headers)

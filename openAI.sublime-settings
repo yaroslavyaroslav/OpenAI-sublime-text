@@ -211,52 +211,5 @@
             "max_tokens": 4000,
         },
 
-    ],
-
-    ////////// ----------------------------------- LEGACY ----------------------------------- //////////
-    // The model which will generate the code edition.
-    // Some models are suitable for natural language tasks, others specialize in code.
-    // Learn more at https://beta.openai.com/docs/models
-    // ____Affects only edition mode.____
-    //
-    // DEPRECATED: Will become obsolete at version 3.0.0 on 01.01.2024.
-    "edit_model": "code-davinci-edit-001",
-
-    // The model which will generate the completion.
-    // Some models are suitable for natural language tasks, others specialize in code.
-    // Learn more at https://beta.openai.com/docs/models
-    // ____Affects only completion and inserting modes.____
-    //
-    // DEPRECATED: Will become obsolete at version 3.0.0 on 01.01.2024.
-    "model": "gpt-3.5-turbo-instruct",
-    // Same as `temperature` in assistants array, but for backward capability with legacy OpenAI API
-    //
-    // Used for legacy `v1/completion` capability
-    // DEPRECATED: Will become obsolete at version 3.0.0 on 01.01.2024.
-    "temperature": 1,
-
-    // Same as `max_tokens` in assistants array, but for backward capability with legacy OpenAI API
-    //
-    // Used for legacy `v1/completion` capability
-    // DEPRECATED: Will become obsolete at version 3.0.0 on 01.01.2024.
-    "max_tokens": 2048,
-
-    // Same as `top_p` in assistants array, but for backward capability with legacy OpenAI API
-    //
-    // Used for legacy `v1/completion` capability
-    // DEPRECATED: Will become obsolete at version 3.0.0 on 01.01.2024.
-    "top_p": 1,
-
-    // Same as `frequency_penalty` in assistants array, but for backward capability with legacy OpenAI API
-    //
-    // Used for legacy `v1/completion` capability
-    // DEPRECATED: Will become obsolete at version 3.0.0 on 01.01.2024.
-    "frequency_penalty": 0,
-
-    // Same as `presence_penalty` in assistants array, but for backward capability with legacy OpenAI API
-    //
-    // Used for legacy `v1/completion` capability
-    // DEPRECATED: Will become obsolete at version 3.0.0 on 01.01.2024.
-    "presence_penalty": 0,
-    ////////// ----------------------------------- LEGACY ----------------------------------- //////////
+    ]
 }

@@ -234,32 +234,4 @@ class OpenAIWorker(threading.Thread):
             present_error(title="OpenAI error", error=error)
             return
 
-        ### ---------- DEPRECATED CODE ---------- ###
-        if self.mode == 'insertion':
-            placeholder = self.settings.get('placeholder')
-            if not isinstance(placeholder, str):
-                raise AssertionError("The placeholder must be a string.")
-            parts: List[str] = self.text.split(self.settings.get('placeholder'))
-            try:
-                if not len(parts) == 2:
-                    raise AssertionError("There is no placeholder '" + placeholder + "' within the selected text. There should be exactly one.")
-            except Exception as ex:
-                sublime.error_message("Exception\n" + str(ex))
-                logging.exception("Exception: " + str(ex))
-                return
-            payload = self.provider.prepare_payload_deprecated(mode=self.mode, parts=parts)
-            self.provider.prepare_request_deprecated(gateway="/v1/completions", json_payload=payload)
-            self.handle_response()
-
-        elif self.mode == 'edition':
-            payload = self.provider.prepare_payload_deprecated(mode=self.mode, text=self.text, command=self.command)
-            self.provider.prepare_request_deprecated(gateway="/v1/edits", json_payload=payload)
-            self.handle_response()
-        elif self.mode == 'completion':
-            payload = self.provider.prepare_payload_deprecated(mode=self.mode, text=self.text)
-            self.provider.prepare_request_deprecated(gateway="/v1/completions", json_payload=payload)
-            self.handle_response()
-        ### ---------- DEPRECATED CODE ---------- ###
-
-        elif self.mode == 'chat_completion':
-            self.manage_chat_completion()
+        self.manage_chat_completion()
