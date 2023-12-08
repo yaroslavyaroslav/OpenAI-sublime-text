@@ -41,7 +41,6 @@
     "assistants": [
         {
             // A string that will presented in command palete.
-            // Those assistants that are purposed to be used as a function - complete, edit, summarize etc. -
             "name": "Example", // **REQUIRED**
 
             // Mode of how plugin should promts its output, available options:
