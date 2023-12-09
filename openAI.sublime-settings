@@ -3,8 +3,8 @@
     "token": "",
 
     // Apply Sublime Text markdown syntax highligh to OpenAI completion output panel text.
-    // Affects only `chat_completion` command.
-    // `MultimarkdownEditing` package highly recommended to apply syntax highlight for a code snippets.
+    // Affects only `"prompt_mode": "panel"`.
+    // `MultimarkdownEditing` package highly recommended to install to apply syntax highlight for a wider range of languages.
     "markdown": true,
 
     // Minimum amount of characters selected to perform completion.
