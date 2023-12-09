@@ -9,12 +9,6 @@ from .errors.OpenAIException import WrongUserInputException, present_error
 from .openai_panel import CommandMode
 
 class Openai(TextCommand):
-    def on_input_deprecated(self, region: Optional[Region], text: Optional[str], view: View, mode: str, input: str):
-        from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
-
-        worker_thread = OpenAIWorker(region, text, view, mode=mode, command=input)
-        worker_thread.start()
-
     def on_input(self, region: Optional[Region], text: Optional[str], view: View, mode: str, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 

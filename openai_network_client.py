@@ -58,9 +58,6 @@ class NetworkClient():
     def prepare_request(self, json_payload):
         self.connection.request(method="POST", url="/v1/chat/completions", body=json_payload, headers=self.headers)
 
-    def prepare_request_deprecated(self, gateway, json_payload):
-        self.connection.request(method="POST", url=gateway, body=json_payload, headers=self.headers)
-
     def execute_response(self) -> Optional[HTTPResponse]:
         return self._execute_network_request()
 

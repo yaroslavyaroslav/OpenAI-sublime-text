@@ -98,17 +98,6 @@ ChatGPT mode works the following way:
 > **Note**
 > A more detailed manual, including various assistant configuration examples, can be found within the plugin settings.
 
-### Single shot completion usage [DEPRECATED]
-
-> **Warning**
-> OpenAI, like us, is currently in the process of phasing out their old APIs and related models in favor of the `chat/completion` API. This API supports all the initial features of the plugin, such as `complete`, `edit` and `append`. The old API and corresponding commands will become obsolete around 04.01.2024[^1]. However, even after OpenAI's APIs are deprecated, these functions will still be available in the plugin due to OpenAI chat models ability to follow instructions using in their latest release.
-
-1. Open the Sublime Text editor and select some code.
-2. Open the command palette and run the `OpenAI: Complete`, `OpenAI: Insert`, or `OpenAI: Edit` commands.
-    - To use the `OpenAI: Insert` command, the selected code should include a placeholder `[insert]`. This can be modified in the settings.
-3. **The plugin will send the selected code to the OpenAI servers**, using your API key, to generate a suggestion for editing the code.
-4. The suggestion will modify the selected code in the editor, according to the command you ran (append, insert, or edit).
-
 ### Other features
 
 ### [Multi]Markdown syntax with syntax highlight support

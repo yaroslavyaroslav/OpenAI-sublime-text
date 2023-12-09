@@ -149,33 +149,17 @@ class OpenAIWorker(threading.Thread):
         if self.assistant.prompt_mode == PromptMode.panel.name:
             Cacher().append_to_cache([full_response_content])
 
-    def handle_deprecated_response(self):
-        response = self.provider.execute_response()
-        if response is None or response.status != 200:
-            return
-        data = response.read()
-        data_decoded = data.decode('utf-8')
-        self.provider.connection.close()
-        completion = json.loads(data_decoded)['choices'][0]['text']
-        completion = completion.strip()  # Removing leading and trailing spaces
-        self.prompt_completion(completion)
-
     def handle_response(self):
         try:
-            if self.mode == "chat_completion": self.handle_chat_response()
-            else: self.handle_deprecated_response()
+            self.handle_chat_response()
         except ContextLengthExceededException as error:
-            if self.mode == 'chat_completion':
-                # Ask user if it's ok to delete first dialog pair?
-                do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
-                if do_delete:
-                    Cacher().drop_first(2)
-                    messages = self.create_message(selected_text=self.text, command=self.command)
-                    payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
-                    self.provider.prepare_request(json_payload=payload)
-                    self.handle_response()
-            else:
-                present_error(title="OpenAI error", error=error)
+            do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
+            if do_delete:
+                Cacher().drop_first(2)
+                messages = self.create_message(selected_text=self.text, command=self.command)
+                payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
+                self.provider.prepare_request(json_payload=payload)
+                self.handle_response()
         except WrongUserInputException as error:
             present_error(title="OpenAI error", error=error)
             return
