@@ -23,26 +23,5 @@
 		"args": {
 			"mode": "refresh_output_panel"
 		}
-	},
-	{
-		"caption": "OpenAI: Insert [DEPRECATED]",
-		"command": "openai",
-		"args": {
-			"mode": "insertion"
-		}
-	},
-	{
-		"caption": "OpenAI: Complete [DEPRECATED]",
-		"command": "openai",
-		"args": {
-			"mode": "completion"
-		}
-	},
-	{
-		"caption": "OpenAI: Edit [DEPRECATED]",
-		"command": "openai",
-		"args": {
-			"mode": "edition"
-		}
 	}
 ]
