@@ -40,10 +40,12 @@ class NetworkClient():
                 self.connection = HTTPSConnection("api.openai.com")
 
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]):
+        internal_messages = []
         if assitant_setting.prompt_mode == PromptMode.panel.value:
             ## FIXME:  This is error prone and should be rewritten
             #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
-            internal_messages = Cacher().read_all() + messages
+            internal_messages = Cacher().read_all()
+        internal_messages += messages
         internal_messages.append({"role": "system", "content": assitant_setting.assistant_role})
 
         return json.dumps({
