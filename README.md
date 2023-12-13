@@ -37,23 +37,6 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 
 </details>
 
-### Simple completion demo
-
-<details><summary>Click to see screens</summary>
-
-![](static/simple_completion/image1.png)
-
----
-![](static/simple_completion/image2.png)
-
----
-![](static/simple_completion/image3.png)
-
----
-![](static/simple_completion/image4.png)
-
-</details>
-
 ## Requirements
 
 - Sublime Text 4
@@ -113,8 +96,10 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 
 ```json
 "proxy": {
-    "address": "127.0.0.1",
-    "port": 9898
+    "address": "127.0.0.1", // required
+    "port": 9898, // required
+    "username": "account",
+    "password": "sOmEpAsSwOrD"
 }
 ```
 
