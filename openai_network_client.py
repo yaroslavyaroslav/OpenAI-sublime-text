@@ -38,7 +38,7 @@ class NetworkClient():
             else:
                 self.connection = HTTPSConnection("api.openai.com")
 
-    def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]):
+    def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
         internal_messages = []
         if assitant_setting.prompt_mode == PromptMode.panel.value:
             ## FIXME:  This is error prone and should be rewritten
