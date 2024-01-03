@@ -9,12 +9,6 @@ from .errors.OpenAIException import WrongUserInputException, present_error
 from .openai_panel import CommandMode
 
 class Openai(TextCommand):
-    def on_input_deprecated(self, region: Optional[Region], text: Optional[str], view: View, mode: str, input: str):
-        from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
-
-        worker_thread = OpenAIWorker(region, text, view, mode=mode, command=input)
-        worker_thread.start()
-
     def on_input(self, region: Optional[Region], text: Optional[str], view: View, mode: str, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
@@ -49,18 +43,7 @@ class Openai(TextCommand):
 
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
-        ### DEPRECATED CODE
-        if mode == 'edition':
-            sublime.active_window().show_input_panel("Request: ", "Comment the given code line by line", functools.partial(self.on_input_deprecated, region, text, self.view, mode), None, None)
-        elif mode == 'insertion':
-            worker_thread = OpenAIWorker(region, text, self.view, mode, "")
-            worker_thread.start()
-        elif mode == 'completion':
-            worker_thread = OpenAIWorker(region, text, self.view, mode, "")
-            worker_thread.start()
-        ### DEPRECATED CODE
-
-        elif mode == CommandMode.reset_chat_history.value:
+        if mode == CommandMode.reset_chat_history.value:
             Cacher().drop_all()
             output_panel = sublime.active_window().find_output_panel("OpenAI Chat")
             output_panel.set_read_only(False)
