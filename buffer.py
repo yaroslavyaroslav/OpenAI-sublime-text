@@ -1,4 +1,3 @@
-from typing import Optional
 from sublime import Edit, Region, View
 from sublime_plugin import TextCommand
 
