@@ -44,8 +44,8 @@ class NetworkClient():
             ## FIXME:  This is error prone and should be rewritten
             #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
             internal_messages = Cacher().read_all()
+        internal_messages.append({'role': 'system', 'content': assitant_setting.assistant_role})
         internal_messages += messages
-        internal_messages.append({"role": "system", "content": assitant_setting.assistant_role})
 
         return json.dumps({
             # Todo add uniq name for each output panel (e.g. each window)

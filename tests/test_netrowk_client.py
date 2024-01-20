@@ -1,69 +1,66 @@
-from typing import Optional
-from main.assistant_settings import AssistantSettings, PromptMode, DEFAULT_ASSISTANT_SETTINGS
-from network.openai_network_client import NetworkClient
+import json
+from typing import Optional, Any
 from sublime import Settings
+import sys
+from unittest import TestCase
 
 
-__settings_mock__ = {
-    'token': '',
-    'proxy': {
-        'address': '',
-        'port': '',
-        'username': '',
-        'password': ''
-    }
-}
+network_client_module = sys.modules['OpenAI completion.openai_network_client']
+assistant_module = sys.modules['OpenAI completion.assistant_settings']
 
-__network_instance__: Optional[NetworkClient]
 
-def _set_up():
-    global __network_instance__
-    __network_instance__ = NetworkClient(Settings(id=0))
+class TestNetworkClient(TestCase):
+    __network_instance__ = Optional[Any]
 
-def test_panel_mode_prepare_payload():
-    global __network_instance__
-    _set_up()
+    def _set_up(self):
+        self.__network_instance__ = network_client_module.NetworkClient(Settings(id=0))
 
-    # assistant_dict = {
-    #     'name': 'str',
-    #     'prompt_mode': PromptMode.panel,
-    #     'chat_model': 'str',
-    #     'assistant_role': 'str'
-    # }
-    # assistant_settings = AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
-    # messages = [
-    #     {"role": "system", "content": f'some system instruction', 'name': 'OpenAI_completion'},
-    #     {"role": "user", "content": f'some user input', 'name': 'OpenAI_completion'},
-    # ]
+    def test_panel_mode_prepare_payload(self):
+        self._set_up()
 
-    # payload = __network_instance__.prepare_payload(assitant_setting=assistant_settings, messages=messages)
+        assistant_dict = {
+            'name': 'str',
+            'prompt_mode': assistant_module.PromptMode.panel,
+            'chat_model': 'str',
+            'assistant_role': 'str'
+        }
+        assistant_settings = assistant_module.AssistantSettings(**{**assistant_module.DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
+        messages = [
+            {'role': 'system', 'content': f'some system instruction', 'name': 'OpenAI_completion'},
+            {'role': 'user', 'content': f'some user input', 'name': 'OpenAI_completion'},
+        ]
 
-    # assert payload == messages.__str__, "Wrong test "
+        # payload = __network_instance__.prepare_payload(assitant_setting=assistant_settings, messages=messages)
 
-    _tear_down()
+        self._tear_down()
 
-def test_non_panel_mode_prepare_payload():
-    global __network_instance__
-    _set_up()
+    def test_non_panel_mode_prepare_payload(self):
+        self._set_up()
 
-    assistant_dict = {
-        'name': 'str',
-        'prompt_mode': PromptMode.insert,
-        'chat_model': 'str',
-        'assistant_role': 'str'
-    }
-    assistant_settings = AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
-    messages = [
-        {"role": "system", "content": f'some system instruction', 'name': 'OpenAI_completion'},
-        {"role": "user", "content": f'some user input', 'name': 'OpenAI_completion'},
-    ]
+        assistant_dict = {
+            'name': 'test_string',
+            'prompt_mode': assistant_module.PromptMode.insert,
+            'chat_model': 'test_string',
+            'assistant_role': 'test_string'
+        }
+        assistant_settings = assistant_module.AssistantSettings(**{**assistant_module.DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
+        messages_to_pass = [
+            {"role": "user", "content": "some user selected text", "name": "OpenAI_completion"},
+            {"role": "user", "content": "some user input", "name": "OpenAI_completion"},
+        ]
 
-    payload = __network_instance__.prepare_payload(assitant_setting=assistant_settings, messages=messages)
+        messages_to_test = messages_to_pass[:]
+        messages_to_test.insert(0, {"role": "system", "content": "test_string"})
 
-    assert payload == messages.__str__, "Wrong test "
+        payload = self.__network_instance__.prepare_payload(assitant_setting=assistant_settings, messages=messages_to_pass)
 
-    _tear_down()
+        payload_json = json.loads(payload)
+        payload_messages = json.dumps(payload_json['messages'])
+        messages_string = json.dumps(messages_to_test)
 
-def _tear_down():
-    global __network_instance__
-    __network_instance__ = None
+        self.assertEqual(payload_messages, messages_string, f'\npayload: {payload_messages}\nmessage: {messages_string}')
+
+        self._tear_down()
+
+    def _tear_down(self):
+        self.__network_instance__ = None
