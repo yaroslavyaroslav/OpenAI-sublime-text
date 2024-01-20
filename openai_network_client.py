@@ -9,7 +9,8 @@ from base64 import b64encode
 
 class NetworkClient():
 
-    def __init__(self, settings: sublime.Settings) -> None:
+    def __init__(self, settings: sublime.Settings, cacher: Cacher = Cacher()) -> None:
+        self.cacher = cacher
         self.settings = settings
         self.headers = {
             'Content-Type': 'application/json',
@@ -40,11 +41,11 @@ class NetworkClient():
 
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
         internal_messages = []
-        if assitant_setting.prompt_mode == PromptMode.panel.value:
+        internal_messages.insert(0, {'role': 'system', 'content': assitant_setting.assistant_role})
+        if assitant_setting.prompt_mode == PromptMode.panel:
             ## FIXME: This is error prone and should be rewritten
             #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
-            internal_messages = Cacher().read_all()
-        internal_messages.append({'role': 'system', 'content': assitant_setting.assistant_role})
+            internal_messages += self.cacher.read_all()
         internal_messages += messages
 
         return json.dumps({

@@ -7,6 +7,7 @@ from typing import List, Dict, Iterator, Any, Optional
 
 
 class Cacher():
+    # FIXME: This solution breaks backward capability, highlight that in release notes.
     def __init__(self, name: str = 'prod') -> None:
         cache_dir = sublime.cache_path()
         plugin_cache_dir = os.path.join(cache_dir, 'OpenAI completion')
