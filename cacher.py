@@ -7,16 +7,15 @@ from typing import List, Dict, Iterator, Any, Optional
 
 
 class Cacher():
-    # FIXME: This solution breaks backward capability, highlight that in release notes.
-    def __init__(self, name: str = 'prod') -> None:
+    def __init__(self, name: str = '') -> None:
         cache_dir = sublime.cache_path()
         plugin_cache_dir = os.path.join(cache_dir, 'OpenAI completion')
         if not os.path.exists(plugin_cache_dir):
             os.makedirs(plugin_cache_dir)
 
         # Create the file path to store the data
-        self.history_file = os.path.join(plugin_cache_dir, f"{name}_chat_history.jl")
-        self.current_model_file = os.path.join(plugin_cache_dir, f"{name}_current_assistant.json")
+        self.history_file = os.path.join(plugin_cache_dir, f"{name}chat_history.jl")
+        self.current_model_file = os.path.join(plugin_cache_dir, f"{name}current_assistant.json")
 
     def check_and_create(self, path: str):
         if not os.path.isfile(path):

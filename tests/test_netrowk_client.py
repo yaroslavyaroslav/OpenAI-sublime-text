@@ -12,7 +12,7 @@ cacher_module = sys.modules['OpenAI completion.cacher']
 
 class TestNetworkClient(TestCase):
     __network_instance__ = Optional[Any]
-    __cacher__ = cacher_module.Cacher(name='test')
+    __cacher__ = cacher_module.Cacher(name='test_')
     __fake_history__ = [
         {'role': 'user', 'content': 'some user instruction 1', 'name': 'OpenAI_completion'},
         {'role': 'assistant', 'content': 'some assitant output 1'},
