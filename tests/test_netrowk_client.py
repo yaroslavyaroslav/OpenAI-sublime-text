@@ -4,6 +4,7 @@ from sublime import Settings
 import sys
 from unittest import TestCase
 
+
 network_client_module = sys.modules['OpenAI completion.openai_network_client']
 assistant_module = sys.modules['OpenAI completion.assistant_settings']
 cacher_module = sys.modules['OpenAI completion.cacher']
@@ -13,13 +14,13 @@ class TestNetworkClient(TestCase):
     __network_instance__ = Optional[Any]
     __cacher__ = cacher_module.Cacher(name='test')
     __fake_history__ = [
-        {'role': 'user', 'content': f'some user instruction 1', 'name': 'OpenAI_completion'},
-        {'role': 'assistant', 'content': f'some assitant output 1'},
-        {'role': 'user', 'content': f'some user selection 2', 'name': 'OpenAI_completion'},
-        {'role': 'user', 'content': f'some user instruction 2', 'name': 'OpenAI_completion'},
-        {'role': 'assistant', 'content': f'some assitant output 2'},
-        {'role': 'user', 'content': f'some user instruction 3', 'name': 'OpenAI_completion'},
-        {'role': 'assistant', 'content': f'some assitant output 3'},
+        {'role': 'user', 'content': 'some user instruction 1', 'name': 'OpenAI_completion'},
+        {'role': 'assistant', 'content': 'some assitant output 1'},
+        {'role': 'user', 'content': 'some user selection 2', 'name': 'OpenAI_completion'},
+        {'role': 'user', 'content': 'some user instruction 2', 'name': 'OpenAI_completion'},
+        {'role': 'assistant', 'content': 'some assitant output 2'},
+        {'role': 'user', 'content': 'some user instruction 3', 'name': 'OpenAI_completion'},
+        {'role': 'assistant', 'content': 'some assitant output 3'},
     ]
 
     def setUp(self):
