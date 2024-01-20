@@ -12,9 +12,9 @@ class NetworkClient():
     def __init__(self, settings: sublime.Settings) -> None:
         self.settings = settings
         self.headers = {
-            'Content-Type': "application/json",
+            'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.settings.get("token")}',
-            'cache-control': "no-cache",
+            'cache-control': 'no-cache',
         }
 
         proxy_settings = self.settings.get('proxy')
@@ -32,16 +32,16 @@ class NetworkClient():
                     port=port,
                 )
                 self.connection.set_tunnel(
-                    "api.openai.com",
+                    'api.openai.com',
                     headers=headers
                 )
             else:
-                self.connection = HTTPSConnection("api.openai.com")
+                self.connection = HTTPSConnection('api.openai.com')
 
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
         internal_messages = []
         if assitant_setting.prompt_mode == PromptMode.panel.value:
-            ## FIXME:  This is error prone and should be rewritten
+            ## FIXME: This is error prone and should be rewritten
             #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
             internal_messages = Cacher().read_all()
         internal_messages.append({'role': 'system', 'content': assitant_setting.assistant_role})
@@ -49,16 +49,16 @@ class NetworkClient():
 
         return json.dumps({
             # Todo add uniq name for each output panel (e.g. each window)
-            "messages": internal_messages,
-            "model": assitant_setting.chat_model,
-            "temperature": assitant_setting.temperature,
-            "max_tokens": assitant_setting.max_tokens,
-            "top_p": assitant_setting.top_p,
-            "stream": True
+            'messages': internal_messages,
+            'model': assitant_setting.chat_model,
+            'temperature': assitant_setting.temperature,
+            'max_tokens': assitant_setting.max_tokens,
+            'top_p': assitant_setting.top_p,
+            'stream': True
         })
 
     def prepare_request(self, json_payload):
-        self.connection.request(method="POST", url="/v1/chat/completions", body=json_payload, headers=self.headers)
+        self.connection.request(method='POST', url='/v1/chat/completions', body=json_payload, headers=self.headers)
 
     def execute_response(self) -> Optional[HTTPResponse]:
         return self._execute_network_request()
