@@ -7,8 +7,13 @@ import functools
 from enum import Enum
 from typing import Optional
 from .cacher import Cacher
+from .openai_worker import OpenAIWorker
+from threading import Event
 
 class OpenaiPanelCommand(WindowCommand):
+    stop_event: Event = Event()
+    worker_thread: Optional[OpenAIWorker] = None
+
     def __init__(self, window):
         super().__init__(window)
         self.settings = sublime.load_settings("openAI.sublime-settings")
@@ -21,8 +26,11 @@ class OpenaiPanelCommand(WindowCommand):
     def on_input(self, region: Optional[Region], text: Optional[str], view: View, mode: str, assistant: AssistantSettings, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
-        worker_thread = OpenAIWorker(region, text, view, mode=mode, command=input, assistant=assistant)
-        worker_thread.start()
+        OpenaiPanelCommand.stop_worker()  # Stop any existing worker before starting a new one
+        OpenaiPanelCommand.stop_event.clear()
+
+        OpenaiPanelCommand.worker_thread = OpenAIWorker(stop_event=self.stop_event, region=region, text=text, view=view, mode=mode, command=input, assistant=assistant)
+        OpenaiPanelCommand.worker_thread.start()
 
     def run(self):
         self.window.show_quick_panel([f"{assistant.name} | {assistant.prompt_mode} | {assistant.chat_model}" for assistant in self.assistants], self.on_done)
@@ -62,6 +70,12 @@ class OpenaiPanelCommand(WindowCommand):
             None,
             None
        )
+
+    @classmethod
+    def stop_worker(cls):
+        if cls.worker_thread and cls.worker_thread.is_alive():
+            cls.stop_event.set()  # Signal the thread to stop
+            cls.worker_thread = None
 
 class CommandMode(Enum):
     refresh_output_panel = "refresh_output_panel"

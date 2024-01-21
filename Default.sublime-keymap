@@ -1,4 +1,11 @@
 [
+    {
+        "keys": ["ctrl+c"],
+        "command": "stop_openai_execution",
+        "context": [
+            { "key": "openai_worker_running", "operator": "equal", "operand": true },
+        ]
+    }
     // {
     //     "keys": [
     //         "super+k",

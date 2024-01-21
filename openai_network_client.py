@@ -1,4 +1,4 @@
-from http.client import HTTPSConnection, HTTPResponse
+from http.client import HTTPSConnection, HTTPResponse, responses
 from typing import Optional, List, Dict
 from .cacher import Cacher
 import sublime
@@ -8,6 +8,7 @@ from .assistant_settings import AssistantSettings, PromptMode
 from base64 import b64encode
 
 class NetworkClient():
+    response: Optional[HTTPResponse] = None
 
     def __init__(self, settings: sublime.Settings, cacher: Cacher = Cacher()) -> None:
         self.cacher = cacher
@@ -64,13 +65,17 @@ class NetworkClient():
     def execute_response(self) -> Optional[HTTPResponse]:
         return self._execute_network_request()
 
+    def close_connection(self):
+        self.response.close()
+        self.connection.close()
+
     def _execute_network_request(self) -> Optional[HTTPResponse]:
-        response = self.connection.getresponse()
+        self.response = self.connection.getresponse()
         # handle 400-499 client errors and 500-599 server errors
-        if 400 <= response.status < 600:
-            error_object = response.read().decode('utf-8')
+        if 400 <= self.response.status < 600:
+            error_object = self.response.read().decode('utf-8')
             error_data = json.loads(error_object)
             if error_data.get('error', {}).get('code') == 'context_length_exceeded':
                 raise ContextLengthExceededException(error_data['error']['message'])
             raise UnknownException(error_data.get('error').get('message'))
-        return response
+        return self.response

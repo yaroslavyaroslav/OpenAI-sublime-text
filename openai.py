@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List, Optional
+from threading import Event
 import sublime
 from sublime_plugin import TextCommand, EventListener
 from sublime import Settings, View, Region, Edit
@@ -7,13 +8,20 @@ import functools
 from .cacher import Cacher
 from .errors.OpenAIException import WrongUserInputException, present_error
 from .openai_panel import CommandMode
+from .openai_worker import OpenAIWorker
 
 class Openai(TextCommand):
+    stop_event: Event = Event()
+    worker_thread: Optional[OpenAIWorker] = None
+
     def on_input(self, region: Optional[Region], text: Optional[str], view: View, mode: str, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
-        worker_thread = OpenAIWorker(region=region, text=text, view=view, mode=mode, command=input)
-        worker_thread.start()
+        Openai.stop_worker()  # Stop any existing worker before starting a new one
+        Openai.stop_event.clear()
+
+        Openai.worker_thread = OpenAIWorker(stop_event=self.stop_event, region=region, text=text, view=view, mode=mode, command=input)
+        Openai.worker_thread.start()
 
     """
     asyncroniously send request to https://api.openai.com/v1/completions
@@ -55,7 +63,7 @@ class Openai(TextCommand):
             listner.toggle_overscroll(window=window, enabled=False)
             listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)
-        else: # mode 'chat_completion', always in panel
+        elif mode == CommandMode.chat_completion.value:
             sublime.active_window().show_input_panel(
                 "Question: ",
                 "",
@@ -69,6 +77,13 @@ class Openai(TextCommand):
                 None,
                 None
             )
+
+    # TODO: To chech if this is even necessary
+    @classmethod
+    def stop_worker(cls):
+        if cls.worker_thread and cls.worker_thread.is_alive():
+            cls.stop_event.set()  # Signal the thread to stop
+            cls.worker_thread = None
 
 class ActiveViewEventListener(EventListener):
     def on_activated(self, view: View):
