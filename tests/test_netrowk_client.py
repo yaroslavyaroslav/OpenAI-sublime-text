@@ -1,5 +1,4 @@
 from json import dumps, loads
-import json
 from typing import Optional, Any
 from sublime import Settings
 import sys
