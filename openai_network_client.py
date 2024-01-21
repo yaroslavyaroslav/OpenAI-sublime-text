@@ -42,7 +42,7 @@ class NetworkClient():
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
         internal_messages = []
         internal_messages.insert(0, {'role': 'system', 'content': assitant_setting.assistant_role})
-        if assitant_setting.prompt_mode == PromptMode.panel:
+        if assitant_setting.prompt_mode == PromptMode.panel.value:
             ## FIXME: This is error prone and should be rewritten
             #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
             internal_messages += self.cacher.read_all()

@@ -1,3 +1,4 @@
+from json import dumps, loads
 import json
 from typing import Optional, Any
 from sublime import Settings
@@ -23,62 +24,61 @@ class TestNetworkClient(TestCase):
         {'role': 'assistant', 'content': 'some assitant output 3'},
     ]
 
+    __messages_to_append__ = [
+        {"role": "user", "content": "some user selection 4", "name": "OpenAI_completion"},
+        {"role": "user", "content": "some user input 4", "name": "OpenAI_completion"},
+    ]
+
+    __system_instruction__ = {"role": "system", "content": "test_string"}
+
+    __assistant_dict__ = {
+        'name': 'test_string',
+        'chat_model': 'test_string',
+        'assistant_role': 'test_string'
+    }
+
     def setUp(self):
         self.__network_instance__ = network_client_module.NetworkClient(Settings(id=0), cacher=self.__cacher__)
         self.__cacher__.append_to_cache(self.__fake_history__)
 
     def test_panel_mode_prepare_payload(self):
+        assistant_dict = self.__assistant_dict__.copy()
+        assistant_dict['prompt_mode'] = assistant_module.PromptMode.panel.value
 
-        # FIXME: This should be moved to a separate function
-        assistant_dict = {
-            'name': 'test_string',
-            'prompt_mode': assistant_module.PromptMode.panel,
-            'chat_model': 'test_string',
-            'assistant_role': 'test_string'
-        }
         assistant_settings = assistant_module.AssistantSettings(**{**assistant_module.DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
-        messages_to_pass = [
-            {"role": "user", "content": "some user selection 4", "name": "OpenAI_completion"},
-            {"role": "user", "content": "some user input 4", "name": "OpenAI_completion"},
-        ]
+        messages_to_pass = self.__messages_to_append__
 
         messages_to_test = messages_to_pass[:]
         messages_to_test = self.__fake_history__ + messages_to_test
-        messages_to_test.insert(0, {"role": "system", "content": "test_string"})
+        messages_to_test.insert(0, self.__system_instruction__)
 
         payload = self.__network_instance__.prepare_payload(assitant_setting=assistant_settings, messages=messages_to_pass)
+        payload_json = loads(payload)
 
-        # FIXME: This should be moved to a separate function
-        payload_json = json.loads(payload)
-        payload_messages = json.dumps(payload_json['messages'])
-        messages_string = json.dumps(messages_to_test)
-
-        self.assertEqual(payload_messages, messages_string, f'\npayload: {payload_messages}\nmessage: {messages_string}')
+        self.assertEqual(
+            dumps(payload_json['messages']),
+            dumps(messages_to_test),
+            f'\npayload: {dumps(payload_json["messages"])}\nmessage: {dumps(messages_to_test)}'
+        )
 
     def test_non_panel_mode_prepare_payload(self):
-        assistant_dict = {
-            'name': 'test_string',
-            'prompt_mode': assistant_module.PromptMode.insert,
-            'chat_model': 'test_string',
-            'assistant_role': 'test_string'
-        }
+        assistant_dict = self.__assistant_dict__.copy()
+        assistant_dict['prompt_mode'] = assistant_module.PromptMode.insert.value
+
         assistant_settings = assistant_module.AssistantSettings(**{**assistant_module.DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
-        messages_to_pass = [
-            {"role": "user", "content": "some user selected text", "name": "OpenAI_completion"},
-            {"role": "user", "content": "some user input", "name": "OpenAI_completion"},
-        ]
+        messages_to_pass = self.__messages_to_append__
 
         messages_to_test = messages_to_pass[:]
-        messages_to_test.insert(0, {"role": "system", "content": "test_string"})
+        messages_to_test.insert(0, self.__system_instruction__)
 
         payload = self.__network_instance__.prepare_payload(assitant_setting=assistant_settings, messages=messages_to_pass)
+        payload_json = loads(payload)
 
-        # FIXME: This should be moved to a separate function
-        payload_json = json.loads(payload)
-        payload_messages = json.dumps(payload_json['messages'])
-        messages_string = json.dumps(messages_to_test)
-
-        self.assertEqual(payload_messages, messages_string, f'\npayload: {payload_messages}\nmessage: {messages_string}')
+        self.assertEqual(
+            dumps(payload_json['messages']),
+            dumps(messages_to_test),
+            f'\npayload: {dumps(payload_json["messages"])}\nmessage: {dumps(messages_to_test)}'
+        )
 
     def tearDown(self):
         self.__network_instance__ = None
