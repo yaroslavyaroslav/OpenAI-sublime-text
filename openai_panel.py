@@ -1,14 +1,18 @@
-from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS
+from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, CommandMode
 import sublime
 from sublime import View, Region
 from sublime_plugin import WindowCommand
 from .errors.OpenAIException import WrongUserInputException, present_error
 import functools
-from enum import Enum
 from typing import Optional
 from .cacher import Cacher
+from .openai_worker import OpenAIWorker
+from threading import Event
 
 class OpenaiPanelCommand(WindowCommand):
+    stop_event: Event = Event()
+    worker_thread: Optional[OpenAIWorker] = None
+
     def __init__(self, window):
         super().__init__(window)
         self.settings = sublime.load_settings("openAI.sublime-settings")
@@ -21,8 +25,11 @@ class OpenaiPanelCommand(WindowCommand):
     def on_input(self, region: Optional[Region], text: Optional[str], view: View, mode: str, assistant: AssistantSettings, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
-        worker_thread = OpenAIWorker(region, text, view, mode=mode, command=input, assistant=assistant)
-        worker_thread.start()
+        OpenaiPanelCommand.stop_worker()  # Stop any existing worker before starting a new one
+        OpenaiPanelCommand.stop_event.clear()
+
+        OpenaiPanelCommand.worker_thread = OpenAIWorker(stop_event=self.stop_event, region=region, text=text, view=view, mode=mode, command=input, assistant=assistant)
+        OpenaiPanelCommand.worker_thread.start()
 
     def run(self):
         self.window.show_quick_panel([f"{assistant.name} | {assistant.prompt_mode} | {assistant.chat_model}" for assistant in self.assistants], self.on_done)
@@ -35,11 +42,11 @@ class OpenaiPanelCommand(WindowCommand):
         Cacher().save_model(assistant.__dict__)
 
         region: Optional[Region] = None
-        text: Optional[str] = None
+        text: Optional[str] = ""
         min_selection = self.settings.get("minimum_selection_length")
         for region in self.window.active_view().sel():
             if not region.empty():
-                text = self.window.active_view().substr(region)
+                text += self.window.active_view().substr(region)
         try:
             ## If none text selected — it's ok, pass that through.
             if region and len(region) <= min_selection:
@@ -54,7 +61,7 @@ class OpenaiPanelCommand(WindowCommand):
              functools.partial(
                 self.on_input,
                 region if region else None,
-                text if text else None,
+                text,
                 self.window.active_view(),
                 CommandMode.chat_completion.value,
                 assistant
@@ -63,7 +70,8 @@ class OpenaiPanelCommand(WindowCommand):
             None
        )
 
-class CommandMode(Enum):
-    refresh_output_panel = "refresh_output_panel"
-    reset_chat_history = "reset_chat_history"
-    chat_completion = "chat_completion"
+    @classmethod
+    def stop_worker(cls):
+        if cls.worker_thread and cls.worker_thread.is_alive():
+            cls.stop_event.set()  # Signal the thread to stop
+            cls.worker_thread = None

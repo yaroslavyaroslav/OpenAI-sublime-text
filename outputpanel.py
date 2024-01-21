@@ -5,8 +5,9 @@ from .cacher import Cacher
 class SharedOutputPanelListener(EventListener):
     OUTPUT_PANEL_NAME = "OpenAI Chat"
 
-    def __init__(self, markdown: bool = True) -> None:
+    def __init__(self, markdown: bool = True, cacher: Cacher = Cacher()) -> None:
         self.markdown: bool = markdown
+        self.cacher = cacher
         super().__init__()
 
     def __get_output_panel__(self, window: Window) -> View:
@@ -16,10 +17,8 @@ class SharedOutputPanelListener(EventListener):
 
     def toggle_overscroll(self, window: Window, enabled: bool):
         output_panel = self.__get_output_panel__(window=window)
-        # scroll_past_end = output_panel.settings().get("scroll_past_end")
         output_panel.settings().set("scroll_past_end", enabled)
 
-    ## FIXME: This one should allow scroll while updating, yet it should follow the text if it's not
     def update_output_panel(self, text: str, window: Window):
         output_panel = self.__get_output_panel__(window=window)
         output_panel.set_read_only(False)
@@ -31,17 +30,16 @@ class SharedOutputPanelListener(EventListener):
         output_panel.set_read_only(False)
         self.clear_output_panel(window)
 
-        for line in Cacher().read_all():
+        for line in self.cacher.read_all():
             if line['role'] == 'user':
                 output_panel.run_command('append', {'characters': f'\n\n## Question\n\n'})
             elif line['role'] == 'assistant':
-                ## This one placed here as there're could be loooong questions.
                 output_panel.run_command('append', {'characters': '\n\n## Answer\n\n'})
 
             output_panel.run_command('append', {'characters': line['content']})
 
         # scrolling panel to the bottom.
-        point = output_panel.text_point(get_number_of_lines(view=output_panel), 0)
+        point = output_panel.text_point(__get_number_of_lines__(view=output_panel), 0)
         output_panel.show_at_center(point)
         output_panel.set_read_only(True)
 
@@ -53,6 +51,6 @@ class SharedOutputPanelListener(EventListener):
     def show_panel(self, window):
         window.run_command("show_panel", {"panel": f"output.{self.OUTPUT_PANEL_NAME}"})
 
-def get_number_of_lines(view: View) -> int:
-        last_line_num = view.rowcol(view.size())[0] + 1
+def __get_number_of_lines__(view: View) -> int:
+        last_line_num = view.rowcol(view.size())[0]
         return last_line_num

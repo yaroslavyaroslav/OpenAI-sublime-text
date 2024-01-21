@@ -7,15 +7,15 @@ from typing import List, Dict, Iterator, Any, Optional
 
 
 class Cacher():
-    def __init__(self) -> None:
+    def __init__(self, name: str = '') -> None:
         cache_dir = sublime.cache_path()
-        plugin_cache_dir = os.path.join(cache_dir, "OpenAI completion")
+        plugin_cache_dir = os.path.join(cache_dir, 'OpenAI completion')
         if not os.path.exists(plugin_cache_dir):
             os.makedirs(plugin_cache_dir)
 
         # Create the file path to store the data
-        self.history_file = os.path.join(plugin_cache_dir, "chat_history.jl")
-        self.current_model_file = os.path.join(plugin_cache_dir, "current_assistant.json")
+        self.history_file = os.path.join(plugin_cache_dir, f"{name}chat_history.jl")
+        self.current_model_file = os.path.join(plugin_cache_dir, f"{name}current_assistant.json")
 
     def check_and_create(self, path: str):
         if not os.path.isfile(path):
@@ -30,8 +30,9 @@ class Cacher():
         with open(self.current_model_file, 'r') as file:
             try:
                 data = json.load(file)
-            except JSONDecodeError as ex:
-                print("Empty file I belive")
+            except JSONDecodeError:
+                # FIXME: raise an error here that should be handled somewhere on top of the file
+                print('Empty file I belive')
                 return None
         return data
 
@@ -41,6 +42,29 @@ class Cacher():
         reader: Iterator[Dict[str, str]] = jl.reader(self.history_file)
         for json_object in reader:
             json_objects.append(json_object)
+
+        return json_objects
+
+    def read_last(self, number: int) -> List[Dict[str, str]]:
+        self.check_and_create(self.history_file)
+        json_objects: List[Dict[str, str]] = []
+
+        # Read the entire file and split into lines
+        with open(self.history_file, 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+
+        # Get the last n lines
+        last_n_lines = lines[-number:]
+
+        # Parse each JSON line into a dictionary
+        for line in last_n_lines:
+            try:
+                json_object = json.loads(line)
+                json_objects.append(json_object)
+            except json.JSONDecodeError:
+                # FIXME: raise an error here that should be handled somewhere on top of the file
+                print('Error decoding JSON from line:', line)
+                pass
 
         return json_objects
 
@@ -54,16 +78,16 @@ class Cacher():
     def drop_first(self, number = 4):
         self.check_and_create(self.history_file)
         # Read all lines from the JSON Lines file
-        with open(self.history_file, "r") as file:
+        with open(self.history_file, 'r') as file:
             lines = file.readlines()
 
         # Remove the specified number of lines from the beginning
         lines = lines[number:]
 
         # Write the remaining lines back to the cache file
-        with open(self.history_file, "w") as file:
+        with open(self.history_file, 'w') as file:
             file.writelines(lines)
 
     def drop_all(self):
-        with open(self.history_file, "w") as _:
+        with open(self.history_file, 'w') as _:
             pass # Truncate the file by opening it in 'w' mode and doing nothing
