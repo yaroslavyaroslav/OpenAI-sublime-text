@@ -25,11 +25,11 @@ class TestNetworkClient(TestCase):
     ]
 
     __messages_to_append__ = [
-        {"role": "user", "content": "some user selection 4", "name": "OpenAI_completion"},
-        {"role": "user", "content": "some user input 4", "name": "OpenAI_completion"},
+        {'role': 'user', 'content': 'some user selection 4', 'name': 'OpenAI_completion'},
+        {'role': 'user', 'content': 'some user input 4', 'name': 'OpenAI_completion'},
     ]
 
-    __system_instruction__ = {"role": "system", "content": "test_string"}
+    __system_instruction__ = {'role': 'system', 'content': 'test_string'}
 
     __assistant_dict__ = {
         'name': 'test_string',
@@ -45,7 +45,12 @@ class TestNetworkClient(TestCase):
         assistant_dict = self.__assistant_dict__.copy()
         assistant_dict['prompt_mode'] = assistant_module.PromptMode.panel.value
 
-        assistant_settings = assistant_module.AssistantSettings(**{**assistant_module.DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
+        assistant_settings = assistant_module.AssistantSettings(
+            **{
+                **assistant_module.DEFAULT_ASSISTANT_SETTINGS,
+                **assistant_dict
+            }
+        )
         messages_to_pass = self.__messages_to_append__
 
         messages_to_test = messages_to_pass[:]
@@ -65,7 +70,12 @@ class TestNetworkClient(TestCase):
         assistant_dict = self.__assistant_dict__.copy()
         assistant_dict['prompt_mode'] = assistant_module.PromptMode.insert.value
 
-        assistant_settings = assistant_module.AssistantSettings(**{**assistant_module.DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
+        assistant_settings = assistant_module.AssistantSettings(
+            **{
+                **assistant_module.DEFAULT_ASSISTANT_SETTINGS,
+                **assistant_dict
+            }
+        )
         messages_to_pass = self.__messages_to_append__
 
         messages_to_test = messages_to_pass[:]
