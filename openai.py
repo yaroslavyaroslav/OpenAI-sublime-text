@@ -41,8 +41,6 @@ class Openai(TextCommand):
             present_error(title="OpenAI error", error=error)
             return
 
-        from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
-
         if mode == CommandMode.reset_chat_history.value:
             Cacher().drop_all()
             output_panel = sublime.active_window().find_output_panel("OpenAI Chat")
