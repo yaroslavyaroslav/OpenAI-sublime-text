@@ -7,14 +7,14 @@ from sublime import Settings, View, Region, Edit
 import functools
 from .cacher import Cacher
 from .errors.OpenAIException import WrongUserInputException, present_error
-from .openai_panel import CommandMode
+from .assistant_settings import CommandMode
 from .openai_worker import OpenAIWorker
 
 class Openai(TextCommand):
     stop_event: Event = Event()
     worker_thread: Optional[OpenAIWorker] = None
 
-    def on_input(self, region: Optional[Region], text: Optional[str], view: View, mode: str, input: str):
+    def on_input(self, region: Optional[Region], text: str, view: View, mode: str, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
         Openai.stop_worker()  # Stop any existing worker before starting a new one
@@ -70,7 +70,7 @@ class Openai(TextCommand):
                 functools.partial(
                     self.on_input,
                     region if region else None,
-                    text if text else None,
+                    text,
                     self.view,
                     mode
                 ),

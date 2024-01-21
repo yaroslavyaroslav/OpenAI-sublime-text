@@ -1,10 +1,9 @@
-from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS
+from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, CommandMode
 import sublime
 from sublime import View, Region
 from sublime_plugin import WindowCommand
 from .errors.OpenAIException import WrongUserInputException, present_error
 import functools
-from enum import Enum
 from typing import Optional
 from .cacher import Cacher
 from .openai_worker import OpenAIWorker
@@ -62,7 +61,7 @@ class OpenaiPanelCommand(WindowCommand):
              functools.partial(
                 self.on_input,
                 region if region else None,
-                text if text else None,
+                text,
                 self.window.active_view(),
                 CommandMode.chat_completion.value,
                 assistant
@@ -76,8 +75,3 @@ class OpenaiPanelCommand(WindowCommand):
         if cls.worker_thread and cls.worker_thread.is_alive():
             cls.stop_event.set()  # Signal the thread to stop
             cls.worker_thread = None
-
-class CommandMode(Enum):
-    refresh_output_panel = "refresh_output_panel"
-    reset_chat_history = "reset_chat_history"
-    chat_completion = "chat_completion"
