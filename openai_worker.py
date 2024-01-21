@@ -12,7 +12,7 @@ import re
 
 
 class OpenAIWorker(Thread):
-    def __init__(self, stop_event: Event, region: Optional[Region], text: Optional[str], view: View, mode: str, command: Optional[str], assistant: Optional[AssistantSettings] = None):
+    def __init__(self, stop_event: Event, region: Optional[Region], text: str, view: View, mode: str, command: Optional[str], assistant: Optional[AssistantSettings] = None):
         self.region = region
         # Selected text within editor (as `user`)
         self.text = text
@@ -169,7 +169,11 @@ class OpenAIWorker(Thread):
             return
 
     def manage_chat_completion(self):
-        messages = self.create_message(selected_text=self.text, command=self.command, placeholder=self.assistant.placeholder)
+        scope = self.window.active_view().scope_name(self.region.begin())
+        scope_name = scope.split('.')[-1]
+        wrapped_selection = f"```{scope_name}\n" + self.text + "\n```"
+
+        messages = self.create_message(selected_text=wrapped_selection, command=self.command, placeholder=self.assistant.placeholder)
         ## FIXME: This should be here, otherwise it would duplicates the messages.
         payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 

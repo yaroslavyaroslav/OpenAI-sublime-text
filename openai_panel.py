@@ -43,11 +43,11 @@ class OpenaiPanelCommand(WindowCommand):
         Cacher().save_model(assistant.__dict__)
 
         region: Optional[Region] = None
-        text: Optional[str] = None
+        text: Optional[str] = ""
         min_selection = self.settings.get("minimum_selection_length")
         for region in self.window.active_view().sel():
             if not region.empty():
-                text = self.window.active_view().substr(region)
+                text += self.window.active_view().substr(region)
         try:
             ## If none text selected — it's ok, pass that through.
             if region and len(region) <= min_selection:

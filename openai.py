@@ -35,10 +35,10 @@ class Openai(TextCommand):
 
         # get selected text
         region: Optional[Region] = None
-        text: Optional[str] = None
+        text: Optional[str] = ""
         for region in self.view.sel():
             if not region.empty():
-                text = self.view.substr(region)
+                text += self.view.substr(region)
 
         # Checking that user select some text
         try:
