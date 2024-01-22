@@ -169,9 +169,11 @@ class OpenAIWorker(Thread):
             return
 
     def manage_chat_completion(self):
-        scope = self.window.active_view().scope_name(self.region.begin())
-        scope_name = scope.split('.')[-1]
-        wrapped_selection = f"```{scope_name}\n" + self.text + "\n```"
+        wrapped_selection = None
+        if self.region:
+            scope = self.window.active_view().scope_name(self.region.begin())
+            scope_name = scope.split('.')[-1]
+            wrapped_selection = f"```{scope_name}\n" + self.text + "\n```"
 
         messages = self.create_message(selected_text=wrapped_selection, command=self.command, placeholder=self.assistant.placeholder)
         ## FIXME: This should be here, otherwise it would duplicates the messages.
