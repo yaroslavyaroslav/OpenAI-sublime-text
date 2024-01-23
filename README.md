@@ -1,3 +1,5 @@
+[![Star on GitHub][img-stars]][stars]
+
 # OpenAI Sublime Text Plugin
 ## Abstract
 
@@ -130,4 +132,5 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
 
 > This one was at 80% written by that thing itself including this readme. I was here mostly for debugging purposes, rather than designing and researching. This is pure magic, I swear.
 
-[^1]: Special to USA folks: It's the 4-th January.
+[stars]: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/stargazers
+[img-stars]: static/media/star-on-github.svg
