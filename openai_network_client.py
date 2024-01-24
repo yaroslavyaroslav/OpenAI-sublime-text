@@ -28,7 +28,6 @@ class NetworkClient():
             proxy_auth = b64encode(bytes(f'{proxy_username}:{proxy_password}', 'utf-8')).strip().decode('ascii')
             headers = {'Proxy-Authorization': f'Basic {proxy_auth}'} if len(proxy_auth) > 0 else {}
             if address and len(address) > 0 and port:
-
                 self.connection = HTTPSConnection(
                     host=address,
                     port=port,

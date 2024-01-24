@@ -209,6 +209,5 @@
             "assistant_role": "You are senior Pytorch and LLM/SD code assitant",
             "max_tokens": 4000,
         },
-
     ]
 }

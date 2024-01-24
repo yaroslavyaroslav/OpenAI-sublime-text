@@ -3,7 +3,7 @@ import sys
 from typing import Optional, Any
 
 
-class TestOutputPanel(TestCase):
+class TestOpenAIWorker(TestCase):
 
     def setUp(self):
         pass
