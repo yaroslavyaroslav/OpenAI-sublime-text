@@ -29,3 +29,8 @@ DEFAULT_ASSISTANT_SETTINGS = {
     "frequency_penalty": 0,
     "presence_penalty": 0,
 }
+
+class CommandMode(Enum):
+    refresh_output_panel = "refresh_output_panel"
+    reset_chat_history = "reset_chat_history"
+    chat_completion = "chat_completion"

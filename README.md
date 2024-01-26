@@ -1,3 +1,5 @@
+[![Star on GitHub][img-stars]][stars]
+
 # OpenAI Sublime Text Plugin
 ## Abstract
 
@@ -15,25 +17,14 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 - **Multiple assistant presets**
 - Status bar badge with a currently selected assistant properties.
 
-### Multiple assistant
-
-<details><summary>Click to see screens</summary>
-
-![](static/assistant_palete/image1.png)
-
-</details>
-
 ### ChatGPT completion demo
 
 <details><summary>Click to see screens</summary>
 
-![](static/chatgpt_completion/image1.png)
+![](static/gifs/panel.gif)
 
 ---
-![](static/chatgpt_completion/image2.png)
-
----
-![](static/chatgpt_completion/image3.png)
+![](static/gifs/editing.gif)
 
 </details>
 
@@ -130,4 +121,5 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
 
 > This one was at 80% written by that thing itself including this readme. I was here mostly for debugging purposes, rather than designing and researching. This is pure magic, I swear.
 
-[^1]: Special to USA folks: It's the 4-th January.
+[stars]: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/stargazers
+[img-stars]: static/media/star-on-github.svg

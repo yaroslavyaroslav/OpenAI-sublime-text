@@ -1,20 +1,18 @@
 import sublime
 from sublime import View, Region
-import threading
+from threading import Thread, Event
 from .cacher import Cacher
 from typing import Dict, List, Optional, Any
 from .openai_network_client import NetworkClient
 from .buffer import TextStreamer
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException, WrongUserInputException, present_error, present_unknown_error
 from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, PromptMode
-import json
 from json import JSONDecoder
-import logging
 import re
 
 
-class OpenAIWorker(threading.Thread):
-    def __init__(self, region: Optional[Region], text: Optional[str], view: View, mode: str, command: Optional[str], assistant: Optional[AssistantSettings] = None):
+class OpenAIWorker(Thread):
+    def __init__(self, stop_event: Event, region: Optional[Region], text: str, view: View, mode: str, command: Optional[str], assistant: Optional[AssistantSettings] = None):
         self.region = region
         # Selected text within editor (as `user`)
         self.text = text
@@ -24,6 +22,8 @@ class OpenAIWorker(threading.Thread):
         self.mode = mode
         # Text input from input panel
         self.settings = sublime.load_settings("openAI.sublime-settings")
+
+        self.stop_event: Event = stop_event
 
         opt_assistant_dict = Cacher().read_model()
         ## loading assistant dict
@@ -48,16 +48,6 @@ class OpenAIWorker(threading.Thread):
         self.listner.update_output_panel(
             text=text_chunk,
             window=self.window
-        )
-
-    def prompt_completion(self, completion):
-        placeholder = self.settings.get('placeholder')
-        if not isinstance(placeholder, str):
-            placeholder = "[insert]"
-        self.buffer_manager.prompt_completion(
-            mode=self.mode,
-            completion=completion,
-            placeholder=placeholder
         )
 
     def delete_selection(self, region):
@@ -132,6 +122,14 @@ class OpenAIWorker(threading.Thread):
         full_response_content = {'role': '', 'content': ''}
 
         for chunk in response:
+
+            # FIXME: With this behavior a bit of latest tokens get missed. (e.g. the're seen within a proxy, but not in the code)
+            if self.stop_event.is_set():
+                self.handle_sse_delta(delta={'role': "assistant"}, full_response_content=full_response_content)
+                self.handle_sse_delta(delta={'content': "\n\n[Aborted]"}, full_response_content=full_response_content)
+
+                self.provider.close_connection()
+                break
             chunk_str = chunk.decode('utf-8')
 
             # Check for SSE data
@@ -143,9 +141,12 @@ class OpenAIWorker(threading.Thread):
                     if 'delta' in response['choices'][0]:
                         delta = response['choices'][0]['delta']
                         self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
-                except: raise
+                except:
+                    response.close()
+                    self.provider.close_connection()
+                    raise
 
-        self.provider.connection.close()
+        self.provider.close_connection()
         if self.assistant.prompt_mode == PromptMode.panel.name:
             Cacher().append_to_cache([full_response_content])
 
@@ -168,7 +169,13 @@ class OpenAIWorker(threading.Thread):
             return
 
     def manage_chat_completion(self):
-        messages = self.create_message(selected_text=self.text, command=self.command, placeholder=self.assistant.placeholder)
+        wrapped_selection = None
+        if self.region:
+            scope = self.window.active_view().scope_name(self.region.begin())
+            scope_name = scope.split('.')[-1]
+            wrapped_selection = f"```{scope_name}\n" + self.text + "\n```"
+
+        messages = self.create_message(selected_text=wrapped_selection, command=self.command, placeholder=self.assistant.placeholder)
         ## FIXME: This should be here, otherwise it would duplicates the messages.
         payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
