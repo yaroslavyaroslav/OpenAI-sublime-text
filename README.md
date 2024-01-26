@@ -19,14 +19,13 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 
 ### ChatGPT completion demo
 
-<details><summary>Click to see screens</summary>
-
-![](static/gifs/panel.gif)
+[![Watch the video](static/media/panel_thumbnail.png)](static/vids/panel.mp4)
+> video speed up to 1.7x
 
 ---
-![](static/gifs/editing.gif)
 
-</details>
+[![Watch the video](static/media/editing_thumbnail.png)](https://imgur.com/a/Bl8ZK4L)
+> video speed up to 1.7x
 
 ## Requirements
 
