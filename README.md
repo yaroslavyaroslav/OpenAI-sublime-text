@@ -17,25 +17,14 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 - **Multiple assistant presets**
 - Status bar badge with a currently selected assistant properties.
 
-### Multiple assistant
-
-<details><summary>Click to see screens</summary>
-
-![](static/assistant_palete/image1.png)
-
-</details>
-
 ### ChatGPT completion demo
 
 <details><summary>Click to see screens</summary>
 
-![](static/chatgpt_completion/image1.png)
+![](static/gifs/panel.png)
 
 ---
-![](static/chatgpt_completion/image2.png)
-
----
-![](static/chatgpt_completion/image3.png)
+![](static/gifs/editing.gif)
 
 </details>
 
