@@ -23,8 +23,12 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 
 ![](static/gifs/panel.gif)
 
+> gif is speed up 1.5x
+
 ---
 ![](static/gifs/editing.gif)
+
+> gif is speed up 1.5x
 
 </details>
 
