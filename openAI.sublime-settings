@@ -8,7 +8,7 @@
     // Your openAI token
     "token": "",
 
-    // Apply Sublime Text markdown syntax highligh to OpenAI completion output panel text.
+    // Apply Sublime Text markdown syntax highlight to OpenAI completion output panel text.
     // Affects only `"prompt_mode": "panel"`.
     // `MultimarkdownEditing` package highly recommended to install to apply syntax highlight for a wider range of languages.
     "markdown": true,
@@ -16,13 +16,13 @@
     // Minimum amount of characters selected to perform completion.
     "minimum_selection_length": 10,
 
-    // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistnat objects above)
+    // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistant objects above)
     // Possible options:
     //  - name: User defined assistant setup name
     //  - prompt_mode: Model output prompt mode (panel|append|insert|replace)
     //  - chat_model: Which OpenAI model are used within this setup (e.g. gpt-4, gpt-3.5-turbo-16k).
     //
-    // You're capable to mix these whatewer you want and the text in status bar will follow.
+    // You're capable to mix these whatever you want and the text in status bar will follow.
     "status_hint": [
         // "name",
         // "prompt_mode",
@@ -46,14 +46,14 @@
 
     "assistants": [
         {
-            // A string that will presented in command palete.
+            // A string that will presented in command palette.
             "name": "Example", // **REQUIRED**
 
-            // Mode of how plugin should promts its output, available options:
+            // Mode of how plugin should prompts its output, available options:
             //  - panel: prompt would be output in output panel, selected text wouldn't be affected in any way.
             //  - append: prompt would be added next to the selected text.
             //  - insert: prompt would be inserted instead of a placeholder within a selected text.
-            //  - replace: prompt would overwite selected text.
+            //  - replace: prompt would overwrite selected text.
             //
             // All cases but `panel` required to some text be selected beforehand.
             // The same in all cases but `panel` user type within input panel will be treated by a model
@@ -61,7 +61,7 @@
             "prompt_mode": "panel", // **REQUIRED**
 
             // The model which will generate the chat completion.
-            // Generaly here should be either "gpt-3.5.-turbo|gpt-4|gpt-3.5-turbo-instruct" or their specified versions.
+            // Generally here should be either "gpt-3.5.-turbo|gpt-4|gpt-3.5-turbo-instruct" or their specified versions.
             // If using custom API, refer to their documentation for supported models.
             // Learn more at https://beta.openai.com/docs/models
             "chat_model": "gpt-3.5-turbo", // **REQUIRED**
@@ -69,16 +69,16 @@
             // ChatGPT model knows how to role, lol
             // It can act as a different kind of person. Recently in this plugin it was acting
             // like as a code assistant. With this setting you're able to set it up more precisely.
-            // E.g. "You are (rust|python|js|whatewer) developer assistant", "You are an english tutor" and so on.
+            // E.g. "You are (rust|python|js|whatever) developer assistant", "You are an english tutor" and so on.
             "assistant_role": "You are a senior code assitant", // **REQUIRED**
 
             // Placeholder requires for performing `insert` action.
             // It got passed to OpenAI as an additional system command for additional context, to let it know
-            // what it sould replace within the user's input.
+            // what it should replace within the user's input.
             //
-            // There's no need to dublicate this placeholder within assistant role property
+            // There's no need to duplicate this placeholder within assistant role property
             //
-            // NOTE: Works quite unreliable with gpt-3.5-turbo model so far, but OpenAI promissed to fix this.
+            // NOTE: Works quite unreliable with gpt-3.5-turbo model so far, but OpenAI promised to fix this.
             // WARNING: This property would be passed to a model if it's provided and it might be a thing that bringing a mess in your dialog and in model answers.
             "placeholder": "[PLACEHOLDER]",
 
@@ -119,7 +119,7 @@
             "name": "Insert instruction example",
             "prompt_mode": "insert",
             "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo yet.
-            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
+            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
             "placeholder": "## placeholder" // it's a good fit for a placeholder to be a comment.
         },
@@ -127,37 +127,37 @@
             "name": "Append instruction example",
             "prompt_mode": "append",
             "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo now.
-            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
+            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },
         {
             "name": "Replace instruction example",
             "prompt_mode": "replace",
             "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo now.
-            "assistant_role": "Apply the change requested by the user to the code with respect to senior knowlage of in Python 3.8 and Sublime Text 4 plugin API",
+            "assistant_role": "Apply the change requested by the user to the code with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },
 
         // Other useful ideas //
         {
-            "name": "ST4 Plugin", // It's unecessary to mention a model here, because there's separate filed for just this in status bar hint setting.
+            "name": "ST4 Plugin", // It's necessary to mention a model here, because there's separate filed for just this in status bar hint setting.
             "prompt_mode": "panel",
             "chat_model": "gpt-4",
-            "assistant_role": "You are senior Sublime Text 4 editor plugin development and Python code assitant",
+            "assistant_role": "You are senior Sublime Text 4 editor plugin development and Python code assistant",
             "max_tokens": 4000,
         },
         {
             "name": "ST4 Plugin", // You can share the same `assistant_role` through different models.
             "prompt_mode": "panel",
             "chat_model": "gpt-3.5-turbo-16k",
-            "assistant_role": "You are senior Sublime Text 4 editor plugin development and Python code assitant",
+            "assistant_role": "You are senior Sublime Text 4 editor plugin development and Python code assistant",
             "max_tokens": 4000,
         },
         {
             "name": "UIKit & Combine",
             "prompt_mode": "panel",
             "chat_model": "gpt-4-0613",
-            "assistant_role": "You are senior UIKit and Combine code assitant",
+            "assistant_role": "You are senior UIKit and Combine code assistant",
             "max_tokens": 4000,
         },
         {
@@ -185,7 +185,7 @@
             "name": "English Tutor",
             "prompt_mode": "panel",
             "chat_model": "gpt-4-0613",
-            "assistant_role": "You are senior English tutor: (1)you fix the input that user provides, (2) you emphasize the fixed words with md bold, and format the whole edited text with md quote, (3) right after that you provide a **detailed explanation** of what English rules were violated and **why**. (4) If user inputs to you an clarifation message like that he/she meant a bit different in original sentense as you've provided — you counts it as a command, not as a new sentence to format and provide fixed version with incremental updates in explanation. (5) In all other context among mentioned above you have to be as low wordy as possibly can.",
+            "assistant_role": "You are senior English tutor: (1)you fix the input that user provides, (2) you emphasize the fixed words with md bold, and format the whole edited text with md quote, (3) right after that you provide a **detailed explanation** of what English rules were violated and **why**. (4) If user inputs to you an clarification message like that he/she meant a bit different in original sentence as you've provided — you counts it as a command, not as a new sentence to format and provide fixed version with incremental updates in explanation. (5) In all other context among mentioned above you have to be as low wordy as possibly can.",
             "max_tokens": 4000,
         },
         {
@@ -196,24 +196,24 @@
             "max_tokens": 4000,
         },
         {
-            "name": "Bash & Git assitant",
+            "name": "Bash & Git assistant",
             "prompt_mode": "panel",
             "chat_model": "gpt-4-0613",
-            "assistant_role": "You are bash and git senior assitant",
+            "assistant_role": "You are bash and git senior assistant",
             "max_tokens": 4000,
         },
         {
-            "name": "CoreImage & AVFoundation assitant",
+            "name": "CoreImage & AVFoundation assistant",
             "prompt_mode": "panel",
             "chat_model": "gpt-4-0613",
-            "assistant_role": "You are senior of CoreImage, Vision, CoreML and AVFoundation code assitant, all your answer you're providing after taking a deep breath and going step by step.",
+            "assistant_role": "You are senior of CoreImage, Vision, CoreML and AVFoundation code assistant, all your answer you're providing after taking a deep breath and going step by step.",
             "max_tokens": 4000,
         },
         {
-            "name": "Pytorch assitant",
+            "name": "Pytorch assistant",
             "prompt_mode": "panel",
             "chat_model": "gpt-4-0613",
-            "assistant_role": "You are senior Pytorch and LLM/SD code assitant",
+            "assistant_role": "You are senior Pytorch and LLM/SD code assistant",
             "max_tokens": 4000,
         },
     ]
