@@ -121,11 +121,11 @@ If using other LLM, that have OpenAI compatible API, like Ollama, you need to ch
 
 ## Disclaimers
 
-> **Note**
-> Please note that OpenAI is a paid service, and you will need to have an API key and sufficient credit to use this plugin if not using custom API provider.
+> [!NOTE]
+> Please note that OpenAI is a paid service, and you will need to have an API key and sufficient credit to use this plugin, if not using custom API provider.
 
-> **Warning**
-> **All selected code will be sent to the OpenAI servers (if not using custom API provider) for processing, so make sure you have all necessary permissions to do so**.
+> [!WARNING]
+> All selected code will be sent to the OpenAI servers (if not using custom API provider) for processing, so make sure you have all necessary permissions to do so.
 
 > This one was at 80% written by that thing itself including this readme. I was here mostly for debugging purposes, rather than designing and researching. This is pure magic, I swear.
 
