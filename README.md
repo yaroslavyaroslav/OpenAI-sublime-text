@@ -117,7 +117,7 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
 ```
 
 ### Setup alternative (OpenAI compatible) API
-If using other LLM, that have OpenAI compatible API, like Ollama, you need to change some settings. First, you have to set correct `"url"` to point to API (for example `"localhost:11434"` for Ollama running on localhost) and set `"https": false`, if service is not accessible through HTTPS. Then you have to set `"token"` (even if it is not required. It can be any string longer than 10 characters). And finally, tweak `"completions"` to use models, you want. Then everything should work just normal. 
+If using other LLM, that have OpenAI compatible API, like Ollama, you need to change some settings. First, you have to set correct `"url"` to point to API (for example `"http://localhost:11434"` for Ollama running on localhost). Then you have to set `"token"` (even if it is not required by API. It can be any string longer than 10 characters). And finally, tweak `"completions"` to use models, you want. Then everything should work just normal. 
 
 ## Disclaimers
 

@@ -1,10 +1,7 @@
 {
-    // Custom URL for API (useful when using custom, OpenAI compattible API) in format host:port
-    "url": "api.openai.com",
-    
-    // Whether to use HTTPS for connection
-    "https": true,
-    
+    // Custom URL for API (useful when using custom, OpenAI compattible API)
+    "url": "https://api.openai.com",
+
     // Your openAI token
     "token": "",
 

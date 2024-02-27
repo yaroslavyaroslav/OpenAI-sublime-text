@@ -21,9 +21,10 @@ class NetworkClient():
             'Authorization': f'Bearer {self.settings.get("token")}',
             'cache-control': 'no-cache',
         }
-        
-        url = self.settings.get('url')
-        connection = HTTPSConnection if self.settings.get('https') else HTTPConnection
+
+        url_parts = self.settings.get('url').split('://')
+        url = '://'.join(url_parts[1:])
+        connection = HTTPSConnection if url_parts[0] == 'https' else HTTPConnection
 
         proxy_settings = self.settings.get('proxy')
         if isinstance(proxy_settings, dict):
