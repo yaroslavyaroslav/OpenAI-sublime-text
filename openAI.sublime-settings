@@ -1,4 +1,10 @@
 {
+    // Custom URL for API (useful when using custom, OpenAI compattible API) in format host:port
+    "url": "api.openai.com",
+    
+    // Whether to use HTTPS for connection
+    "https": true,
+    
     // Your openAI token
     "token": "",
 
@@ -56,6 +62,7 @@
 
             // The model which will generate the chat completion.
             // Generaly here should be either "gpt-3.5.-turbo|gpt-4|gpt-3.5-turbo-instruct" or their specified versions.
+            // If using custom API, refer to their documentation for supported models.
             // Learn more at https://beta.openai.com/docs/models
             "chat_model": "gpt-3.5-turbo", // **REQUIRED**
 

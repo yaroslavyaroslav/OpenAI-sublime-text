@@ -1,11 +1,14 @@
-from http.client import HTTPSConnection, HTTPResponse, responses
-from typing import Optional, List, Dict
-from .cacher import Cacher
-import sublime
 import json
-from .errors.OpenAIException import ContextLengthExceededException, UnknownException
-from .assistant_settings import AssistantSettings, PromptMode
 from base64 import b64encode
+from http.client import HTTPConnection, HTTPResponse, HTTPSConnection, responses
+from typing import Dict, List, Optional
+
+import sublime
+
+from .assistant_settings import AssistantSettings, PromptMode
+from .cacher import Cacher
+from .errors.OpenAIException import ContextLengthExceededException, UnknownException
+
 
 class NetworkClient():
     response: Optional[HTTPResponse] = None
@@ -18,6 +21,9 @@ class NetworkClient():
             'Authorization': f'Bearer {self.settings.get("token")}',
             'cache-control': 'no-cache',
         }
+        
+        url = self.settings.get('url')
+        connection = HTTPSConnection if self.settings.get('https') else HTTPConnection
 
         proxy_settings = self.settings.get('proxy')
         if isinstance(proxy_settings, dict):
@@ -28,16 +34,16 @@ class NetworkClient():
             proxy_auth = b64encode(bytes(f'{proxy_username}:{proxy_password}', 'utf-8')).strip().decode('ascii')
             headers = {'Proxy-Authorization': f'Basic {proxy_auth}'} if len(proxy_auth) > 0 else {}
             if address and len(address) > 0 and port:
-                self.connection = HTTPSConnection(
+                self.connection = connection(
                     host=address,
                     port=port,
                 )
                 self.connection.set_tunnel(
-                    'api.openai.com',
+                    url,
                     headers=headers
                 )
             else:
-                self.connection = HTTPSConnection('api.openai.com')
+                self.connection = connection(url)
 
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
         internal_messages = []
