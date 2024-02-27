@@ -1,5 +1,8 @@
 {
-    // Custom URL for API (useful when using custom, OpenAI compattible API)
+    // URL for OpenAI API. Change when using custom, OpenAI compatible API.
+    // It must start with http:// or https://, which selects protocol for connection. Use http:// when using localhost.
+    // Selected parts of code and prompt will be sent to that URL, so make sure, you have all necessary permission to do so.
+    // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
     "url": "https://api.openai.com",
 
     // Your openAI token
