@@ -16,6 +16,7 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 - Server Side Streaming (SSE) support (i.e. text starts presenting gradually right after user request)
 - **Multiple assistant presets**
 - Status bar badge with a currently selected assistant properties.
+- **Support for other OpenAI compatible APIs, like [Ollama](https://ollama.com/)**
 
 ### ChatGPT completion demo
 
@@ -30,8 +31,8 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 ## Requirements
 
 - Sublime Text 4
-- [OpenAI](https://beta.openai.com/account) API key (paid service)
-- Internet connection
+- [OpenAI](https://beta.openai.com/account) API key (paid service) or other OpenAI compatible API
+- Internet connection (if using online service)
 
 ## Installation
 
@@ -110,13 +111,16 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
 }
 ```
 
+### Setup alternative (OpenAI compatible) API
+If using other LLM, that have OpenAI compatible API, like Ollama, you need to change some settings. First, you have to set correct `"url"` to point to API (for example `"http://localhost:11434"` for Ollama running on localhost). Then you have to set `"token"` (even if it is not required by API. It can be any string longer than 10 characters). And finally, tweak `"completions"` to use models, you want. Then everything should work just normal. 
+
 ## Disclaimers
 
-> **Note**
-> Please note that OpenAI is a paid service, and you will need to have an API key and sufficient credit to use this plugin.
+> [!NOTE]
+> Please note that OpenAI is a paid service, and you will need to have an API key and sufficient credit to use this plugin, if not using custom API provider.
 
-> **Warning**
-> **All selected code will be sent to the OpenAI servers for processing, so make sure you have all necessary permissions to do so**.
+> [!WARNING]
+> All selected code will be sent to the OpenAI servers (if not using custom API provider) for processing, so make sure you have all necessary permissions to do so.
 
 > This one was at 80% written by that thing itself including this readme. I was here mostly for debugging purposes, rather than designing and researching. This is pure magic, I swear.
 
