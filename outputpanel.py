@@ -38,15 +38,21 @@ class SharedOutputPanelListener(EventListener):
 
             output_panel.run_command('append', {'characters': line['content']})
 
-        # scrolling panel to the bottom.
-        point = output_panel.text_point(__get_number_of_lines__(view=output_panel), 0)
-        output_panel.show_at_center(point)
         output_panel.set_read_only(True)
+        self.scroll_to_botton(window=window)
 
     def clear_output_panel(self, window):
         output_panel = self.__get_output_panel__(window=window)
         output_panel.run_command("select_all")
         output_panel.run_command("right_delete")
+
+    ## FIXME: This command doesn't work as expected at first run
+    ## despite that textpoint provides correct value.
+    def scroll_to_botton(self, window):
+        output_panel = self.__get_output_panel__(window=window)
+        point = output_panel.text_point(__get_number_of_lines__(view=output_panel), 0)
+        print(f"point: {point}")
+        output_panel.show_at_center(point)
 
     def show_panel(self, window):
         window.run_command("show_panel", {"panel": f"output.{self.OUTPUT_PANEL_NAME}"})
