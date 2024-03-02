@@ -22,7 +22,8 @@ class NetworkClient():
             'cache-control': 'no-cache',
         }
 
-        url_parts = self.settings.get('url').split('://')
+        url_string: str = self.settings.get('url', 'https://api.openai.com')
+        url_parts = url_string.split('://')
         url = '://'.join(url_parts[1:])
         connection = HTTPSConnection if url_parts[0] == 'https' else HTTPConnection
 
