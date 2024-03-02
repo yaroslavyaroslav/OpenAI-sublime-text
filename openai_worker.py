@@ -60,7 +60,7 @@ class OpenAIWorker(Thread):
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if 'role' in delta:
                 full_response_content['role'] = delta['role']
-            elif 'content' in delta:
+            if 'content' in delta:
                 full_response_content['content'] += delta['content']
                 self.update_output_panel(delta['content'])
         else:
