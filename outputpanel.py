@@ -15,9 +15,10 @@ class SharedOutputPanelListener(EventListener):
     def create_new_tab(self, window: Window):
         print(f"self.streaming_view_id_1: {self.settings.get(f'streaming_view_id_for_window_{window.id()}', None)}")
         if self.settings.get(f"streaming_view_id_for_window_{window.id()}", None):
-            self.refresh_output_panel(window=window)
-            self.show_panel(window=window)
-            return
+            if self.get_active_tab_(window=window):
+                self.refresh_output_panel(window=window)
+                self.show_panel(window=window)
+                return
 
         new_view = window.new_file()
         new_view.set_scratch(True)
