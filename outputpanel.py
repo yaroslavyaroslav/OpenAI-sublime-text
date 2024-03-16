@@ -13,19 +13,19 @@ class SharedOutputPanelListener(EventListener):
         super().__init__()
 
     def create_new_tab(self, window: Window):
-        print(f"self.streaming_view_id_1: {self.settings.get('streaming_view_id', None)}")
-        if self.settings.get("streaming_view_id", None):
+        print(f"self.streaming_view_id_1: {self.settings.get(f'streaming_view_id_for_window_{window.id()}', None)}")
+        if self.settings.get(f"streaming_view_id_for_window_{window.id()}", None):
             self.refresh_output_panel(window=window)
             self.show_panel(window=window)
             return
 
         new_view = window.new_file()
         new_view.set_scratch(True)
-        self.settings.set('streaming_view_id', new_view.id())
+        self.settings.set(f'streaming_view_id_for_window_{window.id()}', new_view.id())
 
     def get_tab_(self, window: Window) -> Optional[View]:
-        print(f"self.streaming_view_id_2: {self.settings.get('streaming_view_id', None)}")
-        if self.settings.get("streaming_view_id", None) is not None:
+        print(f"self.streaming_view_id_2: {self.settings.get(f'streaming_view_id_for_window_{window.id()}', None)}")
+        if self.settings.get(f'streaming_view_id_for_window_{window.id()}', None) is not None:
             return self.get_active_tab_(window=window)
 
     def get_output_panel_(self, window: Window) -> View:
@@ -82,15 +82,15 @@ class SharedOutputPanelListener(EventListener):
         output_panel.show_at_center(point)
 
     def get_active_tab_(self, window) -> Optional[View]:
-        if self.settings.get("streaming_view_id", None) is not None:
+        if self.settings.get(f'streaming_view_id_for_window_{window.id()}', None) is not None:
             for view in window.views():
-                if view.id() == self.settings.get("streaming_view_id", None):
+                if view.id() == self.settings.get(f'streaming_view_id_for_window_{window.id()}', None):
                     return view
 
     def show_panel(self, window):
         # Attempt to activate the view with streaming_view_id if it exists
-        print(f"self.streaming_view_id_3: {self.settings.get('streaming_view_id', None)}")
-        if self.settings.get("streaming_view_id", None) is not None:
+        print(f"self.streaming_view_id_3: {self.settings.get(f'streaming_view_id_for_window_{window.id()}', None)}")
+        if self.settings.get(f'streaming_view_id_for_window_{window.id()}', None) is not None:
             view = self.get_active_tab_(window)
             window.focus_view(view)
             return
