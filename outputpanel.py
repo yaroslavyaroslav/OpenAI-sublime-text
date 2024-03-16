@@ -21,6 +21,8 @@ class SharedOutputPanelListener(EventListener):
 
         new_view = window.new_file()
         new_view.set_scratch(True)
+        ## FIXME: This is temporary
+        new_view.settings().set("scroll_past_end", True)
         self.settings.set(f'streaming_view_id_for_window_{window.id()}', new_view.id())
 
     def get_tab_(self, window: Window) -> Optional[View]:
@@ -31,6 +33,7 @@ class SharedOutputPanelListener(EventListener):
     def get_output_panel_(self, window: Window) -> View:
         output_panel = window.find_output_panel(self.OUTPUT_PANEL_NAME) or window.create_output_panel(self.OUTPUT_PANEL_NAME)
         self.setup_presentation_style_(output_panel)
+        output_panel.settings().set("scroll_past_end", False)
         return output_panel
 
     def setup_presentation_style_(self, view: View):

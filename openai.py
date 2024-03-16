@@ -64,13 +64,13 @@ class Openai(TextCommand):
             window = sublime.active_window()
             listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
             listner.create_new_tab(window)
-            listner.toggle_overscroll(window=window, enabled=True)
+            # listner.toggle_overscroll(window=window, enabled=True)
             listner.refresh_output_panel(window=window)
 
         elif mode == CommandMode.refresh_output_panel.value:
             window = sublime.active_window()
             listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
-            listner.toggle_overscroll(window=window, enabled=False)
+            # listner.toggle_overscroll(window=window, enabled=False)
             listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)
 
