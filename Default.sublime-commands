@@ -23,5 +23,12 @@
 		"args": {
 			"mode": "refresh_output_panel"
 		}
+	},
+	{
+		"caption": "OpenAI: Open in Tab",
+		"command": "openai",
+		"args": {
+			"mode": "create_new_tab"
+		}
 	}
 ]

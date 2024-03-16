@@ -29,6 +29,8 @@ class Openai(TextCommand):
     and inserts suggestion from within response at place of `[insert]` placeholder
     """
     def run(self, edit: Edit, **kwargs):
+        from .outputpanel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
+
         global settings
         plugin_loaded()
         mode = kwargs.get('mode', 'chat_completion')
@@ -42,8 +44,8 @@ class Openai(TextCommand):
 
         # Checking that user select some text
         try:
-            if region and region.__len__() < settings.get("minimum_selection_length"):
-                if mode != 'reset_chat_history' and mode != 'refresh_output_panel':
+            if region and len(region) < settings.get("minimum_selection_length"):
+                if mode == CommandMode.chat_completion:
                     raise WrongUserInputException("Not enough text selected to complete the request, please expand the selection.")
         except WrongUserInputException as error:
             present_error(title="OpenAI error", error=error)
@@ -51,18 +53,27 @@ class Openai(TextCommand):
 
         if mode == CommandMode.reset_chat_history.value:
             Cacher().drop_all()
+            # FIXME: This is broken, beacuse it specified on panel
             output_panel = sublime.active_window().find_output_panel("OpenAI Chat")
             output_panel.set_read_only(False)
             region = Region(0, output_panel.size())
             output_panel.erase(edit, region)
             output_panel.set_read_only(True)
+
+        elif mode == CommandMode.create_new_tab.value:
+            window = sublime.active_window()
+            listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
+            listner.create_new_tab(window)
+            listner.toggle_overscroll(window=window, enabled=True)
+            listner.refresh_output_panel(window=window)
+
         elif mode == CommandMode.refresh_output_panel.value:
-            from .outputpanel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
             window = sublime.active_window()
             listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
             listner.toggle_overscroll(window=window, enabled=False)
             listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)
+
         elif mode == CommandMode.chat_completion.value:
             sublime.active_window().show_input_panel(
                 "Question: ",

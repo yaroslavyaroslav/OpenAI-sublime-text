@@ -45,7 +45,7 @@ class OpenAIWorker(Thread):
 
     # This method appears redundant.
     def update_output_panel(self, text_chunk: str):
-        self.listner.update_output_panel(
+        self.listner.update_output_view(
             text=text_chunk,
             window=self.window
         )
@@ -72,7 +72,6 @@ class OpenAIWorker(Thread):
             self.update_output_panel("\n\n## Answer\n\n")
             self.listner.show_panel(window=self.window)
             self.listner.scroll_to_botton(window=self.window)
-            self.listner.toggle_overscroll(window=self.window, enabled=False)
 
         elif self.assistant.prompt_mode == PromptMode.append.name:
             cursor_pos = self.view.sel()[0].end()

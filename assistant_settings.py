@@ -32,5 +32,6 @@ DEFAULT_ASSISTANT_SETTINGS = {
 
 class CommandMode(Enum):
     refresh_output_panel = "refresh_output_panel"
+    create_new_tab = "create_new_tab"
     reset_chat_history = "reset_chat_history"
     chat_completion = "chat_completion"
