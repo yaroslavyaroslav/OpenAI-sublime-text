@@ -29,7 +29,7 @@ class Openai(TextCommand):
     and inserts suggestion from within response at place of `[insert]` placeholder
     """
     def run(self, edit: Edit, **kwargs):
-        from .outputpanel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
+        from .output_panel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
 
         global settings
         plugin_loaded()

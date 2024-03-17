@@ -22,6 +22,7 @@ class SharedOutputPanelListener(EventListener):
 
         new_view = window.new_file()
         new_view.set_scratch(True)
+        new_view.settings().set("line_numbers", False)
         ## FIXME: This is temporary
         new_view.settings().set("scroll_past_end", True)
         self.settings.set(f'streaming_view_id_for_window_{window.id()}', new_view.id())
