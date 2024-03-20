@@ -13,33 +13,27 @@ class SharedOutputPanelListener(EventListener):
         super().__init__()
 
     def create_new_tab(self, window: Window):
-        print(f"self.streaming_view_id_1: {self.settings.get(f'streaming_view_id_for_window_{window.id()}', None)}")
-        if self.settings.get(f"streaming_view_id_for_window_{window.id()}", None):
-            if self.get_active_tab_(window=window):
-                self.refresh_output_panel(window=window)
-                self.show_panel(window=window)
-                return
+        if self.get_active_tab_(window=window):
+            self.refresh_output_panel(window=window)
+            self.show_panel(window=window)
+            return
 
         new_view = window.new_file()
         new_view.set_scratch(True)
-        new_view.settings().set("line_numbers", False)
         ## FIXME: This is temporary
         new_view.settings().set("scroll_past_end", True)
-        self.settings.set(f'streaming_view_id_for_window_{window.id()}', new_view.id())
-
-    def get_tab_(self, window: Window) -> Optional[View]:
-        print(f"self.streaming_view_id_2: {self.settings.get(f'streaming_view_id_for_window_{window.id()}', None)}")
-        if self.settings.get(f'streaming_view_id_for_window_{window.id()}', None) is not None:
-            return self.get_active_tab_(window=window)
+        new_view.set_name(self.OUTPUT_PANEL_NAME)
 
     def get_output_panel_(self, window: Window) -> View:
         output_panel = window.find_output_panel(self.OUTPUT_PANEL_NAME) or window.create_output_panel(self.OUTPUT_PANEL_NAME)
-        self.setup_presentation_style_(output_panel)
+        self.setup_common_presentation_style_(output_panel)
         output_panel.settings().set("scroll_past_end", False)
         return output_panel
 
-    def setup_presentation_style_(self, view: View):
+    def setup_common_presentation_style_(self, view: View):
         if self.markdown: view.set_syntax_file("Packages/Markdown/MultiMarkdown.sublime-syntax")
+        view.settings().set("gutter", False)
+        view.settings().set("line_numbers", False)
 
     def toggle_overscroll(self, window: Window, enabled: bool):
         view = self.get_output_view_(window=window)
@@ -50,10 +44,11 @@ class SharedOutputPanelListener(EventListener):
         view.set_read_only(False)
         view.run_command('append', {'characters': text})
         view.set_read_only(True)
+        view.set_name(self.OUTPUT_PANEL_NAME)
 
     def get_output_view_(self, window: Window) -> View:
-        view = self.get_tab_(window=window) or self.get_output_panel_(window=window)
-        self.setup_presentation_style_(view=view)
+        view = self.get_active_tab_(window=window) or self.get_output_panel_(window=window)
+        self.setup_common_presentation_style_(view=view)
         return view
 
     def refresh_output_panel(self, window):
@@ -62,7 +57,8 @@ class SharedOutputPanelListener(EventListener):
         self.clear_output_panel(window)
 
         for line in self.cacher.read_all():
-            ## TODO: Make me enumerated (it's not that easy, since question and answer are the different lines)
+            ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
+            ## (it's not that easy, since question and answer are the different lines)
             if line['role'] == 'user':
                 output_panel.run_command('append', {'characters': f'\n\n## Question\n\n'})
             elif line['role'] == 'assistant':
@@ -71,6 +67,7 @@ class SharedOutputPanelListener(EventListener):
             output_panel.run_command('append', {'characters': line['content']})
 
         output_panel.set_read_only(True)
+        output_panel.set_name(self.OUTPUT_PANEL_NAME)
         self.scroll_to_botton(window=window)
 
     def clear_output_panel(self, window):
@@ -87,17 +84,18 @@ class SharedOutputPanelListener(EventListener):
         output_panel.show_at_center(point)
 
     def get_active_tab_(self, window) -> Optional[View]:
-        if self.settings.get(f'streaming_view_id_for_window_{window.id()}', None) is not None:
-            for view in window.views():
-                if view.id() == self.settings.get(f'streaming_view_id_for_window_{window.id()}', None):
-                    return view
+        for view in window.views():
+            print(f"view {view.name()}")
+            if view.name() == self.OUTPUT_PANEL_NAME:
+                print(f"view true: {view.name()}")
+                return view
 
     def show_panel(self, window):
         # Attempt to activate the view with streaming_view_id if it exists
-        print(f"self.streaming_view_id_3: {self.settings.get(f'streaming_view_id_for_window_{window.id()}', None)}")
-        if self.settings.get(f'streaming_view_id_for_window_{window.id()}', None) is not None:
-            view = self.get_active_tab_(window)
-            window.focus_view(view)
+        view = self.get_active_tab_(window) or None
+        if view:
+            view.set_name(self.OUTPUT_PANEL_NAME)
+            window.focus_view(self.get_active_tab_(window))
             return
 
         window.run_command("show_panel", {"panel": f"output.{self.OUTPUT_PANEL_NAME}"})
