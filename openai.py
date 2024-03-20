@@ -40,7 +40,7 @@ class Openai(TextCommand):
         text: Optional[str] = ""
         for region in self.view.sel():
             if not region.empty():
-                text += self.view.substr(region)
+                text += self.view.substr(region) + "\n\n"
 
         # Checking that user select some text
         try:
@@ -54,15 +54,19 @@ class Openai(TextCommand):
         if mode == CommandMode.reset_chat_history.value:
             Cacher().drop_all()
             # FIXME: This is broken, beacuse it specified on panel
-            output_panel = sublime.active_window().find_output_panel("OpenAI Chat")
-            output_panel.set_read_only(False)
-            region = Region(0, output_panel.size())
-            output_panel.erase(edit, region)
-            output_panel.set_read_only(True)
+            window = sublime.active_window()
+            listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
+
+            view = listner.get_output_view_(window=window)
+            view.set_read_only(False)
+            region = Region(0, view.size())
+            view.erase(edit, region)
+            view.set_read_only(True)
 
         elif mode == CommandMode.create_new_tab.value:
             window = sublime.active_window()
             listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
+
             listner.create_new_tab(window)
             # listner.toggle_overscroll(window=window, enabled=True)
             listner.refresh_output_panel(window=window)
@@ -70,6 +74,7 @@ class Openai(TextCommand):
         elif mode == CommandMode.refresh_output_panel.value:
             window = sublime.active_window()
             listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
+            
             # listner.toggle_overscroll(window=window, enabled=False)
             listner.refresh_output_panel(window=window)
             listner.show_panel(window=window)

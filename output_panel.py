@@ -20,6 +20,7 @@ class SharedOutputPanelListener(EventListener):
 
         new_view = window.new_file()
         new_view.set_scratch(True)
+        self.setup_common_presentation_style_(new_view)
         ## FIXME: This is temporary
         new_view.settings().set("scroll_past_end", True)
         new_view.set_name(self.OUTPUT_PANEL_NAME)
@@ -31,9 +32,10 @@ class SharedOutputPanelListener(EventListener):
         return output_panel
 
     def setup_common_presentation_style_(self, view: View):
-        if self.markdown: view.set_syntax_file("Packages/Markdown/MultiMarkdown.sublime-syntax")
+        if self.markdown: view.assign_syntax("Packages/Markdown/MultiMarkdown.sublime-syntax")
         view.settings().set("gutter", False)
         view.settings().set("line_numbers", False)
+        view.settings().set("set_unsaved_view_name", False)
 
     def toggle_overscroll(self, window: Window, enabled: bool):
         view = self.get_output_view_(window=window)
@@ -80,14 +82,11 @@ class SharedOutputPanelListener(EventListener):
     def scroll_to_botton(self, window):
         output_panel = self.get_output_view_(window=window)
         point = output_panel.text_point(__get_number_of_lines__(view=output_panel), 0)
-        print(f"point: {point}")
         output_panel.show_at_center(point)
 
     def get_active_tab_(self, window) -> Optional[View]:
         for view in window.views():
-            print(f"view {view.name()}")
             if view.name() == self.OUTPUT_PANEL_NAME:
-                print(f"view true: {view.name()}")
                 return view
 
     def show_panel(self, window):
