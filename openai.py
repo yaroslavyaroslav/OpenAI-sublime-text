@@ -23,11 +23,6 @@ class Openai(TextCommand):
         Openai.worker_thread = OpenAIWorker(stop_event=self.stop_event, region=region, text=text, view=view, mode=mode, command=input)
         Openai.worker_thread.start()
 
-    """
-    asyncroniously send request to https://api.openai.com/v1/completions
-    with the selcted text of the view
-    and inserts suggestion from within response at place of `[insert]` placeholder
-    """
     def run(self, edit: Edit, **kwargs):
         from .output_panel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
 
