@@ -70,7 +70,7 @@
             // It can act as a different kind of person. Recently in this plugin it was acting
             // like as a code assistant. With this setting you're able to set it up more precisely.
             // E.g. "You are (rust|python|js|whatever) developer assistant", "You are an english tutor" and so on.
-            "assistant_role": "You are a senior code assitant", // **REQUIRED**
+            "assistant_role": "You are a senior code assistant", // **REQUIRED**
 
             // Placeholder requires for performing `insert` action.
             // It got passed to OpenAI as an additional system command for additional context, to let it know
