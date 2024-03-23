@@ -25,7 +25,10 @@ class OpenAIWorker(Thread):
 
         self.stop_event: Event = stop_event
 
-        opt_assistant_dict = Cacher().read_model()
+        self.project_settings = view.settings().get('ai_assistant', None)
+        self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
+
+        opt_assistant_dict = self.cacher.read_model()
         ## loading assistant dict
         assistant_dict = opt_assistant_dict if opt_assistant_dict else self.settings.get('assistants')[0]
         ## merging dicts with a default one and initializing AssitantSettings
@@ -148,7 +151,7 @@ class OpenAIWorker(Thread):
 
         self.provider.close_connection()
         if self.assistant.prompt_mode == PromptMode.panel.name:
-            Cacher().append_to_cache([full_response_content])
+            self.cacher.append_to_cache([full_response_content])
 
     def handle_response(self):
         try:
@@ -156,7 +159,7 @@ class OpenAIWorker(Thread):
         except ContextLengthExceededException as error:
             do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
             if do_delete:
-                Cacher().drop_first(2)
+                self.cacher.drop_first(2)
                 messages = self.create_message(selected_text=self.text, command=self.command)
                 payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
                 self.provider.prepare_request(json_payload=payload)
@@ -180,12 +183,11 @@ class OpenAIWorker(Thread):
         payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
         if self.assistant.prompt_mode == PromptMode.panel.name:
-            cacher = Cacher()
-            cacher.append_to_cache(messages)
+            self.cacher.append_to_cache(messages)
             self.update_output_panel("\n\n## Question\n\n")
 
             # MARK: Read only last few messages from cache with a len of a messages list
-            questions = [value['content'] for value in cacher.read_all()[-len(messages):]]
+            questions = [value['content'] for value in self.cacher.read_all()[-len(messages):]]
 
             # MARK: \n\n for splitting command from selected text
             # FIXME: This logic adds redundant line breaks on a single message.

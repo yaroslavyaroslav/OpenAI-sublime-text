@@ -12,10 +12,14 @@ from threading import Event
 class OpenaiPanelCommand(WindowCommand):
     stop_event: Event = Event()
     worker_thread: Optional[OpenAIWorker] = None
+    cache_prefix = None
 
     def __init__(self, window):
         super().__init__(window)
         self.settings = sublime.load_settings("openAI.sublime-settings")
+        self.project_settings = self.window.active_view().settings().get('ai_assistant', None)
+
+        self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
         # Load assistants from settings
         self.load_assistants()
 
@@ -45,7 +49,7 @@ class OpenaiPanelCommand(WindowCommand):
 
         assistant = self.assistants[index]
 
-        Cacher().save_model(assistant.__dict__)
+        self.cacher.save_model(assistant.__dict__)
 
         region: Optional[Region] = None
         text: Optional[str] = ""

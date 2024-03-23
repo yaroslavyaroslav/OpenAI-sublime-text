@@ -13,6 +13,7 @@ from .openai_worker import OpenAIWorker
 class Openai(TextCommand):
     stop_event: Event = Event()
     worker_thread: Optional[OpenAIWorker] = None
+    cacher = None
 
     def on_input(self, region: Optional[Region], text: str, view: View, mode: str, input: str):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
@@ -29,6 +30,8 @@ class Openai(TextCommand):
         global settings
         plugin_loaded()
         mode = kwargs.get('mode', 'chat_completion')
+        self.project_settings = self.view.settings().get('ai_assistant', None)
+        self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
 
         # get selected text
         region: Optional[Region] = None
@@ -47,7 +50,7 @@ class Openai(TextCommand):
             return
 
         if mode == CommandMode.reset_chat_history.value:
-            Cacher().drop_all()
+            self.cacher.drop_all()
             # FIXME: This is broken, beacuse it specified on panel
             window = sublime.active_window()
             listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
@@ -97,10 +100,16 @@ class Openai(TextCommand):
             cls.worker_thread = None
 
 class ActiveViewEventListener(EventListener):
+
+    cacher = None
     def on_activated(self, view: View):
         global settings
         plugin_loaded()
-        assistant = Cacher().read_model()
+        ## FIXME: This is might be wrong, settings of view should be get not for an active view, but for a given window project view.
+        ## It could be correct btw, as if a window with a specific settings gets active — it updated exact it status bar.
+        self.project_settings = sublime.active_window().active_view().settings().get('ai_assistant', None)
+        self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
+        assistant = self.cacher.read_model()
         status_hint_options: Optional[List[str]] = settings.get('status_hint', [])
 
         if assistant and 'name' in assistant and 'prompt_mode' in assistant and 'chat_model' in assistant:
