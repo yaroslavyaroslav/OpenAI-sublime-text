@@ -14,8 +14,8 @@ class Cacher():
             os.makedirs(plugin_cache_dir)
 
         # Create the file path to store the data
-        self.history_file = os.path.join(plugin_cache_dir, f"{name}chat_history.jl")
-        self.current_model_file = os.path.join(plugin_cache_dir, f"{name}current_assistant.json")
+        self.history_file = os.path.join(plugin_cache_dir, "{file_name}chat_history.jl".format(file_name=name + "_" if len(name) > 0 else ""))
+        self.current_model_file = os.path.join(plugin_cache_dir, "{file_name}current_assistant.json".format(file_name=name + "_" if len(name) > 0 else ""))
 
     def check_and_create(self, path: str):
         if not os.path.isfile(path):
