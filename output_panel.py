@@ -4,7 +4,7 @@ from .cacher import Cacher
 from typing import Optional
 
 class SharedOutputPanelListener(EventListener):
-    OUTPUT_PANEL_NAME = "OpenAI Chat"
+    OUTPUT_PANEL_NAME = "AI Chat"
 
     def __init__(self, markdown: bool = True, cacher: Cacher = Cacher()) -> None:
         self.markdown: bool = markdown
