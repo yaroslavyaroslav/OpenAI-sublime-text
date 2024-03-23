@@ -33,6 +33,7 @@ class Openai(TextCommand):
         self.project_settings = self.view.settings().get('ai_assistant', None)
         self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
 
+        listner = SharedOutputPanelListener(markdown=settings.get('markdown'), cacher=self.cacher)
         # get selected text
         region: Optional[Region] = None
         text: Optional[str] = ""
@@ -53,7 +54,6 @@ class Openai(TextCommand):
             self.cacher.drop_all()
             # FIXME: This is broken, beacuse it specified on panel
             window = sublime.active_window()
-            listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
 
             view = listner.get_output_view_(window=window)
             view.set_read_only(False)
@@ -63,7 +63,6 @@ class Openai(TextCommand):
 
         elif mode == CommandMode.create_new_tab.value:
             window = sublime.active_window()
-            listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
 
             listner.create_new_tab(window)
             # listner.toggle_overscroll(window=window, enabled=True)
@@ -71,7 +70,6 @@ class Openai(TextCommand):
 
         elif mode == CommandMode.refresh_output_panel.value:
             window = sublime.active_window()
-            listner = SharedOutputPanelListener(markdown=settings.get('markdown'))
             
             # listner.toggle_overscroll(window=window, enabled=False)
             listner.refresh_output_panel(window=window)

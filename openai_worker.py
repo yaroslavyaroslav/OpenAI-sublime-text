@@ -41,7 +41,7 @@ class OpenAIWorker(Thread):
             markdown_setting = True
 
         from .output_panel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
-        self.listner = SharedOutputPanelListener(markdown=markdown_setting)
+        self.listner = SharedOutputPanelListener(markdown=markdown_setting, cacher=self.cacher)
 
         self.buffer_manager = TextStreamer(self.view)
         super(OpenAIWorker, self).__init__()
