@@ -33,7 +33,7 @@ class OpenAIWorker(Thread):
         assistant_dict = opt_assistant_dict if opt_assistant_dict else self.settings.get('assistants')[0]
         ## merging dicts with a default one and initializing AssitantSettings
         self.assistant = assistant if assistant is not None else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
-        self.provider = NetworkClient(settings=self.settings)
+        self.provider = NetworkClient(settings=self.settings, cacher=self.cacher)
         self.window = sublime.active_window()
 
         markdown_setting = self.settings.get('markdown')
