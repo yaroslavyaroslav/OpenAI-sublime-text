@@ -31,7 +31,8 @@ class Cacher():
             try:
                 data = json.load(file)
             except JSONDecodeError:
-                # FIXME: raise an error here that should be handled somewhere on top of the file
+                # TODO: Handle this state, but keep in mind
+                # that it's completely legal to being a file empty for some (yet unspecified) state
                 print('Empty file I belive')
                 return None
         return data

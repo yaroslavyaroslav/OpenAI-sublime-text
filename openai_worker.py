@@ -93,8 +93,6 @@ class OpenAIWorker(Thread):
             self.view.sel().add(Region(cursor_pos, cursor_pos))
 
         elif self.assistant.prompt_mode == PromptMode.insert.name:
-            # FIXME: Broken code,
-            # Execution continues after error thrown.
             selection_region = self.view.sel()[0]
             try:
                 if self.assistant.placeholder:
@@ -126,7 +124,7 @@ class OpenAIWorker(Thread):
 
         for chunk in response:
 
-            # FIXME: With this behavior a bit of latest tokens get missed. (e.g. the're seen within a proxy, but not in the code)
+            # FIXME: With this implementation a few last tokens get missed on cacnel action. (e.g. the're seen within a proxy, but not in the code)
             if self.stop_event.is_set():
                 self.handle_sse_delta(delta={'role': "assistant"}, full_response_content=full_response_content)
                 self.handle_sse_delta(delta={'content': "\n\n[Aborted]"}, full_response_content=full_response_content)
@@ -179,7 +177,7 @@ class OpenAIWorker(Thread):
             wrapped_selection = f"```{scope_name}\n" + self.text + "\n```"
 
         messages = self.create_message(selected_text=wrapped_selection, command=self.command, placeholder=self.assistant.placeholder)
-        ## FIXME: This should be here, otherwise it would duplicates the messages.
+        ## MARK: This should be here, otherwise it would duplicates the messages.
         payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
         if self.assistant.prompt_mode == PromptMode.panel.name:

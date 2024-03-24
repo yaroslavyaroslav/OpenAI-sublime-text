@@ -21,7 +21,7 @@ class SharedOutputPanelListener(EventListener):
         new_view = window.new_file()
         new_view.set_scratch(True)
         self.setup_common_presentation_style_(new_view)
-        ## FIXME: This is temporary
+        ## FIXME: This is temporary, should be moved to plugin settings
         new_view.settings().set("scroll_past_end", True)
         new_view.set_name(self.OUTPUT_PANEL_NAME)
 
