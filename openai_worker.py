@@ -1,5 +1,5 @@
 import sublime
-from sublime import View, Region
+from sublime import Sheet, View, Region
 from threading import Thread, Event
 from .cacher import Cacher
 from typing import Dict, List, Optional, Any
@@ -12,7 +12,7 @@ import re
 
 
 class OpenAIWorker(Thread):
-    def __init__(self, stop_event: Event, region: Optional[Region], text: str, view: View, mode: str, command: Optional[str], assistant: Optional[AssistantSettings] = None):
+    def __init__(self, stop_event: Event, region: Optional[Region], text: str, view: View, mode: str, command: Optional[str], assistant: Optional[AssistantSettings] = None, sheets: Optional[List[Sheet]] = None):
         self.region = region
         # Selected text within editor (as `user`)
         self.text = text
@@ -24,6 +24,7 @@ class OpenAIWorker(Thread):
         self.settings = sublime.load_settings("openAI.sublime-settings")
 
         self.stop_event: Event = stop_event
+        self.sheets = sheets
 
         self.project_settings = view.settings().get('ai_assistant', None)
         self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
@@ -169,12 +170,37 @@ class OpenAIWorker(Thread):
             present_error(title="OpenAI error", error=error)
             return
 
+    def wrap_sheet_contents_with_scope(self) -> List[str]:
+        wrapped_selection: List[str] = []
+
+        if self.sheets:
+            for sheet in self.sheets:
+                # Convert the sheet to a view
+                view = sheet.view() if sheet else None
+                if not view:
+                    continue  # If for some reason the sheet cannot be converted to a view, skip.
+
+                # Deriving the scope from the beginning of the view's content
+                scope_region = view.scope_name(0)  # Assuming you want the scope at the start of the document
+                scope_name = scope_region.split(' ')[0].split('.')[-1]
+
+                # Extracting the text from the view
+                content = view.substr(sublime.Region(0, view.size()))
+
+                # Wrapping the content with the derived scope name
+                wrapped_content = f"```{scope_name}\n{content}\n```"
+                wrapped_selection.append(wrapped_content)
+
+        return wrapped_selection
+
     def manage_chat_completion(self):
         wrapped_selection = None
         if self.region:
-            scope = self.window.active_view().scope_name(self.region.begin())
-            scope_name = scope.split('.')[-1]
-            wrapped_selection = f"```{scope_name}\n" + self.text + "\n```"
+            scope_region = self.window.active_view().scope_name(self.region.begin())
+            scope_name = scope_region.split(' ')[0].split('.')[-1]
+            wrapped_selection = [f"```{scope_name}\n" + self.text + "\n```"]
+        elif self.sheets:
+            wrapped_selection = self.wrap_sheet_contents_with_scope()
 
         messages = self.create_message(selected_text=wrapped_selection, command=self.command, placeholder=self.assistant.placeholder)
         ## MARK: This should be here, otherwise it would duplicates the messages.
@@ -204,10 +230,10 @@ class OpenAIWorker(Thread):
             return
         self.handle_response()
 
-    def create_message(self, selected_text: Optional[str], command: Optional[str], placeholder: Optional[str] = None) -> List[Dict[str, str]]:
+    def create_message(self, selected_text: Optional[List[str]], command: Optional[str], placeholder: Optional[str] = None) -> List[Dict[str, str]]:
         messages = []
         if placeholder: messages.append({"role": "system", "content": f'placeholder: {placeholder}', 'name': 'OpenAI_completion'})
-        if selected_text: messages.append({"role": "user", "content": selected_text, 'name': 'OpenAI_completion'})
+        if selected_text: messages.extend([{"role": "user", "content": text, 'name': 'OpenAI_completion'} for text in selected_text])
         if command: messages.append({"role": "user", "content": command, 'name': 'OpenAI_completion'})
         return messages
 

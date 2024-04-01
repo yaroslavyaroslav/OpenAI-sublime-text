@@ -3,7 +3,7 @@ from typing import List, Optional
 from threading import Event
 import sublime
 from sublime_plugin import TextCommand, EventListener
-from sublime import Settings, View, Region, Edit
+from sublime import Settings, View, Region, Edit, Sheet
 import functools
 from .cacher import Cacher
 from .errors.OpenAIException import WrongUserInputException, present_error
@@ -15,13 +15,13 @@ class Openai(TextCommand):
     worker_thread: Optional[OpenAIWorker] = None
     cacher = None
 
-    def on_input(self, region: Optional[Region], text: str, view: View, mode: str, input: str):
+    def on_input(self, region: Optional[Region], text: str, view: View, mode: str, input: str, selected_sheets: Optional[List[Sheet]]):
         from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
 
         Openai.stop_worker()  # Stop any existing worker before starting a new one
         Openai.stop_event.clear()
 
-        Openai.worker_thread = OpenAIWorker(stop_event=self.stop_event, region=region, text=text, view=view, mode=mode, command=input)
+        Openai.worker_thread = OpenAIWorker(stop_event=self.stop_event, region=region, text=text, view=view, mode=mode, command=input, assistant=None, sheets=selected_sheets)
         Openai.worker_thread.start()
 
     def run(self, edit: Edit, **kwargs):
@@ -30,6 +30,7 @@ class Openai(TextCommand):
         global settings
         plugin_loaded()
         mode = kwargs.get('mode', 'chat_completion')
+        files_included = kwargs.get('files_included', False)
         self.project_settings = self.view.settings().get('ai_assistant', None)
         self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
 
@@ -76,19 +77,37 @@ class Openai(TextCommand):
             listner.show_panel(window=window)
 
         elif mode == CommandMode.chat_completion.value:
-            sublime.active_window().show_input_panel(
-                "Question: ",
-                "",
-                functools.partial(
-                    self.on_input,
-                    region if region else None,
-                    text,
-                    self.view,
-                    mode
-                ),
-                None,
-                None
-            )
+            if files_included:
+                sheets = sublime.active_window().selected_sheets()
+                _ = sublime.active_window().show_input_panel(
+                    "Question: ",
+                    "",
+                    lambda user_input: self.on_input(
+                        region=region if region else None,
+                        text=text,
+                        view=self.view,
+                        mode=mode,
+                        input=user_input,
+                        selected_sheets=sheets
+                    ),
+                    None,
+                    None,
+                )
+            else:
+                _ = sublime.active_window().show_input_panel(
+                    "Question: ",
+                    "",
+                    lambda user_input: self.on_input(
+                        region=region if region else None,
+                        text=text,
+                        view=self.view,
+                        mode=mode,
+                        input=user_input,
+                        selected_sheets=None
+                    ),
+                    None,
+                    None,
+                )
 
     # TODO: To chech if this is even necessary
     @classmethod
