@@ -197,7 +197,7 @@ class OpenAIWorker(Thread):
         wrapped_selection = None
         if self.region:
             scope_region = self.window.active_view().scope_name(self.region.begin())
-            scope_name = scope.split('.')[-1] # in case of precise selection take the last scope
+            scope_name = scope_region.split('.')[-1] # in case of precise selection take the last scope
             wrapped_selection = [f"```{scope_name}\n" + self.text + "\n```"]
         if self.sheets: # no sheets should be passed unintentionaly
             wrapped_selection = self.wrap_sheet_contents_with_scope() # in case of unprecise selection take the last scope
