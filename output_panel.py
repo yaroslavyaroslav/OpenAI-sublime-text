@@ -61,6 +61,8 @@ class SharedOutputPanelListener(EventListener):
         for line in self.cacher.read_all():
             ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
             ## (it's not that easy, since question and answer are the different lines)
+            ## FIXME: This logic conflicts with multifile/multimessage request behaviour
+            ## it presents ## Question above each message, while has to do it once for a pack.
             if line['role'] == 'user':
                 output_panel.run_command('append', {'characters': f'\n\n## Question\n\n'})
             elif line['role'] == 'assistant':
