@@ -16,10 +16,49 @@ class Cacher():
         # Create the file path to store the data
         self.history_file = os.path.join(plugin_cache_dir, "{file_name}chat_history.jl".format(file_name=name + "_" if len(name) > 0 else ""))
         self.current_model_file = os.path.join(plugin_cache_dir, "{file_name}current_assistant.json".format(file_name=name + "_" if len(name) > 0 else ""))
+        self.tokens_count_file = os.path.join(plugin_cache_dir, "{file_name}tokens_count.json".format(file_name=name + "_" if len(name) > 0 else ""))
 
     def check_and_create(self, path: str):
         if not os.path.isfile(path):
             open(path, 'w').close()
+
+    def append_tokens_count(self, data: Dict[str, int]):
+        try:
+            with open(self.tokens_count_file, 'r') as file:
+                existing_data: Dict[str, int] = json.load(file)
+        except (FileNotFoundError, JSONDecodeError):
+            existing_data = {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0
+            }
+
+        for key, value in data.items():
+            if key in existing_data:
+                existing_data[key] += value
+            else:
+                existing_data[key] = value
+
+        with open(self.tokens_count_file, 'w') as file:
+            json.dump(existing_data, file)
+
+    def reset_tokens_count(self):
+        with open(self.tokens_count_file, 'w') as _:
+            pass # Truncate the file by opening it in 'w' mode and doing nothing
+
+    def read_tokens_count(self) -> Optional[Dict[str, int]]:
+        self.check_and_create(self.tokens_count_file)
+        with open(self.tokens_count_file, 'r') as file:
+            try:
+                data = json.load(file)
+            except JSONDecodeError:
+                data = {
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "total_tokens": 0
+                }
+                return data
+        return data
 
     def save_model(self, data: Dict[str, Any]):
         with open(self.current_model_file, 'w') as file:

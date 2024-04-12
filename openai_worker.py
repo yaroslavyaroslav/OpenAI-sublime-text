@@ -151,6 +151,9 @@ class OpenAIWorker(Thread):
         self.provider.close_connection()
         if self.assistant.prompt_mode == PromptMode.panel.name:
             self.cacher.append_to_cache([full_response_content])
+            completion_tokens_amount = self.calculate_completion_tokens([full_response_content])
+            print("sdhfksj")
+            self.cacher.append_tokens_count({"completion_tokens": completion_tokens_amount})
 
     def handle_response(self):
         try:
@@ -252,3 +255,11 @@ class OpenAIWorker(Thread):
             return
 
         self.manage_chat_completion()
+
+    def calculate_completion_tokens(self, responses: List[Dict[str, str]]) -> int:
+        total_tokens = 0
+        for response in responses:
+            if response['content'] and response['role'] == 'assistant':
+                total_tokens += int(len(response['content']) / 4)
+        return total_tokens
+

@@ -55,6 +55,9 @@ class NetworkClient():
             internal_messages += self.cacher.read_all()
         internal_messages += messages
 
+        prompt_tokens_amount = self.calculate_prompt_tokens(internal_messages)
+        self.cacher.append_tokens_count(data={'prompt_tokens': prompt_tokens_amount})
+
         return json.dumps({
             # Todo add uniq name for each output panel (e.g. each window)
             'messages': internal_messages,
@@ -85,3 +88,11 @@ class NetworkClient():
                 raise ContextLengthExceededException(error_data['error']['message'])
             raise UnknownException(error_data.get('error').get('message'))
         return self.response
+
+    def calculate_prompt_tokens(self, responses: List[Dict[str, str]]) -> int:
+        total_tokens = 0
+        print("responses", responses)
+        for response in responses:
+            if 'content' in response:
+                total_tokens += len(response['content']) / 4
+        return int(total_tokens)

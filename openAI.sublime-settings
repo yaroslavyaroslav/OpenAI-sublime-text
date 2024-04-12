@@ -13,6 +13,22 @@
     // `MultimarkdownEditing` package highly recommended to install to apply syntax highlight for a wider range of languages.
     "markdown": true,
 
+    // Settings that configures presentation of a chat view for both output panel and chat tap
+    "chat_presentation": {
+        // Toggles whether to present gutter itself
+        "gutter_enabled": true,
+
+        // Toggles whether to present line numbers row
+        "line_numbers_enabled": true,
+
+        // Toggles whether to allow the chat view to be overscrolled
+        "scroll_past_end": false,
+
+        // Toggles whether or not to use reverse settings for a tab comparing to output panel
+        // i.e. in case of the default settings neither gutter or a line numbers will be presented and the overscroll is enabled
+        "reverse_for_tab": true
+    },
+
     // Minimum amount of characters selected to perform completion.
     "minimum_selection_length": 10,
 

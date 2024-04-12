@@ -3,7 +3,6 @@ import sublime
 from sublime import View, Region, Sheet
 from sublime_plugin import WindowCommand
 from .errors.OpenAIException import WrongUserInputException, present_error
-import functools
 from typing import Optional, List
 from .cacher import Cacher
 from .openai_worker import OpenAIWorker

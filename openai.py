@@ -4,7 +4,6 @@ from threading import Event
 import sublime
 from sublime_plugin import TextCommand, EventListener
 from sublime import Settings, View, Region, Edit, Sheet
-import functools
 from .cacher import Cacher
 from .errors.OpenAIException import WrongUserInputException, present_error
 from .assistant_settings import CommandMode
@@ -53,6 +52,7 @@ class Openai(TextCommand):
 
         if mode == CommandMode.reset_chat_history.value:
             self.cacher.drop_all()
+            self.cacher.reset_tokens_count()
             # FIXME: This is broken, beacuse it specified on panel
             window = sublime.active_window()
 
