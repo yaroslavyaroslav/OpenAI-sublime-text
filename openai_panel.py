@@ -67,8 +67,6 @@ class OpenaiPanelCommand(WindowCommand):
             present_error(title="OpenAI error", error=error)
             return
 
-        print(self.files_included, "files_included")
-
         if self.files_included:
             sheets = sublime.active_window().selected_sheets()
             _ = sublime.active_window().show_input_panel(

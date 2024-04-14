@@ -152,7 +152,6 @@ class OpenAIWorker(Thread):
         if self.assistant.prompt_mode == PromptMode.panel.name:
             self.cacher.append_to_cache([full_response_content])
             completion_tokens_amount = self.calculate_completion_tokens([full_response_content])
-            print("sdhfksj")
             self.cacher.append_tokens_count({"completion_tokens": completion_tokens_amount})
 
     def handle_response(self):

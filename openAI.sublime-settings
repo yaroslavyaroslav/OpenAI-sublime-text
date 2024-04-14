@@ -36,7 +36,7 @@
     // Possible options:
     //  - name: User defined assistant setup name
     //  - prompt_mode: Model output prompt mode (panel|append|insert|replace)
-    //  - chat_model: Which OpenAI model are used within this setup (e.g. gpt-4, gpt-3.5-turbo-16k).
+    //  - chat_model: Which OpenAI model are used within this setup (i.e. gpt-4-turbo-preview, gpt-3.5-turbo-16k).
     //
     // You're capable to mix these whatever you want and the text in status bar will follow.
     "status_hint": [
@@ -77,7 +77,7 @@
             "prompt_mode": "panel", // **REQUIRED**
 
             // The model which will generate the chat completion.
-            // Generally here should be either "gpt-3.5.-turbo|gpt-4|gpt-3.5-turbo-instruct" or their specified versions.
+            // Generally here should be either "gpt-3.5.-turbo|gpt-4-turbo-preview" or their specified versions.
             // If using custom API, refer to their documentation for supported models.
             // Learn more at https://beta.openai.com/docs/models
             "chat_model": "gpt-3.5-turbo", // **REQUIRED**
@@ -134,7 +134,7 @@
         {
             "name": "Insert instruction example",
             "prompt_mode": "insert",
-            "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo yet.
+            "chat_model": "gpt-4-turbo-preview", // works unreliable with gpt-3.5-turbo yet.
             "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
             "placeholder": "## placeholder" // it's a good fit for a placeholder to be a comment.
@@ -142,14 +142,14 @@
         {
             "name": "Append instruction example",
             "prompt_mode": "append",
-            "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo now.
+            "chat_model": "gpt-4-turbo-preview", // works unreliable with gpt-3.5-turbo now.
             "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },
         {
             "name": "Replace instruction example",
             "prompt_mode": "replace",
-            "chat_model": "gpt-4", // works unreliable with gpt-3.5-turbo now.
+            "chat_model": "gpt-4-turbo-preview", // works unreliable with gpt-3.5-turbo now.
             "assistant_role": "Apply the change requested by the user to the code with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },
@@ -158,7 +158,7 @@
         {
             "name": "ST4 Plugin", // It's necessary to mention a model here, because there's separate filed for just this in status bar hint setting.
             "prompt_mode": "panel",
-            "chat_model": "gpt-4",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are senior Sublime Text 4 editor plugin development and Python code assistant",
             "max_tokens": 4000,
         },
@@ -172,63 +172,63 @@
         {
             "name": "UIKit & Combine",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are senior UIKit and Combine code assistant",
             "max_tokens": 4000,
         },
         {
             "name": "Social Researcher",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are senior social researcher",
             "max_tokens": 4000,
         },
         {
             "name": "Phd in Computer Science",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are Phd in computer science, ML scope",
             "max_tokens": 4000,
         },
         {
             "name": "Corrector",
             "prompt_mode": "replace",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "Fix provided text with the correct and sounds English one, you are strictly forced to skip any changes in such its part that have not rules violation within them",
             "max_tokens": 4000,
         },
         {
             "name": "English Tutor",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are senior English tutor: (1)you fix the input that user provides, (2) you emphasize the fixed words with md bold, and format the whole edited text with md quote, (3) right after that you provide a **detailed explanation** of what English rules were violated and **why**. (4) If user inputs to you an clarification message like that he/she meant a bit different in original sentence as you've provided — you counts it as a command, not as a new sentence to format and provide fixed version with incremental updates in explanation. (5) In all other context among mentioned above you have to be as low wordy as possibly can.",
             "max_tokens": 4000,
         },
         {
             "name": "bash/zsh converter",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are bash/zsh man pages into bash/zsh completion plugins converter. You are strictly restricted to prompting me anything but the script itself, not a single word along it. Within the requested scrip you should to provide only the `_arguments`",
             "max_tokens": 4000,
         },
         {
             "name": "Bash & Git assistant",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are bash and git senior assistant",
             "max_tokens": 4000,
         },
         {
             "name": "CoreImage & AVFoundation assistant",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are senior of CoreImage, Vision, CoreML and AVFoundation code assistant, all your answer you're providing after taking a deep breath and going step by step.",
             "max_tokens": 4000,
         },
         {
             "name": "Pytorch assistant",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-0613",
+            "chat_model": "gpt-4-turbo-preview",
             "assistant_role": "You are senior Pytorch and LLM/SD code assistant",
             "max_tokens": 4000,
         },

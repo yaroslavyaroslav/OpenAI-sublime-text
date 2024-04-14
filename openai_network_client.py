@@ -91,7 +91,6 @@ class NetworkClient():
 
     def calculate_prompt_tokens(self, responses: List[Dict[str, str]]) -> int:
         total_tokens = 0
-        print("responses", responses)
         for response in responses:
             if 'content' in response:
                 total_tokens += len(response['content']) / 4
