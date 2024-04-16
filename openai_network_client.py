@@ -13,16 +13,22 @@ from .errors.OpenAIException import ContextLengthExceededException, UnknownExcep
 class NetworkClient():
     response: Optional[HTTPResponse] = None
 
-    def __init__(self, settings: sublime.Settings, cacher: Cacher = Cacher()) -> None:
+    # TODO: Drop Settings support attribute in favor to assistnat
+    # proxy settings relies on it
+    def __init__(self, settings: sublime.Settings, assistant: AssistantSettings, cacher: Cacher = Cacher()) -> None:
         self.cacher = cacher
         self.settings = settings
+        self.assistant = assistant
+        token = self.assistant.token if self.assistant.token else self.settings.get("token")
         self.headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {self.settings.get("token")}',
+            'Authorization': f'Bearer {token}',
             'cache-control': 'no-cache',
         }
 
-        url_parts = self.settings.get('url').split('://')
+        url_string = self.assistant.url if self.assistant.url else self.settings.get('url')
+
+        url_parts = url_string.split('://')
         url = '://'.join(url_parts[1:])
         connection = HTTPSConnection if url_parts[0] == 'https' else HTTPConnection
 

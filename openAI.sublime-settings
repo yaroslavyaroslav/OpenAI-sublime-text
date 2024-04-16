@@ -1,5 +1,5 @@
 {
-    // URL for OpenAI API. Change when using custom, OpenAI compatible API.
+    // URL for OpenAI compatiable APIs.
     // It must start with http:// or https://, which selects protocol for connection. Use http:// when using localhost.
     // Selected parts of code and prompt will be sent to that URL, so make sure, you have all necessary permission to do so.
     // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
@@ -62,6 +62,16 @@
 
     "assistants": [
         {
+            // URL for OpenAI alike API.
+            // It must start with http:// or https://, which selects protocol for connection. Use http:// when using localhost.
+            // Selected parts of code and prompt will be sent to that URL, so make sure, you have all necessary permission to do so.
+            // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
+            "url": "https://api.openai.com",
+
+            // Your whaterver service token
+            // OpenAI, together.ai
+            "token": "",
+
             // A string that will presented in command palette.
             "name": "Example", // **REQUIRED**
 

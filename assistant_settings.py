@@ -12,6 +12,8 @@ class PromptMode(Enum):
 class AssistantSettings():
     name: str
     prompt_mode: PromptMode
+    url: Optional[str]
+    token: Optional[str]
     chat_model: str
     assistant_role: str
     temperature: int
@@ -19,10 +21,12 @@ class AssistantSettings():
     top_p: int
     frequency_penalty: int
     presence_penalty: int
-    placeholder: Optional[str] = None
+    placeholder: Optional[str]
 
 DEFAULT_ASSISTANT_SETTINGS = {
     "placeholder": None,
+    "url": None,
+    "token": None,
     "temperature": 1,
     "max_tokens": 2048,
     "top_p": 1,

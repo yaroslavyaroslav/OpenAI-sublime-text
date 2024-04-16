@@ -33,8 +33,8 @@ class OpenAIWorker(Thread):
         ## loading assistant dict
         assistant_dict = opt_assistant_dict if opt_assistant_dict else self.settings.get('assistants')[0]
         ## merging dicts with a default one and initializing AssitantSettings
-        self.assistant = assistant if assistant is not None else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
-        self.provider = NetworkClient(settings=self.settings, cacher=self.cacher)
+        self.assistant = assistant if assistant else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
+        self.provider = NetworkClient(settings=self.settings, assistant=self.assistant, cacher=self.cacher)
         self.window = sublime.active_window()
 
         markdown_setting = self.settings.get('markdown')
@@ -124,8 +124,7 @@ class OpenAIWorker(Thread):
         full_response_content = {'role': '', 'content': ''}
 
         for chunk in response:
-
-            # FIXME: With this implementation a few last tokens get missed on cacnel action. (e.g. the're seen within a proxy, but not in the code)
+            # FIXME: With this implementation few last tokens get missed on cacnel action. (e.g. the're seen within a proxy, but not in the code)
             if self.stop_event.is_set():
                 self.handle_sse_delta(delta={'role': "assistant"}, full_response_content=full_response_content)
                 self.handle_sse_delta(delta={'content': "\n\n[Aborted]"}, full_response_content=full_response_content)
@@ -150,6 +149,8 @@ class OpenAIWorker(Thread):
 
         self.provider.close_connection()
         if self.assistant.prompt_mode == PromptMode.panel.name:
+            if full_response_content['role'] == '':
+                full_response_content['role'] = 'assistant' # together.ai never returns role value, so we have to set it manually
             self.cacher.append_to_cache([full_response_content])
             completion_tokens_amount = self.calculate_completion_tokens([full_response_content])
             self.cacher.append_tokens_count({"completion_tokens": completion_tokens_amount})
