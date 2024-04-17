@@ -5,6 +5,8 @@
 
 OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural language processing (NLP) model to provide an code assistant experience within the editor.
 
+![](static/media/ai_chat_left.png)
+
 ## Features
 
 - Code manipulation (append, insert and edit) selected code with OpenAI models.
@@ -16,7 +18,7 @@ OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural langua
 - Server Side Streaming (SSE) support (i.e. text starts presenting gradually right after user request)
 - **Multiple assistant presets**
 - Status bar badge with a currently selected assistant properties.
-- **Support for other OpenAI compatible APIs, like **[llama.cpp](https://github.com/ggerganov/llama.cpp)** server or [Ollama](https://ollama.com/)**
+- **Support for other OpenAI compatible APIs, like **[llama.cpp](https://github.com/ggerganov/llama.cpp)** server or [Ollama](https://ollama.com)**
 
 ### ChatGPT completion demo
 
