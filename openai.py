@@ -1,6 +1,6 @@
 from enum import Enum
 from threading import Event
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import sublime
 from sublime import Edit, Region, Settings, Sheet, View
@@ -126,22 +126,28 @@ class Openai(TextCommand):
 class ActiveViewEventListener(EventListener):
 
     cacher = None
+
     def on_activated(self, view: View):
         ## FIXME: This is might be wrong, settings of view should be get not for an active view, but for a given window project view.
         ## It could be correct btw, as if a window with a specific settings gets active — it updated exact it status bar.
         self.project_settings = sublime.active_window().active_view().settings().get('ai_assistant', None)
-        self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
-        print(self.cacher.read_model())
-        assistant = self.cacher.read_model()
-        if assistant is None:
-            return
 
-        print("activeded")
-        status_hint_options: Optional[List[str]] = None
+        # Initialize Cacher with proper default handling for missing cache_prefix
+        self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
+
+        # Reading the assistant model from cache
+        assistant = self.cacher.read_model()
         if not settings:
             status_hint_options = []
         else:
             status_hint_options = settings.get('status_hint', [])
+
+        # Update status bar with potentially retrieved model
+        self.update_status_bar(view, assistant, status_hint_options)
+
+    def update_status_bar(self, view: View, assistant: Optional[Dict[str, Any]], status_hint_options: List[str]):
+        if not assistant:
+            return
 
         if not status_hint_options:
             return
@@ -150,15 +156,22 @@ class ActiveViewEventListener(EventListener):
         if {'name', 'prompt_mode', 'chat_model'} <= assistant.keys():
             statuses = []
             for key in ['name', 'prompt_mode', 'chat_model']:
-                if StatusBarMode[key].value in status_hint_options:
+                lookup_key = key if key != 'name' else 'name_' # name is a reserved keyword
+                if StatusBarMode[lookup_key].value in status_hint_options:
                     if key == 'chat_model':
                         statuses.append(assistant[key].upper())
                     else:
                         statuses.append(assistant[key].title())
 
             if statuses:
-                # Join all valid statuses and set to status bar
-                view.set_status('openai_assistant_settings', ' | '.join(statuses))
+                status = f'[ {" | ".join(statuses)} ]'
+                view.set_status('openai_assistant_settings', status)
+
+
+class StatusBarMode(Enum):
+    name_ = "name"
+    prompt_mode = "prompt_mode"
+    chat_model = "chat_model"
 
 
 settings: Optional[Settings] = None
@@ -166,8 +179,3 @@ settings: Optional[Settings] = None
 def plugin_loaded():
     global settings
     settings = sublime.load_settings("openAI.sublime-settings")
-
-class StatusBarMode(Enum):
-    name_ = "name"
-    prompt_mode = "prompt_mode"
-    chat_model = "chat_model"
