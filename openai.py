@@ -1,13 +1,16 @@
 from enum import Enum
-from typing import List, Optional
 from threading import Event
+from typing import List, Optional
+
 import sublime
-from sublime_plugin import TextCommand, EventListener
-from sublime import Settings, View, Region, Edit, Sheet
+from sublime import Edit, Region, Settings, Sheet, View
+from sublime_plugin import EventListener, TextCommand
+
+from .assistant_settings import CommandMode
 from .cacher import Cacher
 from .errors.OpenAIException import WrongUserInputException, present_error
-from .assistant_settings import CommandMode
 from .openai_worker import OpenAIWorker
+
 
 class Openai(TextCommand):
     stop_event: Event = Event()
@@ -15,7 +18,7 @@ class Openai(TextCommand):
     cacher = None
 
     def on_input(self, region: Optional[Region], text: str, view: View, mode: str, input: str, selected_sheets: Optional[List[Sheet]]):
-        from .openai_worker import OpenAIWorker # https://stackoverflow.com/a/52927102
+        from .openai_worker import OpenAIWorker  # https://stackoverflow.com/a/52927102
 
         Openai.stop_worker()  # Stop any existing worker before starting a new one
         Openai.stop_event.clear()
@@ -24,16 +27,20 @@ class Openai(TextCommand):
         Openai.worker_thread.start()
 
     def run(self, edit: Edit, **kwargs):
-        from .output_panel import SharedOutputPanelListener # https://stackoverflow.com/a/52927102
+        from .output_panel import (
+            SharedOutputPanelListener,  # https://stackoverflow.com/a/52927102
+        )
 
-        global settings
-        plugin_loaded()
+        if not settings:
+            # Abort if settings are not loaded yet
+            return
+
         mode = kwargs.get('mode', 'chat_completion')
         files_included = kwargs.get('files_included', False)
         self.project_settings = self.view.settings().get('ai_assistant', None)
         self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
 
-        listner = SharedOutputPanelListener(markdown=settings.get('markdown'), cacher=self.cacher)
+        listener = SharedOutputPanelListener(markdown=settings.get('markdown'), cacher=self.cacher)
         # get selected text
         region: Optional[Region] = None
         text: Optional[str] = ""
@@ -56,7 +63,7 @@ class Openai(TextCommand):
             # FIXME: This is broken, beacuse it specified on panel
             window = sublime.active_window()
 
-            view = listner.get_output_view_(window=window)
+            view = listener.get_output_view_(window=window)
             view.set_read_only(False)
             region = Region(0, view.size())
             view.erase(edit, region)
@@ -65,16 +72,16 @@ class Openai(TextCommand):
         elif mode == CommandMode.create_new_tab.value:
             window = sublime.active_window()
 
-            listner.create_new_tab(window)
+            listener.create_new_tab(window)
             # listner.toggle_overscroll(window=window, enabled=True)
-            listner.refresh_output_panel(window=window)
+            listener.refresh_output_panel(window=window)
 
         elif mode == CommandMode.refresh_output_panel.value:
             window = sublime.active_window()
             
             # listner.toggle_overscroll(window=window, enabled=False)
-            listner.refresh_output_panel(window=window)
-            listner.show_panel(window=window)
+            listener.refresh_output_panel(window=window)
+            listener.show_panel(window=window)
 
         elif mode == CommandMode.chat_completion.value:
             if files_included:
@@ -120,35 +127,39 @@ class ActiveViewEventListener(EventListener):
 
     cacher = None
     def on_activated(self, view: View):
-        global settings
-        plugin_loaded()
         ## FIXME: This is might be wrong, settings of view should be get not for an active view, but for a given window project view.
         ## It could be correct btw, as if a window with a specific settings gets active — it updated exact it status bar.
         self.project_settings = sublime.active_window().active_view().settings().get('ai_assistant', None)
         self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
+        print(self.cacher.read_model())
         assistant = self.cacher.read_model()
-        status_hint_options: Optional[List[str]] = settings.get('status_hint', [])
+        if assistant is None:
+            return
 
-        if assistant and 'name' in assistant and 'prompt_mode' in assistant and 'chat_model' in assistant:
-            if status_hint_options:
-                if len(status_hint_options) > 1:
-                    if StatusBarMode.name_.value in status_hint_options and StatusBarMode.prompt_mode.value in status_hint_options and StatusBarMode.chat_model.value in status_hint_options:
-                        view.set_status('openai_assistant_settings', f'[{assistant["name"].title()} | {assistant["prompt_mode"].title()} | {assistant["chat_model"].upper()}]')
-                    elif StatusBarMode.name_.value in status_hint_options and StatusBarMode.prompt_mode.value in status_hint_options:
-                        view.set_status('openai_assistant_settings', f'[{assistant["name"].title()} | {assistant["prompt_mode"].title()}]')
-                    elif StatusBarMode.name_.value in status_hint_options and StatusBarMode.chat_model.value in status_hint_options:
-                        view.set_status('openai_assistant_settings', f'[{assistant["name"].title()} | {assistant["chat_model"].upper()}]')
-                    elif StatusBarMode.prompt_mode.value in status_hint_options and StatusBarMode.chat_model.value in status_hint_options:
-                        view.set_status('openai_assistant_settings', f'[{assistant["prompt_mode"].title()} | {assistant["chat_model"].upper()}]')
-                elif len(status_hint_options) == 1:
-                    if StatusBarMode.name_.value in status_hint_options:
-                        view.set_status('openai_assistant_settings', f'{assistant["name"].title}')
-                    if StatusBarMode.prompt_mode.value in status_hint_options:
-                        view.set_status('openai_assistant_settings', f'{assistant["prompt_mode"].title}')
-                    if StatusBarMode.chat_model.value in status_hint_options:
-                        view.set_status('openai_assistant_settings', f'{assistant["chat_model"].upper}')
-                else: # status_hint_options is None or len(status_hint_options) == 0
-                    pass
+        print("activeded")
+        status_hint_options: Optional[List[str]] = None
+        if not settings:
+            status_hint_options = []
+        else:
+            status_hint_options = settings.get('status_hint', [])
+
+        if not status_hint_options:
+            return
+
+        # Check necessary keys in assistant
+        if {'name', 'prompt_mode', 'chat_model'} <= assistant.keys():
+            statuses = []
+            for key in ['name', 'prompt_mode', 'chat_model']:
+                if StatusBarMode[key].value in status_hint_options:
+                    if key == 'chat_model':
+                        statuses.append(assistant[key].upper())
+                    else:
+                        statuses.append(assistant[key].title())
+
+            if statuses:
+                # Join all valid statuses and set to status bar
+                view.set_status('openai_assistant_settings', ' | '.join(statuses))
+
 
 settings: Optional[Settings] = None
 
