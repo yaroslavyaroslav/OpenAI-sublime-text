@@ -1,42 +1,44 @@
 [![Star on GitHub][img-stars]][stars]
 
 # OpenAI Sublime Text Plugin
-## Abstract
+## tldr;
 
-OpenAI Completion is a Sublime Text 4 plugin that uses the OpenAI natural language processing (NLP) model to provide an code assistant experience within the editor.
+OpenAI Completion is a Sublime Text plugin that uses LLM models to provide first class code assistant support within the editor.
+
+It's not locked with just OpenAI anymore. [llama.cpp](https://github.com/ggerganov/llama.cpp) server and [ollama](https://ollama.com) supported as well.
 
 ![](static/media/ai_chat_left.png)
 
 ## Features
 
 - Code manipulation (append, insert and edit) selected code with OpenAI models.
-- Selected text capture in addition to every message.
-- **Chat mode support** powered with ChatGPT models.
-- Markdown syntax with syntax highlight support (ChatGPT mode only).
-- Proxy support.
+- **Chat mode** powered by whatever model you'd like.
 - **GPT-4 support**.
-- Server Side Streaming (SSE) support (i.e. text starts presenting gradually right after user request)
-- **Multiple assistant presets**
-- Status bar badge with a currently selected assistant properties.
-- **Support for other OpenAI compatible APIs, like **[llama.cpp](https://github.com/ggerganov/llama.cpp)** server or [Ollama](https://ollama.com)**
+- **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[Ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
+- **Separated chats histories** and assistant settings for a projects.
+- **Ability to send whole files** or their parts as a context expanding.
+- Markdown syntax with code languages syntax highlight (Chat mode only).
+- Server Side Streaming (SSE) (i.e. you don't have to wait for ages till GPT-4 print out something).
+- Status bar various info: model name, mode, sent/received tokens.
+- Proxy support.
 
 ### ChatGPT completion demo
 
 https://github.com/yaroslavyaroslav/OpenAI-sublime-text/assets/16612247/37b98cc2-e9cd-46a6-ac5d-03845313096b
 
-> video speed up to 1.7x
+> video sped up to 1.7x
 
 ---
 
 https://github.com/yaroslavyaroslav/OpenAI-sublime-text/assets/16612247/69f609f3-336d-48e8-a574-3cb7fda5822c
 
-> video speed up to 1.7x
+> video sped up to 1.7x
 
 ## Requirements
 
 - Sublime Text 4
-- [OpenAI](https://beta.openai.com/account) API key (paid service) or other OpenAI compatible API
-- Internet connection (if using online service)
+- **llama.cpp**, **ollama** installed _OR_
+- Remote llm service provider API key, e.g. [OpenAI](https://platform.openai.com)
 
 ## Installation
 
@@ -46,47 +48,75 @@ https://github.com/yaroslavyaroslav/OpenAI-sublime-text/assets/16612247/69f609f3
 
 ## Usage
 
-### ChatGPT usage
+### AI Assistance use case
 
 ChatGPT mode works the following way:
 
-1. Run the `OpenAI: New Message` command
-2. Right after that the plug-in will open the output panel and start printing the model response into it.
-3. Wait until the model stops transferring its answer (currently there's no way how to abort transmission or hide the output panel within that process).
-4. If you would like to fetch chat history to another window manually, you can do that by running the `OpenAI: Refresh Chat` command.
-5. When you're done or want to start all over you should run the `OpenAI: Reset Chat History` command, which deletes the chat cache.
+0. Select some text or even the whole tabs to include them in request
+1. Run either `OpenAI: Chat Model Select` or `OpenAI: Chat Model Select With Tabs` commands.
+2. Input a request in input window if any.
+3. The model will print a response in output panel by default, but you can switch that to a separate tab with `OpenAI: Open in Tab`.
+4. To get an existing chat in a new window run `OpenAI: Refresh Chat`.
+5. To reset history `OpenAI: Reset Chat History` command to rescue.
 
-> **Note**
->  You can bind both of the most usable commands `OpenAI: New Message` and `OpenAI: Show output panel`, to do that please follow `Settings` -> `Package Control` -> `OpenAI completion` -> `Key Bindings`.
+> [!NOTE]
+>  You suggested to bind at least `OpenAI: New Message`, `OpenAI: Chat Model Select` and `OpenAI: Show output panel` in sake for convenience, you can do that in plugin settings.
 
-> **Note**
-> As for now there's just a single history instance. I guess this limitation would disappear sometime.
+### Chat history management
 
-### Single shot completion usage
+You can separate a chat history and assistant settings for a given project by appending the following snippet to its settings:
 
-> **Warning**
-> The `gpt-3.5-turbo` model can still be unreliable in this regard, often generating wordy responses despite specific instructions. OpenAI had promised to address this issue by the end of the year. However, the `gpt-4` model seems to handle commands more effectively.
+```json
+{   
+    "settings": {
+        "ai_assistant": {
+            "cache_prefix": "your_name_project"
+        }
+    }
+}
+```
 
-0. Configure your assistant for each text task you wish to perform (e.g., `append`, `replace`, `insert`, `panel`) in the plugin settings. You can refer to the default setup as an example.
-1. Launch the Sublime Text editor and select a block of code.
-2. Access the command palette and execute the "OpenAI: New Message" command.
-3. **The plugin will transmit the selected code to the OpenAI servers** using your API key. This action will prompt the generation of a suggested code modification based on your command (e.g., append, insert, or edit).
-4. The suggestion provided will make the necessary modifications to the selected code within the editor, following the command you issued.
+### In buffer llm use case
 
-> **Note**
+1. You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
+2. Select some text (they're useless otherwise) to manipulate with and hit `OpenAI: New Message`.
+4. The plugin will response accordingly with **appending**, **replacing** or **inserting** some text.
+
+> [!IMPORTANT]
+>  Yet this is a standalone mode, i.e. an existing chat history won't be sent to a server on a run.
+
+> [!NOTE]
 > A more detailed manual, including various assistant configuration examples, can be found within the plugin settings.
 
 ### Other features
 
+### Open Source models support (llama.cpp, ollama)
+
+1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`"http://localhost:8080"`). 
+2. [Optional] Provide a `"token"` if your provider required one. 
+3. Tweak `"chat_model"` to a model of your choice and you're set.
+
+> [!NOTE]
+> You can set both `url` and `token` either global or on per assistant instance basis, thus being capable to freely switching between closed source and open sourced models within a single session.
+
+## Settings
+The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the plugin to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste your API key in the token property, as follows:
+
+```JSON
+{
+    "token": "sk-your-token",
+}
+```
+
 ### [Multi]Markdown syntax with syntax highlight support
 
-ChatGPT output panel supports markdown syntax highlight. It should just work (if it's not please report an issue).
+It just works.
 
-Although it's highly recommended to install the [`MultimarkdownEditing`](https://sublimetext-markdown.github.io/MarkdownEditing/) to apply syntax highlighting for code snippets provided by ChatGPT. `OpenAI completion` should just pick it up implicitly for the output panel content.
+> [!IMPORTANT]
+> It's highly recommended to install the [`MultimarkdownEditing`](https://sublimetext-markdown.github.io/MarkdownEditing/) to apply broader set of languages with syntax highlighting.
 
 ### Proxy support
 
-That's it. Now you can set up a proxy for this plugin.
 You can setup it up by overriding the proxy property in the `OpenAI completion` settings like follow:
 
 ```json
@@ -98,35 +128,13 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 }
 ```
 
-### GPT-4 support
-
-> **Note**
-> You have to have access to the `GPT-4` model within your account, to use that feature.
-
-It should just work, just set the `chat_model` setting to `GPT-4`.
-
-
-## Settings
-The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the plugin to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste your API key in the token property, as follows:
-
-```JSON
-{
-    "token": "sk-your-token",
-}
-```
-
-### Setup alternative (OpenAI compatible) API
-If using other LLM, that have OpenAI compatible API, like Ollama, you need to change some settings. First, you have to set correct `"url"` to point to API (for example `"http://localhost:11434"` for Ollama running on localhost). Then you have to set `"token"` (even if it is not required by API. It can be any string longer than 10 characters). And finally, tweak `"completions"` to use models, you want. Then everything should work just normal. 
-
 ## Disclaimers
-
-> [!NOTE]
-> Please note that OpenAI is a paid service, and you will need to have an API key and sufficient credit to use this plugin, if not using custom API provider.
 
 > [!WARNING]
 > All selected code will be sent to the OpenAI servers (if not using custom API provider) for processing, so make sure you have all necessary permissions to do so.
 
-> This one was at 80% written by that thing itself including this readme. I was here mostly for debugging purposes, rather than designing and researching. This is pure magic, I swear.
+> [!NOTE]
+> This one was initially written at 80% written by a GPT3.5 back then. I was here mostly for debugging purposes, rather than digging ST API. This is a pure magic, I swear!
 
 [stars]: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/stargazers
 [img-stars]: static/media/star-on-github.svg
