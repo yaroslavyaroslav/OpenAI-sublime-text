@@ -1,7 +1,7 @@
-from sublime import Window, View, load_settings, active_window
+from sublime import Settings, Window, View, load_settings
 from sublime_plugin import EventListener, ViewEventListener
 from .cacher import Cacher
-from typing import Optional
+from typing import Dict, Optional
 
 class SharedOutputPanelListener(EventListener):
     OUTPUT_PANEL_NAME = "AI Chat"
@@ -9,8 +9,8 @@ class SharedOutputPanelListener(EventListener):
     def __init__(self, markdown: bool = True, cacher: Cacher = Cacher()) -> None:
         self.markdown: bool = markdown
         self.cacher = cacher
-        self.settings = load_settings("openAI.sublime-settings")
-        self.panel_settings = self.settings.get("chat_presentation", {})
+        self.settings: Settings = load_settings("openAI.sublime-settings")
+        self.panel_settings: Dict[str, bool] = self.settings.get("chat_presentation", None)
 
         self.gutter_enabled: bool = self.panel_settings.get('gutter_enabled', True)
         self.line_numbers_enabled: bool = self.panel_settings.get('line_numbers_enabled', True)
@@ -61,7 +61,7 @@ class SharedOutputPanelListener(EventListener):
         view = self.get_active_tab_(window=window) or self.get_output_panel_(window=window)
         return view
 
-    def refresh_output_panel(self, window):
+    def refresh_output_panel(self, window: Window):
         output_panel = self.get_output_view_(window=window)
         output_panel.set_read_only(False)
         self.clear_output_panel(window)
@@ -82,14 +82,14 @@ class SharedOutputPanelListener(EventListener):
         output_panel.set_name(self.OUTPUT_PANEL_NAME)
         self.scroll_to_botton(window=window)
 
-    def clear_output_panel(self, window):
+    def clear_output_panel(self, window: Window):
         output_panel = self.get_output_view_(window=window)
         output_panel.run_command("select_all")
         output_panel.run_command("right_delete")
 
     ## FIXME: This command doesn't work as expected at first run
     ## despite that textpoint provides correct value.
-    def scroll_to_botton(self, window):
+    def scroll_to_botton(self, window: Window):
         output_panel = self.get_output_view_(window=window)
         point = output_panel.text_point(__get_number_of_lines__(view=output_panel), 0)
         output_panel.show_at_center(point)
@@ -99,7 +99,7 @@ class SharedOutputPanelListener(EventListener):
             if view.name() == self.OUTPUT_PANEL_NAME:
                 return view
 
-    def show_panel(self, window):
+    def show_panel(self, window: Window):
         # Attempt to activate the view with streaming_view_id if it exists
         view = self.get_active_tab_(window) or None
         if view:
@@ -132,8 +132,8 @@ class AIChatViewEventListener(ViewEventListener):
 
     def get_status_message(self, cacher: Cacher) -> str:
         tokens = cacher.read_tokens_count()
-        prompt = tokens["prompt_tokens"]
-        completion = tokens["completion_tokens"]
+        prompt = tokens["prompt_tokens"] if tokens else 0
+        completion = tokens["completion_tokens"] if tokens else 0
         total = prompt + completion
 
         return f'[⬆️: {prompt:,} + ⬇️: {completion:,} = {total:,}]'

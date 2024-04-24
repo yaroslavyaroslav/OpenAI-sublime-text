@@ -5,7 +5,6 @@ import json
 from json.decoder import JSONDecodeError
 from typing import List, Dict, Iterator, Any, Optional
 
-
 class Cacher():
     def __init__(self, name: str = '') -> None:
         cache_dir = sublime.cache_path()
@@ -50,7 +49,7 @@ class Cacher():
         self.check_and_create(self.tokens_count_file)
         with open(self.tokens_count_file, 'r') as file:
             try:
-                data = json.load(file)
+                data: Optional[Dict[str, int]] = json.load(file)
             except JSONDecodeError:
                 data = {
                     "prompt_tokens": 0,
@@ -68,7 +67,7 @@ class Cacher():
         self.check_and_create(self.current_model_file)
         with open(self.current_model_file, 'r') as file:
             try:
-                data = json.load(file)
+                data: Optional[Dict[str, Any]] = json.load(file)
             except JSONDecodeError:
                 # TODO: Handle this state, but keep in mind
                 # that it's completely legal to being a file empty for some (yet unspecified) state
@@ -89,17 +88,14 @@ class Cacher():
         self.check_and_create(self.history_file)
         json_objects: List[Dict[str, str]] = []
 
-        # Read the entire file and split into lines
         with open(self.history_file, 'r', encoding='utf-8') as file:
             lines = file.readlines()
 
-        # Get the last n lines
-        last_n_lines = lines[-number:]
+        last_n_lines = lines[-number:] # Get the last n lines
 
-        # Parse each JSON line into a dictionary
         for line in last_n_lines:
             try:
-                json_object = json.loads(line)
+                json_object: Dict[str, str] = json.loads(line)
                 json_objects.append(json_object)
             except json.JSONDecodeError:
                 # FIXME: raise an error here that should be handled somewhere on top of the file
@@ -108,7 +104,7 @@ class Cacher():
 
         return json_objects
 
-    def append_to_cache(self, cache_lines):
+    def append_to_cache(self, cache_lines: List[Dict[str, str]]):
         # Create a new JSON Lines writer for output.jl
         writer = jl.writer(self.history_file)
         next(writer)

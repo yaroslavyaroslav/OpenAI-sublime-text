@@ -1,6 +1,6 @@
 from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, CommandMode
 import sublime
-from sublime import View, Region, Sheet
+from sublime import Settings, View, Region, Sheet, Window
 from sublime_plugin import WindowCommand
 from .errors.OpenAIException import WrongUserInputException, present_error
 from typing import Optional, List
@@ -14,9 +14,9 @@ class OpenaiPanelCommand(WindowCommand):
     cache_prefix = None
     files_included = False
 
-    def __init__(self, window):
+    def __init__(self, window: Window):
         super().__init__(window)
-        self.settings = sublime.load_settings("openAI.sublime-settings")
+        self.settings: Settings = sublime.load_settings("openAI.sublime-settings")
         self.project_settings = self.window.active_view().settings().get('ai_assistant', None)
 
         self.cacher = Cacher(name=self.project_settings['cache_prefix']) if self.project_settings else Cacher()
@@ -55,7 +55,7 @@ class OpenaiPanelCommand(WindowCommand):
         region: Optional[Region] = None
         text: Optional[str] = ""
 
-        min_selection = self.settings.get("minimum_selection_length")
+        min_selection: int = self.settings.get("minimum_selection_length", 10)
         for region in self.window.active_view().sel():
             if not region.empty():
                 text += self.window.active_view().substr(region)

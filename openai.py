@@ -137,10 +137,8 @@ class ActiveViewEventListener(EventListener):
 
         # Reading the assistant model from cache
         assistant = self.cacher.read_model()
-        if not settings:
-            status_hint_options = []
-        else:
-            status_hint_options = settings.get('status_hint', [])
+
+        status_hint_options: List[str] = settings.get('status_hint', []) if settings else []
 
         # Update status bar with potentially retrieved model
         self.update_status_bar(view, assistant, status_hint_options)
@@ -154,7 +152,7 @@ class ActiveViewEventListener(EventListener):
 
         # Check necessary keys in assistant
         if {'name', 'prompt_mode', 'chat_model'} <= assistant.keys():
-            statuses = []
+            statuses: List[str] = []
             for key in ['name', 'prompt_mode', 'chat_model']:
                 lookup_key = key if key != 'name' else 'name_' # name is a reserved keyword
                 if StatusBarMode[lookup_key].value in status_hint_options:

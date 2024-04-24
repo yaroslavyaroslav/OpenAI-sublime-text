@@ -12,13 +12,13 @@ class TextStreamer():
         self.view.run_command("text_stream_at", {"position": start_of_selection, "text": completion})
         return
 
-    def delete_selected_region(self, region):
+    def delete_selected_region(self, region: Region):
         json_reg = {'a': region.begin(), 'b': region.end()}
         self.view.run_command("erase_region", {"region": json_reg})
 
 class TextStreamAtCommand(TextCommand):
     def run(self, edit: Edit, position: int, text: str):
-        self.view.insert(edit=edit, pt=position, text=text)
+        _ = self.view.insert(edit=edit, pt=position, text=text)
 
 class ReplaceRegionCommand(TextCommand):
     def run(self, edit: Edit, region, text: str):

@@ -1,5 +1,5 @@
 import sublime
-from sublime import Sheet, View, Region
+from sublime import Sheet, View, Region, Settings
 from threading import Thread, Event
 from .cacher import Cacher
 from typing import Dict, List, Optional, Any
@@ -21,7 +21,7 @@ class OpenAIWorker(Thread):
         self.view = view
         self.mode = mode
         # Text input from input panel
-        self.settings = sublime.load_settings("openAI.sublime-settings")
+        self.settings: Settings = sublime.load_settings("openAI.sublime-settings")
 
         self.stop_event: Event = stop_event
         self.sheets = sheets
@@ -54,10 +54,10 @@ class OpenAIWorker(Thread):
             window=self.window
         )
 
-    def delete_selection(self, region):
+    def delete_selection(self, region: Region):
         self.buffer_manager.delete_selected_region(region=region)
 
-    def update_completion(self, completion):
+    def update_completion(self, completion: str):
         self.buffer_manager.update_completion(completion=completion)
 
     def handle_sse_delta(self, delta: Dict[str, Any], full_response_content:Dict[str, str]):
@@ -138,9 +138,9 @@ class OpenAIWorker(Thread):
                 chunk_str = chunk_str[len("data:"):].strip()
 
                 try:
-                    response = JSONDecoder().decode(chunk_str)
-                    if 'delta' in response['choices'][0]:
-                        delta = response['choices'][0]['delta']
+                    response_str: Dict[str, Any] = JSONDecoder().decode(chunk_str)
+                    if 'delta' in response_str['choices'][0]:
+                        delta: Dict[str, Any] = response_str['choices'][0]['delta']
                         self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
                 except:
                     response.close()
@@ -162,7 +162,7 @@ class OpenAIWorker(Thread):
             do_delete = sublime.ok_cancel_dialog(msg=f'Delete the two farthest pairs?\n\n{error.message}', ok_title="Delete")
             if do_delete:
                 self.cacher.drop_first(2)
-                messages = self.create_message(selected_text=self.text, command=self.command)
+                messages = self.create_message(selected_text=[self.text], command=self.command)
                 payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
                 self.provider.prepare_request(json_payload=payload)
                 self.handle_response()
@@ -262,4 +262,3 @@ class OpenAIWorker(Thread):
             if response['content'] and response['role'] == 'assistant':
                 total_tokens += int(len(response['content']) / 4)
         return total_tokens
-

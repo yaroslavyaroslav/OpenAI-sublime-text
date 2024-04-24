@@ -1,7 +1,6 @@
 import json
 from typing import Iterator, Generator
 
-
 def reader(fname: str) -> Iterator[dict]:
     with open(fname) as file:
         for line in file:

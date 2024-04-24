@@ -15,7 +15,7 @@ class NetworkClient():
 
     # TODO: Drop Settings support attribute in favor to assistnat
     # proxy settings relies on it
-    def __init__(self, settings: sublime.Settings, assistant: AssistantSettings, cacher: Cacher = Cacher()) -> None:
+    def __init__(self, settings: sublime.Settings, assistant: AssistantSettings, cacher: Cacher) -> None:
         self.cacher = cacher
         self.settings = settings
         self.assistant = assistant
@@ -34,13 +34,13 @@ class NetworkClient():
 
         proxy_settings = self.settings.get('proxy')
         if isinstance(proxy_settings, dict):
-            address = proxy_settings.get('address')
-            port = proxy_settings.get('port')
+            address: Optional[str] = proxy_settings.get('address')
+            port: Optional[int] = proxy_settings.get('port')
             proxy_username = proxy_settings.get('username')
             proxy_password = proxy_settings.get('password')
             proxy_auth = b64encode(bytes(f'{proxy_username}:{proxy_password}', 'utf-8')).strip().decode('ascii')
             headers = {'Proxy-Authorization': f'Basic {proxy_auth}'} if len(proxy_auth) > 0 else {}
-            if address and len(address) > 0 and port:
+            if address and port:
                 self.connection = connection(
                     host=address,
                     port=port,
@@ -53,7 +53,7 @@ class NetworkClient():
                 self.connection = connection(url)
 
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
-        internal_messages = []
+        internal_messages: List[Dict[str, str]] = []
         internal_messages.insert(0, {'role': 'system', 'content': assitant_setting.assistant_role})
         if assitant_setting.prompt_mode == PromptMode.panel.value:
             ## FIXME: This is error prone and should be rewritten
@@ -74,7 +74,7 @@ class NetworkClient():
             'stream': True
         })
 
-    def prepare_request(self, json_payload):
+    def prepare_request(self, json_payload: str):
         self.connection.request(method='POST', url='/v1/chat/completions', body=json_payload, headers=self.headers)
 
     def execute_response(self) -> Optional[HTTPResponse]:
@@ -89,7 +89,7 @@ class NetworkClient():
         # handle 400-499 client errors and 500-599 server errors
         if 400 <= self.response.status < 600:
             error_object = self.response.read().decode('utf-8')
-            error_data = json.loads(error_object)
+            error_data: Dict[str, Any] = json.loads(error_object)
             if error_data.get('error', {}).get('code') == 'context_length_exceeded':
                 raise ContextLengthExceededException(error_data['error']['message'])
             raise UnknownException(error_data.get('error').get('message'))

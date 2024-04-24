@@ -15,7 +15,7 @@ It's not locked with just OpenAI anymore. [llama.cpp](https://github.com/ggergan
 - **Chat mode** powered by whatever model you'd like.
 - **GPT-4 support**.
 - **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[Ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
-- **Separated chats histories** and assistant settings for a projects.
+- **Dedicated chats histories** and assistant settings for a projects.
 - **Ability to send whole files** or their parts as a context expanding.
 - Markdown syntax with code languages syntax highlight (Chat mode only).
 - Server Side Streaming (SSE) (i.e. you don't have to wait for ages till GPT-4 print out something).
@@ -76,6 +76,21 @@ You can separate a chat history and assistant settings for a given project by ap
 }
 ```
 
+### Additional request context management
+
+You can add a few things to your request:
+- multi-line selection within a single file
+- multiple files within a single View Group
+
+To perform the former just select something within an active view and initiate the request this way without switching to another tab, selection would be added to a request as a preceding message (each selection chunk would be split by a new line).
+
+To send the whole file(s) in advance to request you should `super+button1` on them to make all tabs of them to become visible in a **single view group** and then run `[New Message|Chat Model] with Sheets` command as shown on the screen below. Pay attention, that in given example only `README.md` and `4.0.0.md` will be sent to a server, but not a content of the `AI chat`. 
+
+![](static/media/file_selection_example.png)
+
+> [!NOTE]
+> It's also doesn't matter whether the file persists on a disc or it's just a virtual buffer with a text in it, if they're selected, their content will be send either way.
+
 ### In buffer llm use case
 
 1. You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
@@ -100,12 +115,25 @@ You can separate a chat history and assistant settings for a given project by ap
 > You can set both `url` and `token` either global or on per assistant instance basis, thus being capable to freely switching between closed source and open sourced models within a single session.
 
 ## Settings
-The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the plugin to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste your API key in the token property, as follows:
+
+The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the most of providers to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste your API key in the token property, as follows:
 
 ```JSON
 {
     "token": "sk-your-token",
 }
+```
+
+## Key bindings
+
+You can bind keys for a given plugin command in `Preferences` -> `Package Settings` -> `OpenAI` -> `Key Bindings`. For example you can bind "New Message" command like this:
+
+```json
+{
+    "keys": [ "super+k", "super+'" ],
+    "command": "openai",
+    "args": { "mode": "chat_completion" }
+},
 ```
 
 ### [Multi]Markdown syntax with syntax highlight support
