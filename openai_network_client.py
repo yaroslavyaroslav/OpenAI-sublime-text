@@ -2,6 +2,7 @@ import json
 from base64 import b64encode
 from http.client import HTTPConnection, HTTPResponse, HTTPSConnection, responses
 from typing import Dict, List, Optional
+from urllib.parse import urlparse
 
 import sublime
 
@@ -26,11 +27,12 @@ class NetworkClient():
             'cache-control': 'no-cache',
         }
 
-        url_string = self.assistant.url if self.assistant.url else self.settings.get('url')
+        url_string: str = self.assistant.url if self.assistant.url else self.settings.get('url')
 
-        url_parts = url_string.split('://')
-        url = '://'.join(url_parts[1:])
-        connection = HTTPSConnection if url_parts[0] == 'https' else HTTPConnection
+        parsed_url = urlparse(url_string)
+        host = parsed_url.netloc
+        self.path = parsed_url.path if parsed_url.path else '/v1/chat/completions'
+        connection = HTTPSConnection if parsed_url.scheme == 'https' else HTTPConnection
 
         proxy_settings = self.settings.get('proxy')
         if isinstance(proxy_settings, dict):
@@ -46,11 +48,11 @@ class NetworkClient():
                     port=port,
                 )
                 self.connection.set_tunnel(
-                    url,
+                    host,
                     headers=headers
                 )
             else:
-                self.connection = connection(url)
+                self.connection = connection(host)
 
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
         internal_messages: List[Dict[str, str]] = []
@@ -75,7 +77,7 @@ class NetworkClient():
         })
 
     def prepare_request(self, json_payload: str):
-        self.connection.request(method='POST', url='/v1/chat/completions', body=json_payload, headers=self.headers)
+        self.connection.request(method='POST', url=self.path, body=json_payload, headers=self.headers)
 
     def execute_response(self) -> Optional[HTTPResponse]:
         return self._execute_network_request()
