@@ -12,6 +12,7 @@ cacher_module = sys.modules['OpenAI completion.cacher']
 
 class TestNetworkClient(TestCase):
     __network_instance__ = Optional[Any]
+    settings = Settings(id=2)
     __cacher__ = cacher_module.Cacher(name='test_')
     __fake_history__ = [
         {'role': 'user', 'content': 'some user instruction 1', 'name': 'OpenAI_completion'},
@@ -37,7 +38,17 @@ class TestNetworkClient(TestCase):
     }
 
     def setUp(self):
-        self.__network_instance__ = network_client_module.NetworkClient(Settings(id=0), cacher=self.__cacher__)
+        self.settings.set("url", "http://localhost:8080")
+        assistant_dict = self.__assistant_dict__.copy()
+        assistant_dict['prompt_mode'] = assistant_module.PromptMode.insert.value
+
+        assistant_settings = assistant_module.AssistantSettings(
+            **{
+                **assistant_module.DEFAULT_ASSISTANT_SETTINGS,
+                **assistant_dict
+            }
+        )
+        self.__network_instance__ = network_client_module.NetworkClient(self.settings, assistant=assistant_settings, cacher=self.__cacher__)
         self.__cacher__.append_to_cache(self.__fake_history__)
 
     def test_panel_mode_prepare_payload(self):

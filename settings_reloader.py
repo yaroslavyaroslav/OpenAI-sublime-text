@@ -9,4 +9,3 @@ class ReloadSettingsListener(sublime_plugin.EventListener):
             # Reload the plugin settings by calling the plugin_loaded function directly.
             from .openai import plugin_loaded
             plugin_loaded()
-
