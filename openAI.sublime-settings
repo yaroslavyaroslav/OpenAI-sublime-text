@@ -62,16 +62,6 @@
 
     "assistants": [
         {
-            // URL for OpenAI alike API.
-            // It must start with http:// or https://, which selects protocol for connection. Use http:// when using localhost.
-            // Selected parts of code and prompt will be sent to that URL, so make sure, you have all necessary permission to do so.
-            // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
-            "url": "https://api.openai.com",
-
-            // Your whaterver service token
-            // OpenAI, together.ai
-            "token": "",
-
             // A string that will presented in command palette.
             "name": "Example", // **REQUIRED**
 
@@ -97,6 +87,16 @@
             // like as a code assistant. With this setting you're able to set it up more precisely.
             // E.g. "You are (rust|python|js|whatever) developer assistant", "You are an english tutor" and so on.
             "assistant_role": "You are a senior code assistant", // **REQUIRED**
+
+            // URL for OpenAI alike API.
+            // It must start with `http://` or `https://`, which selects protocol for connection. Use `http://` when using localhost.
+            // it **COULD**, but not necessary has to be a full path of an endpoint. Yet it's necessary to make some third party providers to work.
+            // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
+            "url": "https://api.openai.com/v1/chat/completions",
+
+            // Your whaterver service token
+            // OpenAI and any other alike API token to put.
+            "token": "",
 
             // Placeholder requires for performing `insert` action.
             // It got passed to OpenAI as an additional system command for additional context, to let it know
@@ -205,18 +205,11 @@
             "max_tokens": 4000,
         },
         {
-            "name": "Phd in Computer Science",
-            "prompt_mode": "panel",
-            "chat_model": "gpt-4-turbo",
-            "assistant_role": "You are Phd in computer science, ML scope",
-            "max_tokens": 4000,
-        },
-        {
             "name": "Corrector",
             "prompt_mode": "replace",
-            "chat_model": "gpt-4-turbo",
-            "assistant_role": "Fix provided text with the correct and sounds English one, you are strictly forced to skip any changes in such its part that have not rules violation within them",
-            "max_tokens": 4000,
+            "chat_model": "gpt-3.5-turbo-16k",
+            "assistant_role": "Fix provided text with the correct and sounds English one, you are strictly forced to skip any changes in such its part that have not rules violation within them, you're strictly forbidden to wrap response into something and to provide any explanation.",
+            "max_tokens": 1000,
         },
         {
             "name": "General Assistant",
