@@ -92,7 +92,11 @@ class NetworkClient():
         if 400 <= self.response.status < 600:
             error_object = self.response.read().decode('utf-8')
             error_data: Dict[str, Any] = json.loads(error_object)
-            if error_data.get('error', {}).get('code') == 'context_length_exceeded':
+            if (error_data.get('error', {}).get('code') == 'context_length_exceeded'
+                or (error_data.get('error', {}).get('type') == 'invalid_request_error'
+                    and error_data.get('error', {}).get('param') == 'max_tokens'
+                )
+            ):
                 raise ContextLengthExceededException(error_data['error']['message'])
             raise UnknownException(error_data.get('error').get('message'))
         return self.response
