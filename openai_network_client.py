@@ -1,7 +1,7 @@
 import json
 from base64 import b64encode
-from http.client import HTTPConnection, HTTPResponse, HTTPSConnection, responses
-from typing import Dict, List, Optional
+from http.client import HTTPConnection, HTTPResponse, HTTPSConnection
+from typing import Dict, List, Optional, Any
 from urllib.parse import urlparse
 
 import sublime
@@ -57,6 +57,30 @@ class NetworkClient():
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
         internal_messages: List[Dict[str, str]] = []
         internal_messages.insert(0, {'role': 'system', 'content': assitant_setting.assistant_role})
+        if assitant_setting.prompt_mode == PromptMode.panel.value:
+            ## FIXME: This is error prone and should be rewritten
+            #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
+            internal_messages += self.cacher.read_all()
+        internal_messages += messages
+
+        prompt_tokens_amount = self.calculate_prompt_tokens(internal_messages)
+        self.cacher.append_tokens_count(data={'prompt_tokens': prompt_tokens_amount})
+
+        return json.dumps({
+            # Todo add uniq name for each output panel (e.g. each window)
+            'messages': internal_messages,
+            'model': assitant_setting.chat_model,
+            'temperature': assitant_setting.temperature,
+            'max_tokens': assitant_setting.max_tokens,
+            'top_p': assitant_setting.top_p,
+            'stream': True
+        })
+
+    def prepare_image_payload(self, assitant_setting: AssistantSettings, message_content: List[Dict[str, Any]]) -> str:
+        internal_messages: List[Dict[str, Any]] = []
+        internal_messages.append({'role': 'system', 'content': assitant_setting.assistant_role})
+        internal_messages.append({'role': 'user', 'content': message_content})
+
         if assitant_setting.prompt_mode == PromptMode.panel.value:
             ## FIXME: This is error prone and should be rewritten
             #  Messages shouldn't be written in cache and passing as an attribute, should use either one.

@@ -6,9 +6,10 @@ from typing import Dict, List, Optional, Any
 from .openai_network_client import NetworkClient
 from .buffer import TextStreamer
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException, WrongUserInputException, present_error, present_unknown_error
-from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, PromptMode
+from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, CommandMode, PromptMode
 from json import JSONDecoder
 import re
+import base64
 
 
 class OpenAIWorker(Thread):
@@ -205,12 +206,21 @@ class OpenAIWorker(Thread):
         if self.sheets: # no sheets should be passed unintentionaly
             wrapped_selection = self.wrap_sheet_contents_with_scope() # in case of unprecise selection take the last scope
 
-        messages = self.create_message(selected_text=wrapped_selection, command=self.command, placeholder=self.assistant.placeholder)
-        ## MARK: This should be here, otherwise it would duplicates the messages.
-        payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
+        if self.mode == CommandMode.handle_image_input.value:
+            messages = self.create_image_message(image_url=self.command)
+            ## MARK: This should be here, otherwise it would duplicates the messages.
+            payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
+        else:
+            messages = self.create_message(selected_text=wrapped_selection, command=self.command, placeholder=self.assistant.placeholder)
+            ## MARK: This should be here, otherwise it would duplicates the messages.
+            payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
         if self.assistant.prompt_mode == PromptMode.panel.name:
-            self.cacher.append_to_cache(messages)
+            if self.mode == CommandMode.handle_image_input.value:
+                fake_messages = self.create_image_fake_message(self.command)
+                self.cacher.append_to_cache(fake_messages)
+            else:
+                self.cacher.append_to_cache(messages)
             self.update_output_panel("\n\n## Question\n\n")
 
             # MARK: Read only last few messages from cache with a len of a messages list
@@ -238,6 +248,41 @@ class OpenAIWorker(Thread):
         if placeholder: messages.append({"role": "system", "content": f'placeholder: {placeholder}', 'name': 'OpenAI_completion'})
         if selected_text: messages.extend([{"role": "user", "content": text, 'name': 'OpenAI_completion'} for text in selected_text])
         if command: messages.append({"role": "user", "content": command, 'name': 'OpenAI_completion'})
+        return messages
+
+    def create_image_fake_message(self, image_url: Optional[str]) -> List[Dict[str, str]]:
+        messages = []
+        if image_url: messages.append({"role": "user", "content": "Describe this image that it be possible to use drop it from the chat history without any context lost. It it's just a text screenshot provide such literally in markdown.", 'name': 'OpenAI_completion'})
+        if image_url: messages.append({"role": "user", "content": image_url, 'name': 'OpenAI_completion'})
+        return messages
+
+    def encode_image(self, image_path: str) -> str:
+      with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode('utf-8')
+
+    def create_image_message(self, image_url: Optional[str]) -> List[Dict[str, Any]]:
+        messages = []
+
+        if image_url:
+            base64_image = self.encode_image(image_url)
+            messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                          "type": "text",
+                          "text": "Describe this image that it be possible to use drop it from the chat history without any context lost. It it's just a text screenshot provide such literally with markdown formatting (don't wrapp the text into markdown scope)"
+                        },
+                        {
+                          "type": "image_url",
+                          "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                          }
+                        }
+                    ],
+                    'name': 'OpenAI_completion'
+                }
+            )
         return messages
 
     def run(self):

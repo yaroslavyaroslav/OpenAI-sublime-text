@@ -83,6 +83,23 @@ class Openai(TextCommand):
             listener.refresh_output_panel(window=window)
             listener.show_panel(window=window)
 
+
+        elif mode == CommandMode.handle_image_input.value:
+            _ = sublime.active_window().show_input_panel(
+                "Image URI: ",
+                "",
+                lambda user_input: self.on_input(
+                    region=region if region else None,
+                    text=text,
+                    view=self.view,
+                    mode=mode,
+                    input=user_input,
+                    selected_sheets=None
+                ),
+                None,
+                None,
+            )
+
         elif mode == CommandMode.chat_completion.value:
             if files_included:
                 sheets = sublime.active_window().selected_sheets()
