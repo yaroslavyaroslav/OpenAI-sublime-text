@@ -271,7 +271,7 @@ class OpenAIWorker(Thread):
                     "content": [
                         {
                           "type": "text",
-                          "text": "Describe this image that it be possible to use drop it from the chat history without any context lost. It it's just a text screenshot provide such literally with markdown formatting (don't wrapp the text into markdown scope)"
+                          "text": "1. Describe this image that it be possible to use drop it from the chat history without any context lost. 2. It it's just a text screenshot provide such literally with markdown formatting (don't wrapp the text into markdown scope). 3. If it's a figma/sketch mock, provide the exact swift code of the exact following layout with UIKit ans Snapkit. Pay attention between text screnshot and a mock of the design in figma or sketch"
                         },
                         {
                           "type": "image_url",
