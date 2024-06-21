@@ -9,6 +9,7 @@ from .errors.OpenAIException import ContextLengthExceededException, UnknownExcep
 from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS, CommandMode, PromptMode
 from json import JSONDecoder
 import re
+import copy
 import base64
 
 
@@ -207,9 +208,11 @@ class OpenAIWorker(Thread):
             wrapped_selection = self.wrap_sheet_contents_with_scope() # in case of unprecise selection take the last scope
 
         if self.mode == CommandMode.handle_image_input.value:
-            messages = self.create_image_message(image_url=self.command)
+            messages = self.create_image_message(image_url=self.text, command=self.command)
             ## MARK: This should be here, otherwise it would duplicates the messages.
-            payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
+            image_assistant = copy.deepcopy(self.assistant)
+            image_assistant.assistant_role = "Follow user's request on an image provided. If none provided do either: 1. Describe this image that it be possible to drop it from the chat history without any context lost. 2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope). 3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise. Pay attention between text screnshot and a mock of the design in figma or sketch"
+            payload = self.provider.prepare_payload(assitant_setting=image_assistant, messages=messages)
         else:
             messages = self.create_message(selected_text=wrapped_selection, command=self.command, placeholder=self.assistant.placeholder)
             ## MARK: This should be here, otherwise it would duplicates the messages.
@@ -217,7 +220,7 @@ class OpenAIWorker(Thread):
 
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if self.mode == CommandMode.handle_image_input.value:
-                fake_messages = self.create_image_fake_message(self.command)
+                fake_messages = self.create_image_fake_message(self.text, self.command)
                 self.cacher.append_to_cache(fake_messages)
             else:
                 self.cacher.append_to_cache(messages)
@@ -250,9 +253,9 @@ class OpenAIWorker(Thread):
         if command: messages.append({"role": "user", "content": command, 'name': 'OpenAI_completion'})
         return messages
 
-    def create_image_fake_message(self, image_url: Optional[str]) -> List[Dict[str, str]]:
+    def create_image_fake_message(self, image_url: Optional[str], command: Optional[str]) -> List[Dict[str, str]]:
         messages = []
-        if image_url: messages.append({"role": "user", "content": "Describe this image that it be possible to use drop it from the chat history without any context lost. It it's just a text screenshot provide such literally in markdown.", 'name': 'OpenAI_completion'})
+        if image_url: messages.append({"role": "user", "content": command, 'name': 'OpenAI_completion'})
         if image_url: messages.append({"role": "user", "content": image_url, 'name': 'OpenAI_completion'})
         return messages
 
@@ -260,18 +263,18 @@ class OpenAIWorker(Thread):
       with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-    def create_image_message(self, image_url: Optional[str]) -> List[Dict[str, Any]]:
+    def create_image_message(self, image_url: Optional[str], command: Optional[str]) -> List[Dict[str, Any]]:
         messages = []
 
         if image_url:
-            base64_image = self.encode_image(image_url)
+            base64_image = self.encode_image(image_url.strip())
             messages.append(
                 {
                     "role": "user",
                     "content": [
                         {
                           "type": "text",
-                          "text": "1. Describe this image that it be possible to use drop it from the chat history without any context lost. 2. It it's just a text screenshot provide such literally with markdown formatting (don't wrapp the text into markdown scope). 3. If it's a figma/sketch mock, provide the exact swift code of the exact following layout with UIKit ans Snapkit. Pay attention between text screnshot and a mock of the design in figma or sketch"
+                          "text": command
                         },
                         {
                           "type": "image_url",
