@@ -86,7 +86,7 @@ class Openai(TextCommand):
 
         elif mode == CommandMode.handle_image_input.value:
             _ = sublime.active_window().show_input_panel(
-                "Image URI: ",
+                "Command for Image: ",
                 "",
                 lambda user_input: self.on_input(
                     region=region if region else None,
