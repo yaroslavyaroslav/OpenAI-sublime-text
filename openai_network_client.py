@@ -1,7 +1,7 @@
 import json
 from base64 import b64encode
-from http.client import HTTPConnection, HTTPResponse, HTTPSConnection, responses
-from typing import Dict, List, Optional
+from http.client import HTTPConnection, HTTPResponse, HTTPSConnection
+from typing import Dict, List, Optional, Any
 from urllib.parse import urlparse
 
 import sublime

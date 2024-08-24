@@ -7,6 +7,13 @@
 		}
 	},
 	{
+		"caption": "OpenAI: Handle image",
+		"command": "openai",
+		"args": {
+			"mode": "handle_image_input",
+		}
+	},
+	{
 		"caption": "OpenAI: Chat Model Select With Sheets",
 		"command": "openai_panel",
 		"args": {
