@@ -9,6 +9,11 @@ It's not locked with just OpenAI anymore. [llama.cpp](https://github.com/ggergan
 
 ![](static/media/ai_chat_left.png)
 
+> [!INFO]
+> I think this plugin is its finite state. Meaning there's no further development of it I have in plans. I still have plans to fix bugs if any, but that tons of little enhancement that could be applied here to fix minor issues and roughness here and there likely never would.
+
+> What I do have in plans is to implement ST front end for [plandex](https://github.com/plandex-ai/plandex) tool based on some parts of this plugin codebase, to get (and to bring) a fancy and powerful agentish capabilities to ST ecosystem. So stay tuned.
+
 ## Features
 
 - Code manipulation (append, insert and edit) selected code with OpenAI models.
@@ -90,6 +95,15 @@ To send the whole file(s) in advance to request you should `super+button1` on th
 
 > [!NOTE]
 > It's also doesn't matter whether the file persists on a disc or it's just a virtual buffer with a text in it, if they're selected, their content will be send either way.
+
+### Image handling
+
+Image handle can be called by `OpenAI: Handle Image` command.
+
+It expects an absolute path of image to be selected in a buffer on the command call (smth like `/Users/username/Documents/Project/image.png`). In addition command can be passed by input panel to proceed the image with special treatment. `png` and `jpg` images are only supported.
+
+> [!WARNING]
+> Userflow don't expects that image url would be passed by that input panel input, it has to be selected in buffer. I'm aware about the UX quality of this design decision, but yet I'm too lazy to develop it further to some better state.
 
 ### In buffer llm use case
 
