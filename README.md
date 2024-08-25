@@ -10,7 +10,7 @@ It's not locked with just OpenAI anymore. [llama.cpp](https://github.com/ggergan
 ![](static/media/ai_chat_left.png)
 
 > [!INFO]
-> I think this plugin is its finite state. Meaning there's no further development of it I have in plans. I still have plans to fix bugs if any, but that tons of little enhancement that could be applied here to fix minor issues and roughness here and there likely never would.
+> I think this plugin is in its finite state. Meaning there's no further development of it I have in plans. I still have plans to fix bugs and review PR if any, but those tons of little enhancement that could be applied here to fix minor issues and roughness and there likely never would.
 
 > What I do have in plans is to implement ST front end for [plandex](https://github.com/plandex-ai/plandex) tool based on some parts of this plugin codebase, to get (and to bring) a fancy and powerful agentish capabilities to ST ecosystem. So stay tuned.
 
