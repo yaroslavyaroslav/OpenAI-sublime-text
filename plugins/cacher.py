@@ -5,7 +5,8 @@ import json
 from json.decoder import JSONDecodeError
 from typing import List, Dict, Iterator, Any, Optional
 
-class Cacher():
+
+class Cacher:
     def __init__(self, name: str = '') -> None:
         cache_dir = sublime.cache_path()
         plugin_cache_dir = os.path.join(cache_dir, 'OpenAI completion')
@@ -13,9 +14,24 @@ class Cacher():
             os.makedirs(plugin_cache_dir)
 
         # Create the file path to store the data
-        self.history_file = os.path.join(plugin_cache_dir, "{file_name}chat_history.jl".format(file_name=name + "_" if len(name) > 0 else ""))
-        self.current_model_file = os.path.join(plugin_cache_dir, "{file_name}current_assistant.json".format(file_name=name + "_" if len(name) > 0 else ""))
-        self.tokens_count_file = os.path.join(plugin_cache_dir, "{file_name}tokens_count.json".format(file_name=name + "_" if len(name) > 0 else ""))
+        self.history_file = os.path.join(
+            plugin_cache_dir,
+            '{file_name}chat_history.jl'.format(
+                file_name=name + '_' if len(name) > 0 else ''
+            ),
+        )
+        self.current_model_file = os.path.join(
+            plugin_cache_dir,
+            '{file_name}current_assistant.json'.format(
+                file_name=name + '_' if len(name) > 0 else ''
+            ),
+        )
+        self.tokens_count_file = os.path.join(
+            plugin_cache_dir,
+            '{file_name}tokens_count.json'.format(
+                file_name=name + '_' if len(name) > 0 else ''
+            ),
+        )
 
     def check_and_create(self, path: str):
         if not os.path.isfile(path):
@@ -27,9 +43,9 @@ class Cacher():
                 existing_data: Dict[str, int] = json.load(file)
         except (FileNotFoundError, JSONDecodeError):
             existing_data = {
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0
+                'prompt_tokens': 0,
+                'completion_tokens': 0,
+                'total_tokens': 0,
             }
 
         for key, value in data.items():
@@ -43,7 +59,7 @@ class Cacher():
 
     def reset_tokens_count(self):
         with open(self.tokens_count_file, 'w') as _:
-            pass # Truncate the file by opening it in 'w' mode and doing nothing
+            pass  # Truncate the file by opening it in 'w' mode and doing nothing
 
     def read_tokens_count(self) -> Optional[Dict[str, int]]:
         self.check_and_create(self.tokens_count_file)
@@ -51,11 +67,7 @@ class Cacher():
             try:
                 data: Optional[Dict[str, int]] = json.load(file)
             except JSONDecodeError:
-                data = {
-                    "prompt_tokens": 0,
-                    "completion_tokens": 0,
-                    "total_tokens": 0
-                }
+                data = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
                 return data
         return data
 
@@ -91,7 +103,7 @@ class Cacher():
         with open(self.history_file, 'r', encoding='utf-8') as file:
             lines = file.readlines()
 
-        last_n_lines = lines[-number:] # Get the last n lines
+        last_n_lines = lines[-number:]  # Get the last n lines
 
         for line in last_n_lines:
             try:
@@ -111,7 +123,7 @@ class Cacher():
         for line in cache_lines:
             writer.send(line)
 
-    def drop_first(self, number = 4):
+    def drop_first(self, number=4):
         self.check_and_create(self.history_file)
         # Read all lines from the JSON Lines file
         with open(self.history_file, 'r') as file:
@@ -126,4 +138,4 @@ class Cacher():
 
     def drop_all(self):
         with open(self.history_file, 'w') as _:
-            pass # Truncate the file by opening it in 'w' mode and doing nothing
+            pass  # Truncate the file by opening it in 'w' mode and doing nothing

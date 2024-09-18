@@ -1,6 +1,7 @@
 from sublime import error_message
 from logging import exception
 
+
 class OpenAIException(Exception):
     """Exception raised for errors in the input.
 
@@ -12,16 +13,21 @@ class OpenAIException(Exception):
         self.message = message
         super().__init__(self.message)
 
+
 class ContextLengthExceededException(OpenAIException): ...
+
 
 class UnknownException(OpenAIException): ...
 
+
 class WrongUserInputException(OpenAIException): ...
 
+
 def present_error(title: str, error: OpenAIException):
-    exception(f"{title}: {error.message}")
-    error_message(f"{title}\n{error.message}")
+    exception(f'{title}: {error.message}')
+    error_message(f'{title}\n{error.message}')
+
 
 def present_unknown_error(title: str, error: Exception):
-    exception(f"{title}: {error}")
-    error_message(f"{title}\n{error}")
+    exception(f'{title}: {error}')
+    error_message(f'{title}\n{error}')

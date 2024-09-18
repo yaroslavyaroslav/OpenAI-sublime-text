@@ -9,7 +9,7 @@ It's not locked with just OpenAI anymore. [llama.cpp](https://github.com/ggergan
 
 ![](static/media/ai_chat_left.png)
 
-> [!INFO]
+> [!NOTE]
 > I think this plugin is in its finite state. Meaning there's no further development of it I have in plans. I still have plans to fix bugs and review PR if any, but those tons of little enhancement that could be applied here to fix minor issues and roughness and there likely never would.
 
 > What I do have in plans is to implement ST front end for [plandex](https://github.com/plandex-ai/plandex) tool based on some parts of this plugin codebase, to get (and to bring) a fancy and powerful agentish capabilities to ST ecosystem. So stay tuned.
@@ -137,6 +137,10 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
     "token": "sk-your-token",
 }
 ```
+
+### ollama setup specific
+
+If you're here it meaning that a model that you're using with ollama talking shit. This is because `temperature` property of a model which is 1 somewhat [doubles](https://github.com/ollama/ollama/blob/69be940bf6d2816f61c79facfa336183bc882720/openai/openai.go#L454) on ollama's side, so it becomes 2, which is a little bit too much for a good model's response. So you to make things work you have to set temperature to 1.
 
 ## Key bindings
 
