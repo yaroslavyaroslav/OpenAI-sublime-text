@@ -24,6 +24,7 @@ class AssistantSettings:
     frequency_penalty: int
     presence_penalty: int
     placeholder: Optional[str]
+    advertisement: bool
 
 
 DEFAULT_ASSISTANT_SETTINGS = {
@@ -35,6 +36,7 @@ DEFAULT_ASSISTANT_SETTINGS = {
     'top_p': 1,
     'frequency_penalty': 0,
     'presence_penalty': 0,
+    'advertisement': True
 }
 
 
