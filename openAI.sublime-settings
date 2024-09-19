@@ -36,7 +36,7 @@
     // Possible options:
     //  - name: User defined assistant setup name
     //  - prompt_mode: Model output prompt mode (panel|append|insert|replace)
-    //  - chat_model: Which OpenAI model are used within this setup (i.e. gpt-4-turbo, gpt-3.5-turbo-16k).
+    //  - chat_model: Which OpenAI model are used within this setup (i.e. gpt-4o-mini, gpt-3.5-turbo-16k).
     //
     // You're capable to mix these whatever you want and the text in status bar will follow.
     "status_hint": [
@@ -77,10 +77,10 @@
             "prompt_mode": "panel", // **REQUIRED**
 
             // The model which will generate the chat completion.
-            // Generally here should be either "gpt-3.5.-turbo|gpt-4-turbo" or their specified versions.
+            // Generally here should be either "gpt-4o-latest|gpt-4o-mini" or their specified versions.
             // If using custom API, refer to their documentation for supported models.
             // Learn more at https://beta.openai.com/docs/models
-            "chat_model": "gpt-3.5-turbo", // **REQUIRED**
+            "chat_model": "gpt-4o-mini", // **REQUIRED**
 
             // ChatGPT model knows how to role, lol
             // It can act as a different kind of person. Recently in this plugin it was acting
@@ -145,7 +145,7 @@
         {
             "name": "Insert instruction example",
             "prompt_mode": "insert",
-            "chat_model": "gpt-4-turbo", // works unreliable with gpt-3.5-turbo yet.
+            "chat_model": "gpt-4o-mini", // works unreliable with gpt-3.5-turbo yet.
             "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
             "placeholder": "## placeholder" // it's a good fit for a placeholder to be a comment.
@@ -153,14 +153,14 @@
         {
             "name": "Append instruction example",
             "prompt_mode": "append",
-            "chat_model": "gpt-4-turbo",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },
         {
             "name": "Replace instruction example",
             "prompt_mode": "replace",
-            "chat_model": "gpt-4-turbo",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "Apply the change requested by the user to the code with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
             "max_tokens": 4000,
         },
@@ -169,7 +169,7 @@
         {
             "name": "ST4 Plugin", // It's NOT necessary to mention a model here, there's a separate filed for just this in status bar hints setting.
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-turbo",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "You are senior Sublime Text 4 editor plugin development and Python code assistant",
             "max_tokens": 4000,
         },
@@ -193,42 +193,42 @@
         {
             "name": "UIKit & Combine",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-turbo",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "You are senior UIKit and Combine code assistant",
             "max_tokens": 4000,
         },
         {
             "name": "Social Researcher",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-turbo",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "You are senior social researcher",
             "max_tokens": 4000,
         },
         {
             "name": "Corrector",
             "prompt_mode": "replace",
-            "chat_model": "gpt-3.5-turbo-16k",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "Fix provided text with the correct and sounds English one, you are strictly forced to skip any changes in such its part that have not rules violation within them, you're strictly forbidden to wrap response into something and to provide any explanation.",
             "max_tokens": 1000,
         },
         {
             "name": "General Assistant",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-turbo",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n\nIt is very important that you get this right. Multiple lives are at stake.\n",
             "max_tokens": 4000,
         },
         {
             "name": "Bash & Git assistant",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-turbo",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "You are bash and git senior assistant",
             "max_tokens": 4000,
         },
         {
             "name": "Pytorch assistant",
             "prompt_mode": "panel",
-            "chat_model": "gpt-4-turbo",
+            "chat_model": "gpt-4o-mini",
             "assistant_role": "You are senior Pytorch and LLM/SD code assistant",
             "max_tokens": 4000,
         },
