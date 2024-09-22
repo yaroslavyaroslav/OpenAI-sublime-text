@@ -1,7 +1,9 @@
-from .openai_base import CommonMethods
-from sublime_plugin import EventListener
-from sublime import View, QueryOperator
 import logging
+
+from sublime import QueryOperator, View
+from sublime_plugin import EventListener
+
+from .openai_base import CommonMethods
 
 logger = logging.getLogger(__name__)
 
@@ -19,11 +21,7 @@ class OpenaiWorkerRunningContext(EventListener):
             logger.debug('key == openai_worker_running')
             logger.debug(
                 'CommonMethods.worker_thread is alive: %s',
-                CommonMethods.worker_thread.is_alive()
-                if CommonMethods.worker_thread
-                else False,
+                CommonMethods.worker_thread.is_alive() if CommonMethods.worker_thread else False,
             )
-            return (
-                CommonMethods.worker_thread and CommonMethods.worker_thread.is_alive()
-            )
+            return CommonMethods.worker_thread and CommonMethods.worker_thread.is_alive()
         return None

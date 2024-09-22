@@ -1,6 +1,7 @@
+import logging
+
 import sublime
 import sublime_plugin
-import logging
 
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,14 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+import logging
+from typing import Any, Dict, List
+
 import sublime
 from sublime import View
 from sublime_plugin import EventListener
-import logging
 
 from .cacher import Cacher
 from .status_bar import StatusBarMode
-
 
 logger = logging.getLogger(__name__)
 
@@ -17,21 +19,19 @@ class ActiveViewEventListener(EventListener):
     def on_activated(self, view: View):
         ## FIXME: This is might be wrong, settings of view should be get not for an active view, but for a given window project view.
         ## It could be correct btw, as if a window with a specific settings gets active — it updated exact it status bar.
-        self.project_settings = (
-            sublime.active_window().active_view().settings().get('ai_assistant', None)
-        )
+        self.project_settings: Dict[str, str] | None = (
+            sublime.active_window().active_view().settings().get('ai_assistant')
+        )  # type: ignore
 
         # Logging disabled becuase it's too spammy. Uncomment in case of necessity.
         # logger.debug(
         #     "project_settings exists: %s", "YES" if self.project_settings else "NO"
         # )
 
+        cache_prefix = self.project_settings.get('cache_prefix') if self.project_settings else None
+
         # Initialize Cacher with proper default handling for missing cache_prefix
-        self.cacher = (
-            Cacher(name=self.project_settings['cache_prefix'])
-            if self.project_settings
-            else Cacher()
-        )
+        self.cacher = Cacher(name=cache_prefix)
 
         # logger.debug("cacher.history_file: %s", self.cacher.history_file)
         # logger.debug("cacher.current_model_file: %s", self.cacher.current_model_file)
@@ -44,9 +44,7 @@ class ActiveViewEventListener(EventListener):
 
         settings = sublime.load_settings('openAI.sublime-settings')
 
-        status_hint_options: List[str] = (
-            settings.get('status_hint', []) if settings else []
-        )
+        status_hint_options: List[str] = settings.get('status_hint', []) if settings else []  # type: ignore
 
         # logger.debug("status_hint_options: %s", status_hint_options)
 
@@ -56,7 +54,7 @@ class ActiveViewEventListener(EventListener):
     def update_status_bar(
         self,
         view: View,
-        assistant: Optional[Dict[str, Any]],
+        assistant: Dict[str, Any] | None,
         status_hint_options: List[str],
     ):
         if not assistant:
@@ -69,9 +67,7 @@ class ActiveViewEventListener(EventListener):
         if {'name', 'prompt_mode', 'chat_model'} <= assistant.keys():
             statuses: List[str] = []
             for key in ['name', 'prompt_mode', 'chat_model']:
-                lookup_key = (
-                    key if key != 'name' else 'name_'
-                )  # name is a reserved keyword
+                lookup_key = key if key != 'name' else 'name_'  # name is a reserved keyword
                 if StatusBarMode[lookup_key].value in status_hint_options:
                     if key == 'chat_model':
                         statuses.append(assistant[key].upper())

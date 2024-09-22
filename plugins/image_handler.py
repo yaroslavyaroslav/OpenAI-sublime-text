@@ -1,8 +1,9 @@
+import logging
 import os
 import re
 from urllib.parse import urlparse
+
 import sublime
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -11,9 +12,7 @@ class ImageValidator:
     @staticmethod
     def get_valid_image_input(text: str) -> str:
         """Check if the input text contains valid image URLs or file paths; return the original string if valid."""
-        clipboard_content = (
-            sublime.get_clipboard().strip() if sublime.get_clipboard() else text.strip()
-        )
+        clipboard_content = sublime.get_clipboard().strip() if sublime.get_clipboard() else text.strip()
 
         # Split the content by spaces or newlines
         potential_images = re.split(r'\n', clipboard_content)
@@ -41,12 +40,12 @@ class ImageValidator:
             result = urlparse(text)
             # Ensure the URL scheme is HTTP/HTTPS and it has a valid image extension
             return all(
-                [result.scheme in ('http', 'https'), result.netloc]
+                [result.scheme in ('http', 'https'), result.netloc]  # type: ignore
             ) and re.match(r'.*\.(jpg|jpeg|png)$', text)
-        except:
+        except:  # noqa: E722
             return False
 
     @staticmethod
     def is_local_image(text: str) -> bool:
         """Check if the text is a valid local file path pointing to an image."""
-        return os.path.isfile(text) and re.match(r'.*\.(jpg|jpeg|png)$', text)
+        return os.path.isfile(text) and re.match(r'.*\.(jpg|jpeg|png)$', text)  # type: ignore

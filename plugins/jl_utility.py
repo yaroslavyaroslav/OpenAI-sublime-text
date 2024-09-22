@@ -1,5 +1,6 @@
 import json
-from typing import Iterator, Generator
+from typing import Generator, Iterator
+
 
 def reader(fname: str) -> Iterator[dict]:
     with open(fname) as file:
@@ -13,4 +14,4 @@ def writer(fname: str, mode: str = 'a') -> Generator[None, dict, None]:
         while True:
             obj = yield
             line = json.dumps(obj, ensure_ascii=False)
-            file.write(f"{line}\n")
+            file.write(f'{line}\n')
