@@ -10,6 +10,7 @@ class PromptMode(Enum):
     append = 'append'
     insert = 'insert'
     replace = 'replace'
+    phantom = 'phantom'
 
 
 @dataclass

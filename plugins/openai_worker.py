@@ -27,6 +27,7 @@ from .errors.OpenAIException import (
     present_unknown_error,
 )
 from .openai_network_client import NetworkClient
+from .phantom_streamer import PhantomStreamer
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +91,7 @@ class OpenAIWorker(Thread):
         self.listner = SharedOutputPanelListener(markdown=markdown_setting, cacher=self.cacher)
 
         self.buffer_manager = TextStreamer(self.view)
+        self.phantom_manager = PhantomStreamer(self.view)
         super(OpenAIWorker, self).__init__()
 
     # This method appears redundant.
@@ -109,6 +111,9 @@ class OpenAIWorker(Thread):
             if 'content' in delta:
                 full_response_content['content'] += delta['content']
                 self.update_output_panel(delta['content'])
+        elif self.assistant.prompt_mode == PromptMode.phantom.name:
+            if 'content' in delta:
+                self.phantom_manager.update_completion(delta['content'])
         else:
             if 'content' in delta:
                 self.update_completion(delta['content'])
@@ -157,7 +162,8 @@ class OpenAIWorker(Thread):
                         )
                 elif not self.assistant.placeholder:
                     raise WrongUserInputException(
-                        'There is no placeholder value set for this assistant. Please add `placeholder` property in a given assistant setting.'
+                        'There is no placeholder value set for this assistant. '
+                        + 'Please add `placeholder` property in a given assistant setting.'
                     )
             except Exception:
                 raise
@@ -169,7 +175,7 @@ class OpenAIWorker(Thread):
             return
 
         try:
-            self.prepare_to_response()
+            self.prepare_to_response()  # TODO: This could be moved earlier in request pipeline.
         except Exception:
             logger.error('prepare_to_response failed')
             self.provider.close_connection()
