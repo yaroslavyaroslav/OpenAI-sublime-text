@@ -1,35 +1,36 @@
-import sublime
-from sublime import Settings, View, Region, Sheet
-from threading import Event
-from typing import Optional, List, Dict, Any
+from __future__ import annotations
+
 import logging
+from threading import Event
+from typing import Any, Dict, List
+
+import sublime
+from sublime import Region, Settings, Sheet, View
 
 from .assistant_settings import (
     AssistantSettings,
     CommandMode,
 )
 from .errors.OpenAIException import WrongUserInputException, present_error
-from .openai_worker import OpenAIWorker
 from .image_handler import ImageValidator
+from .openai_worker import OpenAIWorker
 
 logger = logging.getLogger(__name__)
 
 
 class CommonMethods:
     stop_event: Event = Event()
-    worker_thread: Optional[OpenAIWorker] = None
+    worker_thread: OpenAIWorker | None = None
 
     @classmethod
-    def process_openai_command(
-        cls, view: View, assistant: Optional[AssistantSettings], kwargs: Dict[str, Any]
-    ):
+    def process_openai_command(cls, view: View, assistant: AssistantSettings | None, kwargs: Dict[str, Any]):
         logger.debug('Openai started')
         plugin_loaded()
         mode = kwargs.pop('mode', 'chat_completion')
         files_included = kwargs.get('files_included', False)
 
-        region: Optional[Region] = None
-        text: Optional[str] = ''
+        region: Region | None = None
+        text: str | None = ''
 
         logger.debug('mode: %s', mode)
         logger.debug('Region: %s', region)
@@ -40,7 +41,8 @@ class CommonMethods:
         logger.debug('Selected text: %s', text)
         # Checking that user selected some text
         try:
-            if region and len(region) < settings.get('minimum_selection_length'):
+            minimum_selection_length: int | None = settings.get('minimum_selection_length')  # type: ignore
+            if region and minimum_selection_length and len(region) < minimum_selection_length:
                 if mode == CommandMode.chat_completion:
                     raise WrongUserInputException(
                         'Not enough text selected to complete the request, please expand the selection.'
@@ -56,22 +58,16 @@ class CommonMethods:
             cls.handle_image_input(region, text, view, mode)
 
         elif mode == CommandMode.chat_completion.value:
-            cls.handle_chat_completion(
-                view, region, text, mode, assistant, files_included
-            )
+            cls.handle_chat_completion(view, region, text, mode, assistant, files_included)
 
     @classmethod
-    def handle_image_input(
-        cls, region: Optional[Region], text: str, view: View, mode: str
-    ):
+    def handle_image_input(cls, region: Region | None, text: str, view: View, mode: str):
         valid_input = ImageValidator.get_valid_image_input(text)
 
         sublime.active_window().show_input_panel(
             'Command for Image: ',
             '',
-            lambda user_input: cls.on_input(
-                region, valid_input, view, mode, user_input, None, None
-            ),
+            lambda user_input: cls.on_input(region, valid_input, view, mode, user_input, None, None),
             None,
             None,
         )
@@ -80,19 +76,17 @@ class CommonMethods:
     def handle_chat_completion(
         cls,
         view: View,
-        region: Optional[Region],
+        region: Region | None,
         text: str,
         mode: str,
-        assistant: Optional[AssistantSettings],
+        assistant: AssistantSettings | None,
         files_included: bool,
     ):
         sheets = sublime.active_window().selected_sheets() if files_included else None
         sublime.active_window().show_input_panel(
             'Question: ',
             '',
-            lambda user_input: cls.handle_input(
-                user_input, region, text, view, mode, assistant, sheets
-            ),
+            lambda user_input: cls.handle_input(user_input, region, text, view, mode, assistant, sheets),
             None,
             None,
         )
@@ -105,13 +99,13 @@ class CommonMethods:
     @classmethod
     def on_input(
         cls,
-        region: Optional[Region],
+        region: Region | None,
         text: str,
         view: View,
         mode: str,
         input: str,
-        assistant: Optional[AssistantSettings],
-        selected_sheets: Optional[List[Sheet]],
+        assistant: AssistantSettings | None,
+        selected_sheets: List[Sheet] | None,
     ):
         # from .openai_worker import OpenAIWorker  # https://stackoverflow.com/a/52927102
 
@@ -138,7 +132,7 @@ class CommonMethods:
         # cls.worker_thread = None
 
 
-settings: Optional[Settings] = None
+settings: Settings | None = None
 
 
 def plugin_loaded():

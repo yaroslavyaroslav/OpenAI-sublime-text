@@ -142,6 +142,10 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
 
 If you're here it meaning that a model that you're using with ollama talking shit. This is because `temperature` property of a model which is 1 somewhat [doubles](https://github.com/ollama/ollama/blob/69be940bf6d2816f61c79facfa336183bc882720/openai/openai.go#L454) on ollama's side, so it becomes 2, which is a little bit too much for a good model's response. So you to make things work you have to set temperature to 1.
 
+### Advertisement disabling
+
+To disable advertisement you have to add `"advertisement": false` line into an assistant setting where you wish it to be disabled.
+
 ## Key bindings
 
 You can bind keys for a given plugin command in `Preferences` -> `Package Settings` -> `OpenAI` -> `Key Bindings`. For example you can bind "New Message" command like this:

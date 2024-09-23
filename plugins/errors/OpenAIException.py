@@ -1,5 +1,6 @@
-from sublime import error_message
 from logging import exception
+
+from sublime import error_message
 
 
 class OpenAIException(Exception):
