@@ -1,12 +1,16 @@
-import sublime
-from sublime import Edit, View, Region
-from sublime_plugin import TextCommand
-import logging
+from __future__ import annotations
 
-from .openai_base import CommonMethods
-from .cacher import Cacher
-from .output_panel import SharedOutputPanelListener
+import logging
+from typing import Dict
+
+import sublime
+from sublime import Edit, Region, View
+from sublime_plugin import TextCommand
+
 from .assistant_settings import CommandMode
+from .cacher import Cacher
+from .openai_base import CommonMethods
+from .output_panel import SharedOutputPanelListener
 
 logger = logging.getLogger(__name__)
 
@@ -17,16 +21,17 @@ class Openai(TextCommand):
     def run(self, edit: Edit, **kwargs):
         mode = kwargs.get('mode', 'chat_completion')
 
-        project_settings = self.view.settings().get('ai_assistant', None)
-        cacher = (
-            Cacher(name=project_settings['cache_prefix'])
-            if project_settings
-            else Cacher()
-        )
+        self.project_settings: Dict[str, str] | None = (
+            sublime.active_window().active_view().settings().get('ai_assistant')
+        )  # type: ignore
+
+        cache_prefix = self.project_settings.get('cache_prefix') if self.project_settings else None
+
         settings = sublime.load_settings('openAI.sublime-settings')
 
         listener = SharedOutputPanelListener(
-            markdown=settings.get('markdown'), cacher=cacher
+            markdown=settings.get('markdown', False),  # type: ignore
+            cacher=Cacher(name=cache_prefix),
         )
 
         if mode == CommandMode.reset_chat_history.value:
@@ -40,9 +45,7 @@ class Openai(TextCommand):
 
     # TODO: This is temporary solution, this method should be moved to a more proper place
     @classmethod
-    def reset_chat_history(
-        cls, view: View, listener: SharedOutputPanelListener, edit: Edit
-    ):
+    def reset_chat_history(cls, view: View, listener: SharedOutputPanelListener, edit: Edit):
         listener.cacher.drop_all()
         listener.cacher.reset_tokens_count()
         window = sublime.active_window()

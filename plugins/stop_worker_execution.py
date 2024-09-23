@@ -1,7 +1,9 @@
-from .openai_base import CommonMethods
-from sublime_plugin import TextCommand
-from sublime import Edit
 import logging
+
+from sublime import Edit
+from sublime_plugin import TextCommand
+
+from .openai_base import CommonMethods
 
 logger = logging.getLogger(__name__)
 

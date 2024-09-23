@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
+from typing import Dict, Any
 
 
 class PromptMode(Enum):
@@ -14,8 +16,8 @@ class PromptMode(Enum):
 class AssistantSettings:
     name: str
     prompt_mode: PromptMode
-    url: Optional[str]
-    token: Optional[str]
+    url: str | None
+    token: str | None
     chat_model: str
     assistant_role: str
     temperature: int
@@ -23,11 +25,11 @@ class AssistantSettings:
     top_p: int
     frequency_penalty: int
     presence_penalty: int
-    placeholder: Optional[str]
+    placeholder: str | None
     advertisement: bool
 
 
-DEFAULT_ASSISTANT_SETTINGS = {
+DEFAULT_ASSISTANT_SETTINGS: Dict[str, Any] = {
     'placeholder': None,
     'url': None,
     'token': None,
@@ -36,7 +38,7 @@ DEFAULT_ASSISTANT_SETTINGS = {
     'top_p': 1,
     'frequency_penalty': 0,
     'presence_penalty': 0,
-    'advertisement': True
+    'advertisement': True,
 }
 
 

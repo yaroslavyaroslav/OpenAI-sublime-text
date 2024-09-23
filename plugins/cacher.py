@@ -1,13 +1,17 @@
-import sublime
-import os
-from . import jl_utility as jl
+from __future__ import annotations
+
 import json
+import os
 from json.decoder import JSONDecodeError
-from typing import List, Dict, Iterator, Any, Optional
+from typing import Any, Dict, Iterator, List
+
+import sublime
+
+from . import jl_utility as jl
 
 
 class Cacher:
-    def __init__(self, name: str = '') -> None:
+    def __init__(self, name: str | None = None) -> None:
         cache_dir = sublime.cache_path()
         plugin_cache_dir = os.path.join(cache_dir, 'OpenAI completion')
         if not os.path.exists(plugin_cache_dir):
@@ -16,21 +20,15 @@ class Cacher:
         # Create the file path to store the data
         self.history_file = os.path.join(
             plugin_cache_dir,
-            '{file_name}chat_history.jl'.format(
-                file_name=name + '_' if len(name) > 0 else ''
-            ),
+            '{file_name}chat_history.jl'.format(file_name=name + '_' if name else ''),
         )
         self.current_model_file = os.path.join(
             plugin_cache_dir,
-            '{file_name}current_assistant.json'.format(
-                file_name=name + '_' if len(name) > 0 else ''
-            ),
+            '{file_name}current_assistant.json'.format(file_name=name + '_' if name else ''),
         )
         self.tokens_count_file = os.path.join(
             plugin_cache_dir,
-            '{file_name}tokens_count.json'.format(
-                file_name=name + '_' if len(name) > 0 else ''
-            ),
+            '{file_name}tokens_count.json'.format(file_name=name + '_' if name else ''),
         )
 
     def check_and_create(self, path: str):
@@ -61,11 +59,11 @@ class Cacher:
         with open(self.tokens_count_file, 'w') as _:
             pass  # Truncate the file by opening it in 'w' mode and doing nothing
 
-    def read_tokens_count(self) -> Optional[Dict[str, int]]:
+    def read_tokens_count(self) -> Dict[str, int] | None:
         self.check_and_create(self.tokens_count_file)
         with open(self.tokens_count_file, 'r') as file:
             try:
-                data: Optional[Dict[str, int]] = json.load(file)
+                data: Dict[str, int] | None = json.load(file)
             except JSONDecodeError:
                 data = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
                 return data
@@ -75,11 +73,11 @@ class Cacher:
         with open(self.current_model_file, 'w') as file:
             json.dump(data, file)
 
-    def read_model(self) -> Optional[Dict[str, Any]]:
+    def read_model(self) -> Dict[str, Any] | None:
         self.check_and_create(self.current_model_file)
         with open(self.current_model_file, 'r') as file:
             try:
-                data: Optional[Dict[str, Any]] = json.load(file)
+                data: Dict[str, Any] | None = json.load(file)
             except JSONDecodeError:
                 # TODO: Handle this state, but keep in mind
                 # that it's completely legal to being a file empty for some (yet unspecified) state

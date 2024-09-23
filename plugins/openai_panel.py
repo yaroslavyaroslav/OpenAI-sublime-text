@@ -1,35 +1,38 @@
-from .openai_base import CommonMethods
-from .assistant_settings import AssistantSettings, DEFAULT_ASSISTANT_SETTINGS
+from __future__ import annotations
+
+import logging
+from threading import Event
+from typing import Any, Dict, List
+
 import sublime
 from sublime import Settings, Window
 from sublime_plugin import WindowCommand
-from typing import Optional, List
+
+from .assistant_settings import DEFAULT_ASSISTANT_SETTINGS, AssistantSettings
 from .cacher import Cacher
+from .openai_base import CommonMethods
 from .openai_worker import OpenAIWorker
-from threading import Event
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 class OpenaiPanelCommand(WindowCommand):
     stop_event: Event = Event()
-    worker_thread: Optional[OpenAIWorker] = None
+    worker_thread: OpenAIWorker | None = None
     cache_prefix = None
     files_included = False
 
     def __init__(self, window: Window):
         super().__init__(window)
         self.settings: Settings = sublime.load_settings('openAI.sublime-settings')
-        self.project_settings = (
-            self.window.active_view().settings().get('ai_assistant', None)
-        )
+        self.project_settings: Dict[str, str] | None = (
+            sublime.active_window().active_view().settings().get('ai_assistant')
+        )  # type: ignore
 
-        self.cacher = (
-            Cacher(name=self.project_settings['cache_prefix'])
-            if self.project_settings
-            else Cacher()
-        )
+        cache_prefix = self.project_settings.get('cache_prefix') if self.project_settings else None
+
+        self.cacher = Cacher(name=cache_prefix)
+
         # Load assistants from settings
         self.load_assistants()
 
@@ -37,9 +40,9 @@ class OpenaiPanelCommand(WindowCommand):
         self.settings.add_on_change('reload_assistants', self.load_assistants)
 
     def load_assistants(self):
+        assistants: List[Dict[str, Any]] = self.settings.get('assistants', [])  # type: ignore
         self.assistants: List[AssistantSettings] = [
-            AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant})
-            for assistant in self.settings.get('assistants', [])
+            AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant}) for assistant in assistants
         ]
 
     def run(self, **kwargs):
@@ -52,11 +55,12 @@ class OpenaiPanelCommand(WindowCommand):
             ],
             self.on_done,
         )
-        settings = self.window.active_view().settings().get('ai_assistant', None)
-        if settings and settings.get('cache_prefix', None):
-            prefix = settings.get('cache_prefix', None)
+        settings: Dict[str, str] = self.window.active_view().settings().get('ai_assistant')  # type: ignore
+
+        if settings and settings.get('cache_prefix'):
+            prefix = settings.get('cache_prefix')
             if prefix:
-                self.cacher = Cacher(prefix)
+                self.cacher = Cacher(prefix)  # noqa: E701
 
     def on_done(self, index: int):
         if index == -1:
@@ -67,7 +71,9 @@ class OpenaiPanelCommand(WindowCommand):
         self.cacher.save_model(assistant.__dict__)
 
         CommonMethods.process_openai_command(
-            self.window.active_view(), assistant, self.kwargs
+            self.window.active_view(),  # type: ignore
+            assistant,
+            self.kwargs,
         )
 
     def __del__(self):

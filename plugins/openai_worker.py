@@ -1,16 +1,24 @@
-import sublime
-from sublime import Sheet, View, Region, Settings
-from threading import Thread, Event
-from typing import Dict, List, Optional, Any
-from json import JSONDecoder
-import re
-import copy
-import base64
-import logging
+from __future__ import annotations
 
-from .cacher import Cacher
-from .openai_network_client import NetworkClient
+import base64
+import copy
+import logging
+import re
+from json import JSONDecoder
+from threading import Event, Thread
+from typing import Any, Dict, List
+
+import sublime
+from sublime import Region, Settings, Sheet, View
+
+from .assistant_settings import (
+    DEFAULT_ASSISTANT_SETTINGS,
+    AssistantSettings,
+    CommandMode,
+    PromptMode,
+)
 from .buffer import TextStreamer
+from .cacher import Cacher
 from .errors.OpenAIException import (
     ContextLengthExceededException,
     UnknownException,
@@ -18,12 +26,7 @@ from .errors.OpenAIException import (
     present_error,
     present_unknown_error,
 )
-from .assistant_settings import (
-    AssistantSettings,
-    DEFAULT_ASSISTANT_SETTINGS,
-    CommandMode,
-    PromptMode,
-)
+from .openai_network_client import NetworkClient
 
 logger = logging.getLogger(__name__)
 
@@ -32,19 +35,19 @@ class OpenAIWorker(Thread):
     def __init__(
         self,
         stop_event: Event,
-        region: Optional[Region],
+        region: Region | None,
         text: str,
         view: View,
         mode: str,
-        command: Optional[str],
-        assistant: Optional[AssistantSettings] = None,
-        sheets: Optional[List[Sheet]] = None,
+        command: str | None,
+        assistant: AssistantSettings | None = None,
+        sheets: List[Sheet] | None = None,
     ):
         self.region = region
         # Selected text within editor (as `user`)
         self.text = text
         # Text from input panel (as `user`)
-        self.command = command  # optional
+        self.command = command
         self.view = view
         self.mode = mode
         # Text input from input panel
@@ -55,29 +58,25 @@ class OpenAIWorker(Thread):
         logger.debug('OpenAIWorker self.stop_event id: %s', id(self.stop_event))
         self.sheets = sheets
 
-        self.project_settings = view.settings().get('ai_assistant', None)
-        self.cacher = (
-            Cacher(name=self.project_settings['cache_prefix'])
-            if self.project_settings
-            else Cacher()
-        )
+        self.project_settings: Dict[str, str] | None = (
+            sublime.active_window().active_view().settings().get('ai_assistant')
+        )  # type: ignore
+
+        cache_prefix = self.project_settings.get('cache_prefix') if self.project_settings else None
+
+        self.cacher = Cacher(name=cache_prefix)
 
         opt_assistant_dict = self.cacher.read_model()
         ## loading assistant dict
-        assistant_dict = (
-            opt_assistant_dict
-            if opt_assistant_dict
-            else self.settings.get('assistants')[0]
+        assistant_dict: Dict[str, Any] = (
+            opt_assistant_dict if opt_assistant_dict else self.settings.get('assistants')[0]  # type: ignore
         )
+
         ## merging dicts with a default one and initializing AssitantSettings
         self.assistant = (
-            assistant
-            if assistant
-            else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
+            assistant if assistant else AssistantSettings(**{**DEFAULT_ASSISTANT_SETTINGS, **assistant_dict})
         )
-        self.provider = NetworkClient(
-            settings=self.settings, assistant=self.assistant, cacher=self.cacher
-        )
+        self.provider = NetworkClient(settings=self.settings, assistant=self.assistant, cacher=self.cacher)
         self.window = sublime.active_window()
 
         markdown_setting = self.settings.get('markdown')
@@ -88,9 +87,7 @@ class OpenAIWorker(Thread):
             SharedOutputPanelListener,
         )  # https://stackoverflow.com/a/52927102
 
-        self.listner = SharedOutputPanelListener(
-            markdown=markdown_setting, cacher=self.cacher
-        )
+        self.listner = SharedOutputPanelListener(markdown=markdown_setting, cacher=self.cacher)
 
         self.buffer_manager = TextStreamer(self.view)
         super(OpenAIWorker, self).__init__()
@@ -105,9 +102,7 @@ class OpenAIWorker(Thread):
     def update_completion(self, completion: str):
         self.buffer_manager.update_completion(completion=completion)
 
-    def handle_sse_delta(
-        self, delta: Dict[str, Any], full_response_content: Dict[str, str]
-    ):
+    def handle_sse_delta(self, delta: Dict[str, Any], full_response_content: Dict[str, str]):
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if 'role' in delta:
                 full_response_content['role'] = delta['role']
@@ -153,9 +148,7 @@ class OpenAIWorker(Thread):
                         placeholder_begin = placeholder_region.begin()
                         self.delete_selection(region=placeholder_region)
                         self.view.sel().clear()
-                        self.view.sel().add(
-                            Region(placeholder_begin, placeholder_begin)
-                        )
+                        self.view.sel().add(Region(placeholder_begin, placeholder_begin))
                     else:
                         raise WrongUserInputException(
                             "There is no placeholder '"
@@ -185,9 +178,7 @@ class OpenAIWorker(Thread):
         # without key declaration it would failt to append there later in code.
         full_response_content = {'role': '', 'content': ''}
 
-        logger.debug(
-            'OpenAIWorker execution self.stop_event id: %s', id(self.stop_event)
-        )
+        logger.debug('OpenAIWorker execution self.stop_event id: %s', id(self.stop_event))
 
         for chunk in response:
             # FIXME: With this implementation few last tokens get missed on cacnel action. (e.g. the're seen within a proxy, but not in the code)
@@ -213,9 +204,7 @@ class OpenAIWorker(Thread):
                     response_str: Dict[str, Any] = JSONDecoder().decode(chunk_str)
                     if 'delta' in response_str['choices'][0]:
                         delta: Dict[str, Any] = response_str['choices'][0]['delta']
-                        self.handle_sse_delta(
-                            delta=delta, full_response_content=full_response_content
-                        )
+                        self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
                 except:
                     self.provider.close_connection()
                     raise
@@ -227,12 +216,8 @@ class OpenAIWorker(Thread):
                     'assistant'  # together.ai never returns role value, so we have to set it manually
                 )
             self.cacher.append_to_cache([full_response_content])
-            completion_tokens_amount = self.calculate_completion_tokens(
-                [full_response_content]
-            )
-            self.cacher.append_tokens_count(
-                {'completion_tokens': completion_tokens_amount}
-            )
+            completion_tokens_amount = self.calculate_completion_tokens([full_response_content])
+            self.cacher.append_tokens_count({'completion_tokens': completion_tokens_amount})
 
     def handle_response(self):
         try:
@@ -244,23 +229,15 @@ class OpenAIWorker(Thread):
             )
             if do_delete:
                 self.cacher.drop_first(2)
-                messages = self.create_message(
-                    selected_text=[self.text], command=self.command
-                )
-                payload = self.provider.prepare_payload(
-                    assitant_setting=self.assistant, messages=messages
-                )
+                messages = self.create_message(selected_text=[self.text], command=self.command)
+                payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
                 self.provider.prepare_request(json_payload=payload)
                 self.handle_response()
         except WrongUserInputException as error:
-            logger.debug(
-                'on WrongUserInputException event status: %s', self.stop_event.is_set()
-            )
+            logger.debug('on WrongUserInputException event status: %s', self.stop_event.is_set())
             present_error(title='OpenAI error', error=error)
         except UnknownException as error:
-            logger.debug(
-                'on UnknownException event status: %s', self.stop_event.is_set()
-            )
+            logger.debug('on UnknownException event status: %s', self.stop_event.is_set())
             present_error(title='OpenAI error', error=error)
 
     def wrap_sheet_contents_with_scope(self) -> List[str]:
@@ -274,9 +251,7 @@ class OpenAIWorker(Thread):
                     continue  # If for some reason the sheet cannot be converted to a view, skip.
 
                 # Deriving the scope from the beginning of the view's content
-                scope_region = view.scope_name(
-                    0
-                )  # Assuming you want the scope at the start of the document
+                scope_region = view.scope_name(0)  # Assuming you want the scope at the start of the document
                 scope_name = scope_region.split(' ')[0].split('.')[-1]
 
                 # Extracting the text from the view
@@ -292,9 +267,7 @@ class OpenAIWorker(Thread):
         wrapped_selection = None
         if self.region:
             scope_region = self.window.active_view().scope_name(self.region.begin())
-            scope_name = scope_region.split('.')[
-                -1
-            ]  # in case of precise selection take the last scope
+            scope_name = scope_region.split('.')[-1]  # in case of precise selection take the last scope
             wrapped_selection = [f'```{scope_name}\n' + self.text + '\n```']
         if self.sheets:  # no sheets should be passed unintentionaly
             wrapped_selection = (
@@ -302,15 +275,18 @@ class OpenAIWorker(Thread):
             )  # in case of unprecise selection take the last scope
 
         if self.mode == CommandMode.handle_image_input.value:
-            messages = self.create_image_message(
-                image_url=self.text, command=self.command
-            )
+            messages = self.create_image_message(image_url=self.text, command=self.command)
             ## MARK: This should be here, otherwise it would duplicates the messages.
             image_assistant = copy.deepcopy(self.assistant)
-            image_assistant.assistant_role = "Follow user's request on an image provided. If none provided do either: 1. Describe this image that it be possible to drop it from the chat history without any context lost. 2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope). 3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise. Pay attention between text screnshot and a mock of the design in figma or sketch"
-            payload = self.provider.prepare_payload(
-                assitant_setting=image_assistant, messages=messages
+            image_assistant.assistant_role = (
+                "Follow user's request on an image provided. "
+                'If none provided do either: '
+                '1. Describe this image that it be possible to drop it from the chat history without any context lost. '
+                "2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope). "
+                "3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise. "
+                'Pay attention between text screnshot and a mock of the design in figma or sketch'
             )
+            payload = self.provider.prepare_payload(assitant_setting=image_assistant, messages=messages)
         else:
             messages = self.create_message(
                 selected_text=wrapped_selection,
@@ -318,9 +294,7 @@ class OpenAIWorker(Thread):
                 placeholder=self.assistant.placeholder,
             )
             ## MARK: This should be here, otherwise it would duplicates the messages.
-            payload = self.provider.prepare_payload(
-                assitant_setting=self.assistant, messages=messages
-            )
+            payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if self.mode == CommandMode.handle_image_input.value:
@@ -331,9 +305,7 @@ class OpenAIWorker(Thread):
             self.update_output_panel('\n\n## Question\n\n')
 
             # MARK: Read only last few messages from cache with a len of a messages list
-            questions = [
-                value['content'] for value in self.cacher.read_all()[-len(messages) :]
-            ]
+            questions = [value['content'] for value in self.cacher.read_all()[-len(messages) :]]
 
             # MARK: \n\n for splitting command from selected text
             # FIXME: This logic adds redundant line breaks on a single message.
@@ -354,9 +326,9 @@ class OpenAIWorker(Thread):
 
     def create_message(
         self,
-        selected_text: Optional[List[str]],
-        command: Optional[str],
-        placeholder: Optional[str] = None,
+        selected_text: List[str] | None,
+        command: str | None,
+        placeholder: str | None = None,
     ) -> List[Dict[str, str]]:
         messages = []
         if placeholder:
@@ -369,38 +341,25 @@ class OpenAIWorker(Thread):
             )
         if selected_text:
             messages.extend(
-                [
-                    {'role': 'user', 'content': text, 'name': 'OpenAI_completion'}
-                    for text in selected_text
-                ]
+                [{'role': 'user', 'content': text, 'name': 'OpenAI_completion'} for text in selected_text]
             )
         if command:
-            messages.append(
-                {'role': 'user', 'content': command, 'name': 'OpenAI_completion'}
-            )
+            messages.append({'role': 'user', 'content': command, 'name': 'OpenAI_completion'})
         return messages
 
-    def create_image_fake_message(
-        self, image_url: Optional[str], command: Optional[str]
-    ) -> List[Dict[str, str]]:
+    def create_image_fake_message(self, image_url: str | None, command: str | None) -> List[Dict[str, str]]:
         messages = []
         if image_url:
-            messages.append(
-                {'role': 'user', 'content': command, 'name': 'OpenAI_completion'}
-            )
+            messages.append({'role': 'user', 'content': command, 'name': 'OpenAI_completion'})
         if image_url:
-            messages.append(
-                {'role': 'user', 'content': image_url, 'name': 'OpenAI_completion'}
-            )
+            messages.append({'role': 'user', 'content': image_url, 'name': 'OpenAI_completion'})
         return messages
 
     def encode_image(self, image_path: str) -> str:
         with open(image_path, 'rb') as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
-    def create_image_message(
-        self, image_url: Optional[str], command: Optional[str]
-    ) -> List[Dict[str, Any]]:
+    def create_image_message(self, image_url: str | None, command: str | None) -> List[Dict[str, Any]]:
         """Create a message with a list of image URLs (in base64) and a command."""
         messages = []
 
@@ -416,9 +375,7 @@ class OpenAIWorker(Thread):
                     image_data_list.append(
                         {
                             'type': 'image_url',
-                            'image_url': {
-                                'url': f'data:image/jpeg;base64,{base64_image}'
-                            },
+                            'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
                         }
                     )
 
