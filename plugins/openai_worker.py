@@ -180,6 +180,8 @@ class OpenAIWorker(Thread):
 
         logger.debug('OpenAIWorker execution self.stop_event id: %s', id(self.stop_event))
 
+        full_text = ''
+
         for chunk in response:
             # FIXME: With this implementation few last tokens get missed on cacnel action. (e.g. the're seen within a proxy, but not in the code)
             if self.stop_event.is_set():
@@ -195,6 +197,7 @@ class OpenAIWorker(Thread):
                 self.provider.close_connection()
                 break
             chunk_str = chunk.decode('utf-8')
+            full_text = full_text + chunk_str
 
             # Check for SSE data
             if chunk_str.startswith('data:') and not re.search(r'\[DONE\]$', chunk_str):
@@ -208,6 +211,9 @@ class OpenAIWorker(Thread):
                 except:
                     self.provider.close_connection()
                     raise
+
+        json_text = JSONDecoder().decode(full_text)
+        self.handle_sse_delta(delta=json_text['choices'][0]['message'], full_response_content=full_response_content)
 
         self.provider.close_connection()
         if self.assistant.prompt_mode == PromptMode.panel.name:
