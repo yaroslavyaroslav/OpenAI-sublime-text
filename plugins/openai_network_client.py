@@ -94,7 +94,7 @@ class NetworkClient:
                 'temperature': assitant_setting.temperature,
                 'max_tokens': assitant_setting.max_tokens,
                 'top_p': assitant_setting.top_p,
-                'stream': True,
+                'stream': False,
             }
         )
 
