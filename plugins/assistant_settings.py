@@ -20,25 +20,28 @@ class AssistantSettings:
     url: str | None
     token: str | None
     chat_model: str
-    assistant_role: str
-    temperature: int
-    max_tokens: int
-    top_p: int
-    frequency_penalty: int
-    presence_penalty: int
+    assistant_role: str | None
+    temperature: int | None
+    max_tokens: int | None
+    top_p: int | None
+    frequency_penalty: int | None
+    presence_penalty: int | None
     placeholder: str | None
+    stream: bool | None
     advertisement: bool
 
 
 DEFAULT_ASSISTANT_SETTINGS: Dict[str, Any] = {
     'placeholder': None,
+    'assistant_role': None,
     'url': None,
     'token': None,
-    'temperature': 1,
-    'max_tokens': 2048,
-    'top_p': 1,
-    'frequency_penalty': 0,
-    'presence_penalty': 0,
+    'temperature': None,
+    'max_tokens': None,
+    'top_p': None,
+    'frequency_penalty': None,
+    'presence_penalty': None,
+    'stream': True,
     'advertisement': True,
 }
 
@@ -48,4 +51,3 @@ class CommandMode(Enum):
     refresh_output_panel = 'refresh_output_panel'
     create_new_tab = 'create_new_tab'
     reset_chat_history = 'reset_chat_history'
-    chat_completion = 'chat_completion'

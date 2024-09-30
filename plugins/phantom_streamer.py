@@ -32,17 +32,17 @@ class PhantomStreamer:
         self.completion += completion
         self.global_state = self.global_state + 1 if self.global_state <= 100 else 0
 
-        if self.global_state % 5 == 0:
-            content = PHANTOM_TEMPLATE.format(streaming_content=self.completion)
-            html = mdpopups._create_html(self.view, content, wrapper_class=CLASS_NAME)
+        # if self.global_state % 5 == 0:
+        content = PHANTOM_TEMPLATE.format(streaming_content=self.completion)
+        html = mdpopups._create_html(self.view, content, wrapper_class=CLASS_NAME)
 
-            phantom = (
-                self.phantom
-                if self.phantom
-                else Phantom(line_beginning, html, PhantomLayout.BLOCK, self.close_phantom)
-            )
+        phantom = (
+            self.phantom
+            if self.phantom
+            else Phantom(line_beginning, html, PhantomLayout.BLOCK, self.close_phantom)
+        )
 
-            self.phantom_set.update([phantom])
+        self.phantom_set.update([phantom])
 
     def close_phantom(self, attribute):
         if attribute == 'copy':

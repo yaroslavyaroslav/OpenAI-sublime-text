@@ -43,10 +43,9 @@ class CommonMethods:
         try:
             minimum_selection_length: int | None = settings.get('minimum_selection_length')  # type: ignore
             if region and minimum_selection_length and len(region) < minimum_selection_length:
-                if mode == CommandMode.chat_completion:
-                    raise WrongUserInputException(
-                        'Not enough text selected to complete the request, please expand the selection.'
-                    )
+                raise WrongUserInputException(
+                    'Not enough text selected to complete the request, please expand the selection.'
+                )
         except WrongUserInputException as error:
             present_error(title='OpenAI error', error=error)
             return
@@ -56,8 +55,7 @@ class CommonMethods:
 
         if mode == CommandMode.handle_image_input.value:
             cls.handle_image_input(region, text, view, mode)
-
-        elif mode == CommandMode.chat_completion.value:
+        else:
             cls.handle_chat_completion(view, region, text, mode, assistant, files_included)
 
     @classmethod
