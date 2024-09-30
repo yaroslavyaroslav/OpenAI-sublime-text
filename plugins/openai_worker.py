@@ -4,10 +4,10 @@ import base64
 import copy
 import logging
 import re
-from json import JSONDecoder, JSONDecodeError
+from http.client import HTTPResponse
+from json import JSONDecodeError, JSONDecoder
 from threading import Event, Thread
 from typing import Any, Dict, List
-from http.client import HTTPResponse
 
 import sublime
 from sublime import Region, Settings, Sheet, View
