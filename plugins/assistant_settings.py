@@ -23,6 +23,7 @@ class AssistantSettings:
     assistant_role: str | None
     temperature: int | None
     max_tokens: int | None
+    max_completion_tokens: int | None
     top_p: int | None
     frequency_penalty: int | None
     presence_penalty: int | None
@@ -38,6 +39,7 @@ DEFAULT_ASSISTANT_SETTINGS: Dict[str, Any] = {
     'token': None,
     'temperature': None,
     'max_tokens': None,
+    'max_completion_tokens': None,
     'top_p': None,
     'frequency_penalty': None,
     'presence_penalty': None,
