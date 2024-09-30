@@ -88,13 +88,15 @@ class NetworkClient:
 
         return json.dumps(
             {
-                # Todo add uniq name for each output panel (e.g. each window)
-                'messages': internal_messages,
-                'model': assitant_setting.chat_model,
-                'temperature': assitant_setting.temperature,
-                'max_tokens': assitant_setting.max_tokens,
-                'top_p': assitant_setting.top_p,
-                'stream': True,
+                # Filter out any `None` values using dictionary comprehension
+                key: value for key, value in {
+                    'messages': internal_messages,
+                    'model': assitant_setting.chat_model,
+                    'temperature': assitant_setting.temperature,
+                    'max_tokens': assitant_setting.max_tokens,
+                    'top_p': assitant_setting.top_p,
+                    'stream': assitant_setting.stream,
+                }.items() if value is not None
             }
         )
 

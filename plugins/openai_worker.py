@@ -4,9 +4,10 @@ import base64
 import copy
 import logging
 import re
-from json import JSONDecoder
+from json import JSONDecoder, JSONDecodeError
 from threading import Event, Thread
 from typing import Any, Dict, List
+from http.client import HTTPResponse
 
 import sublime
 from sublime import Region, Settings, Sheet, View
@@ -168,19 +169,7 @@ class OpenAIWorker(Thread):
             except Exception:
                 raise
 
-    def handle_chat_response(self):
-        response = self.provider.execute_response()
-
-        if response is None or response.status != 200:
-            return
-
-        try:
-            self.prepare_to_response()  # TODO: This could be moved earlier in request pipeline.
-        except Exception:
-            logger.error('prepare_to_response failed')
-            self.provider.close_connection()
-            raise
-
+    def handle_streaming_response(self, response: HTTPResponse):
         # without key declaration it would failt to append there later in code.
         full_response_content = {'role': '', 'content': ''}
 
@@ -218,12 +207,76 @@ class OpenAIWorker(Thread):
         self.provider.close_connection()
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if full_response_content['role'] == '':
-                full_response_content['role'] = (
-                    'assistant'  # together.ai never returns role value, so we have to set it manually
-                )
+                # together.ai never returns role value, so we have to set it manually
+                full_response_content['role'] = 'assistant'
             self.cacher.append_to_cache([full_response_content])
             completion_tokens_amount = self.calculate_completion_tokens([full_response_content])
             self.cacher.append_tokens_count({'completion_tokens': completion_tokens_amount})
+
+    def handle_plain_response(self, response: HTTPResponse):
+        # Prepare the full response content structure
+        full_response_content = {'role': '', 'content': ''}
+
+        logger.debug('Handling plain response for OpenAIWorker.')
+
+        # Read the complete response directly
+        chunk_str = response.read().decode('utf-8')
+
+        try:
+            # Parse the JSON response
+            response_str: Dict[str, Any] = JSONDecoder().decode(chunk_str)
+
+            # Ensure there's at least one choice
+            if 'choices' in response_str and len(response_str['choices']) > 0:
+                choice = response_str['choices'][0]
+
+                # Directly populate the full response content
+                if 'role' in choice:
+                    full_response_content['role'] = choice['role']
+                if 'content' in choice:
+                    full_response_content['content'] = choice['content']
+
+            # If role is not set, default it
+            if full_response_content['role'] == '':
+                full_response_content['role'] = 'assistant'
+
+            # Store the response in the cache
+            self.cacher.append_to_cache([full_response_content])
+
+            # Calculate and store the token count
+            completion_tokens_amount = self.calculate_completion_tokens([full_response_content])
+            self.cacher.append_tokens_count({'completion_tokens': completion_tokens_amount})
+
+        except JSONDecodeError as e:
+            logger.error('Failed to decode JSON response: %s', e)
+            self.provider.close_connection()
+            raise
+        except Exception as e:
+            logger.error('An error occurred while handling the plain response: %s', e)
+            self.provider.close_connection()
+            raise
+
+        # Close the connection
+        self.provider.close_connection()
+
+    def handle_chat_response(self):
+        response: HTTPResponse | None = self.provider.execute_response()
+
+        if response is None or response.status != 200:
+            return
+
+        try:
+            self.prepare_to_response()  # TODO: This could be moved earlier in request pipeline.
+        except Exception:
+            logger.error('prepare_to_response failed')
+            self.provider.close_connection()
+            raise
+
+        (
+            self.handle_streaming_response(response)
+            if self.assistant.stream
+            else self.handle_plain_response(response)
+        )
 
     def handle_response(self):
         try:
