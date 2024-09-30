@@ -196,9 +196,9 @@ class OpenAIWorker(Thread):
                 chunk_str = chunk_str[len('data:') :].strip()
 
                 try:
-                    response_str: Dict[str, Any] = JSONDecoder().decode(chunk_str)
-                    if 'delta' in response_str['choices'][0]:
-                        delta: Dict[str, Any] = response_str['choices'][0]['delta']
+                    response_dict: Dict[str, Any] = JSONDecoder().decode(chunk_str)
+                    if 'delta' in response_dict['choices'][0]:
+                        delta: Dict[str, Any] = response_dict['choices'][0]['delta']
                         self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
                 except:
                     self.provider.close_connection()
@@ -217,29 +217,36 @@ class OpenAIWorker(Thread):
         # Prepare the full response content structure
         full_response_content = {'role': '', 'content': ''}
 
-        logger.debug('Handling plain response for OpenAIWorker.')
+        logger.debug('Handling plain (non-streaming) response for OpenAIWorker.')
 
         # Read the complete response directly
-        chunk_str = response.read().decode('utf-8')
+        response_data = response.read().decode()
+        logger.debug(f'raw response: {response_data}')
 
         try:
             # Parse the JSON response
-            response_str: Dict[str, Any] = JSONDecoder().decode(chunk_str)
+            response_dict: Dict[str, Any] = JSONDecoder().decode(response_data)
+            logger.debug(f'raw dict: {response_dict}')
 
             # Ensure there's at least one choice
-            if 'choices' in response_str and len(response_str['choices']) > 0:
-                choice = response_str['choices'][0]
+            if 'choices' in response_dict and len(response_dict['choices']) > 0:
+                choice = response_dict['choices'][0]
+                logger.debug(f'choise: {choice}')
 
-                # Directly populate the full response content
-                if 'role' in choice:
-                    full_response_content['role'] = choice['role']
-                if 'content' in choice:
-                    full_response_content['content'] = choice['content']
+                if 'message' in choice:
+                    message = choice['message']
+                    logger.debug(f'message: {message}')
+                    # Directly populate the full response content
+                    if 'role' in message:
+                        full_response_content['role'] = message['role']
+                    if 'content' in message:
+                        full_response_content['content'] = message['content']
 
             # If role is not set, default it
             if full_response_content['role'] == '':
                 full_response_content['role'] = 'assistant'
 
+            self.handle_sse_delta(delta=full_response_content, full_response_content=full_response_content)
             # Store the response in the cache
             self.cacher.append_to_cache([full_response_content])
 
