@@ -324,7 +324,8 @@ class OpenAIWorker(Thread):
                 content = view.substr(sublime.Region(0, view.size()))
 
                 # Wrapping the content with the derived scope name
-                wrapped_content = f'```{scope_name}\n{content}\n```'
+                # FIXME: make captured path relative to the project root
+                wrapped_content = f'`{view.file_name()}`\n' + f'```{scope_name}\n{content}\n```'
                 wrapped_selection.append(wrapped_content)
 
         return wrapped_selection
@@ -345,12 +346,12 @@ class OpenAIWorker(Thread):
             ## MARK: This should be here, otherwise it would duplicates the messages.
             image_assistant = copy.deepcopy(self.assistant)
             image_assistant.assistant_role = (
-                "Follow user's request on an image provided. "
-                'If none provided do either: '
-                '1. Describe this image that it be possible to drop it from the chat history without any context lost. '
-                "2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope). "
-                "3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise. "
-                'Pay attention between text screnshot and a mock of the design in figma or sketch'
+                "Follow user's request on an image provided."
+                '\n If none provided do either:'
+                '\n 1. Describe this image that it be possible to drop it from the chat history without any context lost.'
+                "\n 2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope)."
+                "\n 3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise."
+                '\n Pay attention between text screnshot and a mock of the design in figma or sketch'
             )
             payload = self.provider.prepare_payload(assitant_setting=image_assistant, messages=messages)
         else:
