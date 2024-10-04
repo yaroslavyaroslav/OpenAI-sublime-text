@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 from json.decoder import JSONDecodeError
-from typing import Any, Dict, Iterator, List
+from typing import Any, Dict, Iterator, List, Tuple
 
 import sublime
 
 from . import jl_utility as jl
+
+logger = logging.getLogger(__name__)
 
 
 class Cacher:
@@ -35,6 +38,11 @@ class Cacher:
         if not os.path.isfile(path):
             open(path, 'w').close()
 
+    def len(self) -> int:
+        length = len(self.read_all()) // 2
+        logger.debug(f'history length: {length}')
+        return length
+
     def append_tokens_count(self, data: Dict[str, int]):
         try:
             with open(self.tokens_count_file, 'r') as file:
@@ -43,7 +51,6 @@ class Cacher:
             existing_data = {
                 'prompt_tokens': 0,
                 'completion_tokens': 0,
-                'total_tokens': 0,
             }
 
         for key, value in data.items():
@@ -59,15 +66,15 @@ class Cacher:
         with open(self.tokens_count_file, 'w') as _:
             pass  # Truncate the file by opening it in 'w' mode and doing nothing
 
-    def read_tokens_count(self) -> Dict[str, int] | None:
+    def read_tokens_count(self) -> Tuple[int, int]:
         self.check_and_create(self.tokens_count_file)
         with open(self.tokens_count_file, 'r') as file:
             try:
                 data: Dict[str, int] | None = json.load(file)
+                tokens = (data['prompt_tokens'], data['completion_tokens'])
             except JSONDecodeError:
-                data = {'prompt_tokens': 0, 'completion_tokens': 0, 'total_tokens': 0}
-                return data
-        return data
+                return (0, 0)
+        return tokens
 
     def save_model(self, data: Dict[str, Any]):
         with open(self.current_model_file, 'w') as file:

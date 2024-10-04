@@ -121,6 +121,11 @@
             // Does not affect editing mode.
             "max_tokens": 2048,
 
+            // Since o1 (September 2024) OpenAI deprecated max_token key,
+            // Use this field to set the cap instead. The default value set here is recommended by OpenAI
+            // _minimal_ value for this particular model. https://platform.openai.com/docs/guides/reasoning/allocating-space-for-reasoning
+            "max_completion_tokens": 25000,
+
             // An alternative to sampling with temperature, called nucleus sampling,
             // where the model considers the results of the tokens with `top_p` probability mass.
             // So 0.1 means only the tokens comprising the top 10% probability mass are considered.
@@ -133,6 +138,12 @@
             // decreasing the model's likelihood to repeat the same line verbatim.
             // docs: https://platform.openai.com/docs/api-reference/parameter-details
             "frequency_penalty": 0,
+
+            // Toggles whether to stream the response from the server or to get in atomically
+            // after llm finishes its prompting.
+            //
+            // By default this is true.
+            "stream": true,
 
             // Number between -2.0 and 2.0.
             /// Positive values penalize new tokens based on whether they appear in the text so far,

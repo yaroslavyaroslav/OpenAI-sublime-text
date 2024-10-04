@@ -4,7 +4,8 @@ import base64
 import copy
 import logging
 import re
-from json import JSONDecoder
+from http.client import HTTPResponse
+from json import JSONDecodeError, JSONDecoder
 from threading import Event, Thread
 from typing import Any, Dict, List
 
@@ -27,6 +28,7 @@ from .errors.OpenAIException import (
     present_unknown_error,
 )
 from .openai_network_client import NetworkClient
+from .phantom_streamer import PhantomStreamer
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +92,7 @@ class OpenAIWorker(Thread):
         self.listner = SharedOutputPanelListener(markdown=markdown_setting, cacher=self.cacher)
 
         self.buffer_manager = TextStreamer(self.view)
+        self.phantom_manager = PhantomStreamer(self.view)
         super(OpenAIWorker, self).__init__()
 
     # This method appears redundant.
@@ -109,6 +112,9 @@ class OpenAIWorker(Thread):
             if 'content' in delta:
                 full_response_content['content'] += delta['content']
                 self.update_output_panel(delta['content'])
+        elif self.assistant.prompt_mode == PromptMode.phantom.name:
+            if 'content' in delta:
+                self.phantom_manager.update_completion(delta['content'])
         else:
             if 'content' in delta:
                 self.update_completion(delta['content'])
@@ -157,24 +163,13 @@ class OpenAIWorker(Thread):
                         )
                 elif not self.assistant.placeholder:
                     raise WrongUserInputException(
-                        'There is no placeholder value set for this assistant. Please add `placeholder` property in a given assistant setting.'
+                        'There is no placeholder value set for this assistant. '
+                        + 'Please add `placeholder` property in a given assistant setting.'
                     )
             except Exception:
                 raise
 
-    def handle_chat_response(self):
-        response = self.provider.execute_response()
-
-        if response is None or response.status != 200:
-            return
-
-        try:
-            self.prepare_to_response()
-        except Exception:
-            logger.error('prepare_to_response failed')
-            self.provider.close_connection()
-            raise
-
+    def handle_streaming_response(self, response: HTTPResponse):
         # without key declaration it would failt to append there later in code.
         full_response_content = {'role': '', 'content': ''}
 
@@ -201,9 +196,9 @@ class OpenAIWorker(Thread):
                 chunk_str = chunk_str[len('data:') :].strip()
 
                 try:
-                    response_str: Dict[str, Any] = JSONDecoder().decode(chunk_str)
-                    if 'delta' in response_str['choices'][0]:
-                        delta: Dict[str, Any] = response_str['choices'][0]['delta']
+                    response_dict: Dict[str, Any] = JSONDecoder().decode(chunk_str)
+                    if 'delta' in response_dict['choices'][0]:
+                        delta: Dict[str, Any] = response_dict['choices'][0]['delta']
                         self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
                 except:
                     self.provider.close_connection()
@@ -212,12 +207,83 @@ class OpenAIWorker(Thread):
         self.provider.close_connection()
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if full_response_content['role'] == '':
-                full_response_content['role'] = (
-                    'assistant'  # together.ai never returns role value, so we have to set it manually
-                )
+                # together.ai never returns role value, so we have to set it manually
+                full_response_content['role'] = 'assistant'
             self.cacher.append_to_cache([full_response_content])
             completion_tokens_amount = self.calculate_completion_tokens([full_response_content])
             self.cacher.append_tokens_count({'completion_tokens': completion_tokens_amount})
+
+    def handle_plain_response(self, response: HTTPResponse):
+        # Prepare the full response content structure
+        full_response_content = {'role': '', 'content': ''}
+
+        logger.debug('Handling plain (non-streaming) response for OpenAIWorker.')
+
+        # Read the complete response directly
+        response_data = response.read().decode()
+        logger.debug(f'raw response: {response_data}')
+
+        try:
+            # Parse the JSON response
+            response_dict: Dict[str, Any] = JSONDecoder().decode(response_data)
+            logger.debug(f'raw dict: {response_dict}')
+
+            # Ensure there's at least one choice
+            if 'choices' in response_dict and len(response_dict['choices']) > 0:
+                choice = response_dict['choices'][0]
+                logger.debug(f'choise: {choice}')
+
+                if 'message' in choice:
+                    message = choice['message']
+                    logger.debug(f'message: {message}')
+                    # Directly populate the full response content
+                    if 'role' in message:
+                        full_response_content['role'] = message['role']
+                    if 'content' in message:
+                        full_response_content['content'] = message['content']
+
+            # If role is not set, default it
+            if full_response_content['role'] == '':
+                full_response_content['role'] = 'assistant'
+
+            self.handle_sse_delta(delta=full_response_content, full_response_content=full_response_content)
+            # Store the response in the cache
+            self.cacher.append_to_cache([full_response_content])
+
+            # Calculate and store the token count
+            completion_tokens_amount = self.calculate_completion_tokens([full_response_content])
+            self.cacher.append_tokens_count({'completion_tokens': completion_tokens_amount})
+
+        except JSONDecodeError as e:
+            logger.error('Failed to decode JSON response: %s', e)
+            self.provider.close_connection()
+            raise
+        except Exception as e:
+            logger.error('An error occurred while handling the plain response: %s', e)
+            self.provider.close_connection()
+            raise
+
+        # Close the connection
+        self.provider.close_connection()
+
+    def handle_chat_response(self):
+        response: HTTPResponse | None = self.provider.execute_response()
+
+        if response is None or response.status != 200:
+            return
+
+        try:
+            self.prepare_to_response()  # TODO: This could be moved earlier in request pipeline.
+        except Exception:
+            logger.error('prepare_to_response failed')
+            self.provider.close_connection()
+            raise
+
+        (
+            self.handle_streaming_response(response)
+            if self.assistant.stream
+            else self.handle_plain_response(response)
+        )
 
     def handle_response(self):
         try:
@@ -258,7 +324,8 @@ class OpenAIWorker(Thread):
                 content = view.substr(sublime.Region(0, view.size()))
 
                 # Wrapping the content with the derived scope name
-                wrapped_content = f'```{scope_name}\n{content}\n```'
+                # FIXME: make captured path relative to the project root
+                wrapped_content = f'`{view.file_name()}`\n' + f'```{scope_name}\n{content}\n```'
                 wrapped_selection.append(wrapped_content)
 
         return wrapped_selection
@@ -279,12 +346,12 @@ class OpenAIWorker(Thread):
             ## MARK: This should be here, otherwise it would duplicates the messages.
             image_assistant = copy.deepcopy(self.assistant)
             image_assistant.assistant_role = (
-                "Follow user's request on an image provided. "
-                'If none provided do either: '
-                '1. Describe this image that it be possible to drop it from the chat history without any context lost. '
-                "2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope). "
-                "3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise. "
-                'Pay attention between text screnshot and a mock of the design in figma or sketch'
+                "Follow user's request on an image provided."
+                '\n If none provided do either:'
+                '\n 1. Describe this image that it be possible to drop it from the chat history without any context lost.'
+                "\n 2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope)."
+                "\n 3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise."
+                '\n Pay attention between text screnshot and a mock of the design in figma or sketch'
             )
             payload = self.provider.prepare_payload(assitant_setting=image_assistant, messages=messages)
         else:
