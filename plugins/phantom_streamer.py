@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 import mdpopups
-from sublime import Phantom, PhantomLayout, PhantomSet, View, set_clipboard
+from sublime import Phantom, PhantomLayout, PhantomSet, View, set_clipboard, active_window
 
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
@@ -62,6 +62,5 @@ class PhantomStreamer:
                 pass
             self.phantom_set.update([])
             self.view.settings().set(VIEW_SETTINGS_KEY_OPENAI_TEXT, False)
-        else:  # for handling usual URLs
-            # TODO: https://github.com/sublimehq/sublime_text/issues/6506 (problem's on ST side)
-            self.view.run_command('open_url', {'url': attribute})
+        else:  # for handling all the rest URLs
+            (self.view.window() or active_window()).run_command('open_url', {'url': attribute})
