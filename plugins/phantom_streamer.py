@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import logging
+from enum import Enum
 
 import mdpopups
-from sublime import Phantom, PhantomLayout, PhantomSet, View, set_clipboard, active_window
+from sublime import NewFileFlags, Phantom, PhantomLayout, PhantomSet, View, active_window, set_clipboard
 
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
@@ -11,7 +12,7 @@ PHANTOM_TEMPLATE = (
     '---'
     + '\nallow_code_wrap: true'
     + '\n---'
-    + '\n\n<a href="close">[x]</a> | <a href="copy">Copy</a> | <a href="append">Append</a> | <a href="replace">Replace</a>'
+    + '\n\n<a href="close">[x]</a> | <a href="copy">Copy</a> | <a href="append">Append</a> | <a href="replace">Replace</a> | <a href="new_file">In New Tab</a>'
     + '\n\n{streaming_content}'
 )
 CLASS_NAME = 'openai-completion-phantom'
@@ -49,19 +50,37 @@ class PhantomStreamer:
 
     def close_phantom(self, attribute):
         logger.debug(f'attribure: `{attribute}`')
-        if attribute == 'close' or attribute == 'copy' or attribute == 'append' or attribute == 'replace':
-            if attribute == 'copy':
+        if attribute in [action.value for action in PhantomActions]:
+            if attribute == PhantomActions.copy.value:
                 set_clipboard(self.completion)
-            if attribute == 'append':
+            if attribute == PhantomActions.append.value:
                 self.view.run_command(
                     'text_stream_at', {'position': self.selected_region.end(), 'text': self.completion}
                 )
-            elif attribute == 'replace':
+            elif attribute == PhantomActions.replace.value:
                 region_object = {'a': self.selected_region.begin(), 'b': self.selected_region.end()}
                 self.view.run_command('replace_region', {'region': region_object, 'text': self.completion})
-            elif attribute == 'close':
+            elif attribute == PhantomActions.new_file.value:
+                new_tab = (self.view.window() or active_window()).new_file(
+                    flags=NewFileFlags.REPLACE_MRU
+                    | NewFileFlags.ADD_TO_SELECTION
+                    | NewFileFlags.CLEAR_TO_RIGHT,
+                    syntax='Packages/Markdown/MultiMarkdown.sublime-syntax',
+                )
+                new_tab.set_scratch(False)
+                new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion})
+            elif attribute == PhantomActions.close.value:
                 pass
+
             self.phantom_set.update([])
             self.view.settings().set(VIEW_SETTINGS_KEY_OPENAI_TEXT, False)
         else:  # for handling all the rest URLs
             (self.view.window() or active_window()).run_command('open_url', {'url': attribute})
+
+
+class PhantomActions(Enum):
+    close = 'close'
+    copy = 'copy'
+    append = 'append'
+    replace = 'replace'
+    new_file = 'new_file'
