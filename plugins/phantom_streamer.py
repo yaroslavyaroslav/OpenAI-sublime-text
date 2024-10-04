@@ -11,7 +11,7 @@ PHANTOM_TEMPLATE = (
     '---\n'
     + 'allow_code_wrap: true\n'
     + '---\n\n'
-    + '<a href="close">[x]</a> | <a href="copy">Copy</a>\n\n{streaming_content}'
+    + '<a href="close">[x]</a> | <a href="copy">Copy</a> | <a href="append">Append</a> | <a href="replace">Replace</a>\n\n{streaming_content}'
 )
 CLASS_NAME = 'openai-completion-phantom'
 
@@ -25,6 +25,8 @@ class PhantomStreamer:
         self.completion: str = ''
         self.phantom: Phantom | None = None
         self.phantom_id: int | None = None
+        logger.debug(f'view selection: {view.sel()[0]}')
+        self.selected_region = view.sel()[0]  # saving only first selection to buffer ease logic
         self.global_state: int = 0
 
     def update_completion(self, completion: str):
@@ -45,7 +47,21 @@ class PhantomStreamer:
         self.phantom_set.update([phantom])
 
     def close_phantom(self, attribute):
-        if attribute == 'copy':
-            set_clipboard(self.completion)
-        self.phantom_set.update([])
-        self.view.settings().set(VIEW_SETTINGS_KEY_OPENAI_TEXT, False)
+        logger.debug(f'attribure: `{attribute}`')
+        if attribute == 'close' or attribute == 'copy' or attribute == 'append' or attribute == 'replace':
+            if attribute == 'copy':
+                set_clipboard(self.completion)
+            if attribute == 'append':
+                self.view.run_command(
+                    'text_stream_at', {'position': self.selected_region.end(), 'text': self.completion}
+                )
+            elif attribute == 'replace':
+                region_object = {'a': self.selected_region.begin(), 'b': self.selected_region.end()}
+                self.view.run_command('replace_region', {'region': region_object, 'text': self.completion})
+            elif attribute == 'close':
+                pass
+            self.phantom_set.update([])
+            self.view.settings().set(VIEW_SETTINGS_KEY_OPENAI_TEXT, False)
+        else:  # for handling usual URLs
+            # TODO: https://github.com/sublimehq/sublime_text/issues/6506 (problem's on ST side)
+            self.view.run_command('open_url', {'url': attribute})

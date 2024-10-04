@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Dict
+
 from sublime import Edit, Region, View
+from sublime_types import Point
 from sublime_plugin import TextCommand
 
 
@@ -25,10 +30,10 @@ class TextStreamAtCommand(TextCommand):
 
 
 class ReplaceRegionCommand(TextCommand):
-    def run(self, edit: Edit, region, text: str):  # type: ignore
+    def run(self, edit: Edit, region: Dict[str, Point], text: str):  # type: ignore
         self.view.replace(edit=edit, region=Region(region['a'], region['b']), text=text)
 
 
 class EraseRegionCommand(TextCommand):
-    def run(self, edit: Edit, region):  # type: ignore
+    def run(self, edit: Edit, region: Dict[str, Point]):  # type: ignore
         self.view.erase(edit=edit, region=Region(region['a'], region['b']))
