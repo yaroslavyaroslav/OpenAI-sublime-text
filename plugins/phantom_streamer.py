@@ -8,10 +8,11 @@ from sublime import Phantom, PhantomLayout, PhantomSet, View, set_clipboard, act
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
 PHANTOM_TEMPLATE = (
-    '---\n'
-    + 'allow_code_wrap: true\n'
-    + '---\n\n'
-    + '<a href="close">[x]</a> | <a href="copy">Copy</a> | <a href="append">Append</a> | <a href="replace">Replace</a>\n\n{streaming_content}'
+    '---'
+    + '\nallow_code_wrap: true'
+    + '\n---'
+    + '\n\n<a href="close">[x]</a> | <a href="copy">Copy</a> | <a href="append">Append</a> | <a href="replace">Replace</a>'
+    + '\n\n{streaming_content}'
 )
 CLASS_NAME = 'openai-completion-phantom'
 
