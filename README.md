@@ -1,4 +1,4 @@
-[![Star on GitHub][img-stars]][stars]
+[![Star on GitHub][img-stars]][stars] ![Package Control][img-downloads]
 
 # OpenAI Sublime Text Plugin
 ## tldr;
@@ -14,7 +14,7 @@ Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cp
 - Code manipulation (append, insert and edit) selected code with OpenAI models.
 - **Phantoms** Get non-disruptive inline right in view answers from the model.
 - **Chat mode** powered by whatever model you'd like.
-- **GPT-o1 support**.
+- **gpt-o1 support**.
 - **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[Ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
 - **Dedicated chats histories** and assistant settings for a projects.
 - **Ability to send whole files** or their parts as a context expanding.
@@ -184,3 +184,5 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 
 [stars]: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/stargazers
 [img-stars]: static/media/star-on-github.svg
+[downloads]: https://packagecontrol.io/packages/OpenAI%20completion
+[img-downloads]: https://img.shields.io/packagecontrol/dt/OpenAI%2520completion.svg

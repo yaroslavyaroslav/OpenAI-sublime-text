@@ -28,15 +28,12 @@ class PhantomStreamer:
         self.phantom: Phantom | None = None
         self.phantom_id: int | None = None
         logger.debug(f'view selection: {view.sel()[0]}')
-        self.selected_region = view.sel()[0]  # saving only first selection to buffer ease logic
-        self.global_state: int = 0
+        self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
 
     def update_completion(self, completion: str):
         line_beginning = self.view.line(self.view.sel()[0])
         self.completion += completion
-        self.global_state = self.global_state + 1 if self.global_state <= 100 else 0
 
-        # if self.global_state % 5 == 0:
         content = PHANTOM_TEMPLATE.format(streaming_content=self.completion)
         html = mdpopups._create_html(self.view, content, wrapper_class=CLASS_NAME)
 
