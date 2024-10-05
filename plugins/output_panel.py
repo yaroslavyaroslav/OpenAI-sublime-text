@@ -60,10 +60,7 @@ class SharedOutputPanelListener(EventListener):
 
     def update_output_view(self, text: str, window: Window):
         view = self.get_output_view_(window=window)
-        view.set_read_only(False)
-        view.run_command('append', {'characters': text})
-        view.set_read_only(True)
-        view.set_name(self.OUTPUT_PANEL_NAME)
+        view.run_command('append', {'characters': text, 'force': True})
 
     def get_output_view_(self, window: Window, reversed: bool = False) -> View:
         view = self.get_active_tab_(window=window) or self.get_output_panel_(window=window)
