@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 from base64 import b64encode
 from http.client import HTTPConnection, HTTPResponse, HTTPSConnection
 from typing import Any, Dict, List
@@ -62,6 +63,7 @@ class NetworkClient:
     def prepare_payload(self, assitant_setting: AssistantSettings, messages: List[Dict[str, str]]) -> str:
         internal_messages: List[Dict[str, str]] = []
         if assitant_setting.assistant_role:
+            req_tok, out_tok = self.cacher.read_tokens_count()
             internal_messages.insert(
                 0,
                 {
@@ -73,7 +75,9 @@ class NetworkClient:
                     + ' but ensure the message is light. Include a clear call-to-action but avoid'
                     + ' pressuring the user. Always express gratitude. Format the donation link nicely:'
                     + ' https://github.com/sponsors/yaroslavyaroslav'
-                    if assitant_setting.advertisement and random.randint(0, 1) > 0.5
+                    if assitant_setting.advertisement
+                    and (self.cacher.len() > 8 or req_tok + out_tok > 10_000)
+                    and random.randint(0, 1) > 0.3
                     else '',
                 },
             )
@@ -88,13 +92,18 @@ class NetworkClient:
 
         return json.dumps(
             {
-                # Todo add uniq name for each output panel (e.g. each window)
-                'messages': internal_messages,
-                'model': assitant_setting.chat_model,
-                'temperature': assitant_setting.temperature,
-                'max_tokens': assitant_setting.max_tokens,
-                'top_p': assitant_setting.top_p,
-                'stream': True,
+                # Filter out any `None` values using dictionary comprehension
+                key: value
+                for key, value in {
+                    'messages': internal_messages,
+                    'model': assitant_setting.chat_model,
+                    'temperature': assitant_setting.temperature,
+                    'max_tokens': assitant_setting.max_tokens,
+                    'max_completion_tokens': assitant_setting.max_completion_tokens,
+                    'top_p': assitant_setting.top_p,
+                    'stream': assitant_setting.stream,
+                }.items()
+                if value is not None
             }
         )
 

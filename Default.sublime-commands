@@ -23,15 +23,11 @@
 	{
 		"caption": "OpenAI: New Message",
 		"command": "openai",
-		"args": {
-			"mode": "chat_completion"
-		}
 	},
 	{
 		"caption": "OpenAI: New Message With Sheets",
 		"command": "openai",
 		"args": {
-			"mode": "chat_completion",
 			"files_included": true
 		}
 	},

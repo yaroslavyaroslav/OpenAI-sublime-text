@@ -1,24 +1,20 @@
-[![Star on GitHub][img-stars]][stars]
+[![Star on GitHub][img-stars]][stars] ![Package Control][img-downloads]
 
 # OpenAI Sublime Text Plugin
 ## tldr;
 
-OpenAI Completion is a Sublime Text plugin that uses LLM models to provide first class code assistant support within the editor.
+Cursor level of AI assistance for Sublime Text. I mean it.
 
-It's not locked with just OpenAI anymore. [llama.cpp](https://github.com/ggerganov/llama.cpp) server and [ollama](https://ollama.com) supported as well.
+Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cpp) server, [ollama](https://ollama.com) or whatever third party LLM hosting.
 
-![](static/media/ai_chat_left.png)
-
-> [!NOTE]
-> I think this plugin is in its finite state. Meaning there's no further development of it I have in plans. I still have plans to fix bugs and review PR if any, but those tons of little enhancement that could be applied here to fix minor issues and roughness and there likely never would.
-
-> What I do have in plans is to implement ST front end for [plandex](https://github.com/plandex-ai/plandex) tool based on some parts of this plugin codebase, to get (and to bring) a fancy and powerful agentish capabilities to ST ecosystem. So stay tuned.
+![](static/media/ai_chat_right_phantom.png)
 
 ## Features
 
 - Code manipulation (append, insert and edit) selected code with OpenAI models.
+- **Phantoms** Get non-disruptive inline right in view answers from the model.
 - **Chat mode** powered by whatever model you'd like.
-- **GPT-4 support**.
+- **gpt-o1 support**.
 - **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[Ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
 - **Dedicated chats histories** and assistant settings for a projects.
 - **Ability to send whole files** or their parts as a context expanding.
@@ -75,7 +71,7 @@ You can separate a chat history and assistant settings for a given project by ap
 {   
     "settings": {
         "ai_assistant": {
-            "cache_prefix": "your_name_project"
+            "cache_prefix": "your_project_name"
         }
     }
 }
@@ -100,16 +96,31 @@ To send the whole file(s) in advance to request you should `super+button1` on th
 
 Image handle can be called by `OpenAI: Handle Image` command.
 
-It expects an absolute path of image to be selected in a buffer on the command call (smth like `/Users/username/Documents/Project/image.png`). In addition command can be passed by input panel to proceed the image with special treatment. `png` and `jpg` images are only supported.
+It expects an absolute path to image to be selected in a buffer or stored in clipboard on the command call (smth like `/Users/username/Documents/Project/image.png`). In addition command can be passed by input panel to proceed the image with special treatment. `png` and `jpg` images are only supported.
 
-> [!WARNING]
-> Userflow don't expects that image url would be passed by that input panel input, it has to be selected in buffer. I'm aware about the UX quality of this design decision, but yet I'm too lazy to develop it further to some better state.
+> [!NOTE]
+> Currently plugin expects the link or the list of links separated by a new line to be selected in buffer or stored in clipboard **only**.
 
 ### In buffer llm use case
 
-1. You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
-2. Select some text (they're useless otherwise) to manipulate with and hit `OpenAI: New Message`.
-4. The plugin will response accordingly with **appending**, **replacing** or **inserting** some text.
+#### Phantom use case
+
+Phantom is the overlay UI placed inline in the editor view (see the picture below). It doesn't affects content of the view. 
+
+1. You can set `"prompt_mode": "phantom"` for AI assistant in its settings.
+2. [optional] Select some text to pass in context in to manipulate with.
+3. Hit `OpenAI: New Message` or `OpenAI: Chat Model Select` and ask whatever you'd like in popup input pane.
+4. Phantom will appear below the cursor position or the beginning of the selection while the streaming LLM answer occurs.
+5. You can apply actions to the llm prompt, they're quite self descriptive and follows behavior deprecated in buffer commands.
+6. You can hit `ctrl+c` to stop prompting same as with in `panel` mode.
+
+![](static/media/phantom_example.png)
+
+> [!WARNING]
+> The following in buffer commands are deprecated and will be removed in 5.0 release.
+> 1. You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
+> 2. Select some text (they're useless otherwise) to manipulate with and hit `OpenAI: New Message`.
+> 4. The plugin will response accordingly with **appending**, **replacing** or **inserting** some text.
 
 > [!IMPORTANT]
 >  Yet this is a standalone mode, i.e. an existing chat history won't be sent to a server on a run.
@@ -137,10 +148,6 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
     "token": "sk-your-token",
 }
 ```
-
-### ollama setup specific
-
-If you're here it meaning that a model that you're using with ollama talking shit. This is because `temperature` property of a model which is 1 somewhat [doubles](https://github.com/ollama/ollama/blob/69be940bf6d2816f61c79facfa336183bc882720/openai/openai.go#L454) on ollama's side, so it becomes 2, which is a little bit too much for a good model's response. So you to make things work you have to set temperature to 1.
 
 ### Advertisement disabling
 
@@ -188,3 +195,5 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 
 [stars]: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/stargazers
 [img-stars]: static/media/star-on-github.svg
+[downloads]: https://packagecontrol.io/packages/OpenAI%20completion
+[img-downloads]: https://img.shields.io/packagecontrol/dt/OpenAI%2520completion.svg

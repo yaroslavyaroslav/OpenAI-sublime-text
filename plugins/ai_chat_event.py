@@ -36,9 +36,5 @@ class AIChatViewEventListener(ViewEventListener):
         return active_view.name() == 'AI Chat' if active_view else False
 
     def get_status_message(self, cacher: Cacher) -> str:
-        tokens = cacher.read_tokens_count()
-        prompt = tokens['prompt_tokens'] if tokens else 0
-        completion = tokens['completion_tokens'] if tokens else 0
-        total = prompt + completion
-
-        return f'[⬆️: {prompt:,} + ⬇️: {completion:,} = {total:,}]'
+        prompt, completion = cacher.read_tokens_count()
+        return f'[⬆️: {prompt:,} + ⬇️: {completion:,} = {prompt + completion:,}]'
