@@ -3,17 +3,18 @@
 # OpenAI Sublime Text Plugin
 ## tldr;
 
-OpenAI Completion is a Sublime Text plugin that uses LLM models to provide first class code assistant support within the editor.
+Cursor level of AI assistance for Sublime Text. I mean it.
 
-It's not locked with just OpenAI anymore. [llama.cpp](https://github.com/ggerganov/llama.cpp) server and [ollama](https://ollama.com) supported as well.
+Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cpp) server, [ollama](https://ollama.com) or whatever third party LLM hosting.
 
-![](static/media/ai_chat_left.png)
+![](static/media/ai_chat_right_phantom.png)
 
 ## Features
 
 - Code manipulation (append, insert and edit) selected code with OpenAI models.
+- **Phantoms** Get non-disruptive inline right in view answers from the model.
 - **Chat mode** powered by whatever model you'd like.
-- **GPT-4 support**.
+- **GPT-o1 support**.
 - **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[Ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
 - **Dedicated chats histories** and assistant settings for a projects.
 - **Ability to send whole files** or their parts as a context expanding.
