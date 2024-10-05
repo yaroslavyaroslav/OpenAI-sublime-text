@@ -71,7 +71,7 @@ You can separate a chat history and assistant settings for a given project by ap
 {   
     "settings": {
         "ai_assistant": {
-            "cache_prefix": "your_name_project"
+            "cache_prefix": "your_project_name"
         }
     }
 }
@@ -96,16 +96,31 @@ To send the whole file(s) in advance to request you should `super+button1` on th
 
 Image handle can be called by `OpenAI: Handle Image` command.
 
-It expects an absolute path of image to be selected in a buffer on the command call (smth like `/Users/username/Documents/Project/image.png`). In addition command can be passed by input panel to proceed the image with special treatment. `png` and `jpg` images are only supported.
+It expects an absolute path to image to be selected in a buffer or stored in clipboard on the command call (smth like `/Users/username/Documents/Project/image.png`). In addition command can be passed by input panel to proceed the image with special treatment. `png` and `jpg` images are only supported.
 
-> [!WARNING]
-> Userflow don't expects that image url would be passed by that input panel input, it has to be selected in buffer. I'm aware about the UX quality of this design decision, but yet I'm too lazy to develop it further to some better state.
+> [!NOTE]
+> Currently plugin expects the link or the list of links separated by a new line to be selected in buffer or stored in clipboard **only**.
 
 ### In buffer llm use case
 
-1. You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
-2. Select some text (they're useless otherwise) to manipulate with and hit `OpenAI: New Message`.
-4. The plugin will response accordingly with **appending**, **replacing** or **inserting** some text.
+#### Phantom use case
+
+Phantom is the overlay UI placed inline in the editor view (see the picture below). It doesn't affects content of the view. 
+
+1. You can set `"prompt_mode": "phantom"` for AI assistant in its settings.
+2. [optional] Select some text to pass in context in to manipulate with.
+3. Hit `OpenAI: New Message` or `OpenAI: Chat Model Select` and ask whatever you'd like in popup input pane.
+4. Phantom will appear below the cursor position or the beginning of the selection while the streaming LLM answer occurs.
+5. You can apply actions to the llm prompt, they're quite self descriptive and follows behavior deprecated in buffer commands.
+6. You can hit `ctrl+c` to stop prompting same as with in `panel` mode.
+
+![](static/media/phantom_example.png)
+
+> [!WARNING]
+> The following in buffer commands are deprecated and will be removed in 5.0 release.
+> 1. You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
+> 2. Select some text (they're useless otherwise) to manipulate with and hit `OpenAI: New Message`.
+> 4. The plugin will response accordingly with **appending**, **replacing** or **inserting** some text.
 
 > [!IMPORTANT]
 >  Yet this is a standalone mode, i.e. an existing chat history won't be sent to a server on a run.
@@ -133,10 +148,6 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
     "token": "sk-your-token",
 }
 ```
-
-### ollama setup specific
-
-If you're here it meaning that a model that you're using with ollama talking shit. This is because `temperature` property of a model which is 1 somewhat [doubles](https://github.com/ollama/ollama/blob/69be940bf6d2816f61c79facfa336183bc882720/openai/openai.go#L454) on ollama's side, so it becomes 2, which is a little bit too much for a good model's response. So you to make things work you have to set temperature to 1.
 
 ### Advertisement disabling
 
