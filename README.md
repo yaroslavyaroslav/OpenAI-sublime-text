@@ -101,7 +101,7 @@ It expects an absolute path to image to be selected in a buffer or stored in cli
 > [!NOTE]
 > Currently plugin expects the link or the list of links separated by a new line to be selected in buffer or stored in clipboard **only**.
 
-### In buffer llm use case
+### In-buffer llm use case
 
 #### Phantom use case
 
@@ -116,17 +116,18 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 
 ![](static/media/phantom_example.png)
 
-> [!WARNING]
-> The following in buffer commands are deprecated and will be removed in 5.0 release.
-> 1. You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
-> 2. Select some text (they're useless otherwise) to manipulate with and hit `OpenAI: New Message`.
-> 4. The plugin will response accordingly with **appending**, **replacing** or **inserting** some text.
 
 > [!IMPORTANT]
 >  Yet this is a standalone mode, i.e. an existing chat history won't be sent to a server on a run.
 
 > [!NOTE]
 > A more detailed manual, including various assistant configuration examples, can be found within the plugin settings.
+
+> [!WARNING]
+> The following in buffer commands are deprecated and will be removed in 5.0 release.
+> 1. [DEPRECATED] You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
+> 2. [DEPRECATED] Select some text (they're useless otherwise) to manipulate with and hit `OpenAI: New Message`.
+> 4. [DEPRECATED] The plugin will response accordingly with **appending**, **replacing** or **inserting** some text.
 
 ### Other features
 
@@ -155,13 +156,13 @@ To disable advertisement you have to add `"advertisement": false` line into an a
 
 ## Key bindings
 
-You can bind keys for a given plugin command in `Preferences` -> `Package Settings` -> `OpenAI` -> `Key Bindings`. For example you can bind "New Message" command like this:
+You can bind keys for a given plugin command in `Preferences` -> `Package Settings` -> `OpenAI` -> `Key Bindings`. For example you can bind "New Message" including active tabs as context command like this:
 
 ```json
 {
     "keys": [ "super+k", "super+'" ],
-    "command": "openai",
-    "args": { "mode": "chat_completion" }
+    "command": "openai", // or "openai_panel"
+    "args": { "files_included": true }
 },
 ```
 
@@ -170,7 +171,7 @@ You can bind keys for a given plugin command in `Preferences` -> `Package Settin
 It just works.
 
 > [!IMPORTANT]
-> It's highly recommended to install the [`MultimarkdownEditing`](https://sublimetext-markdown.github.io/MarkdownEditing/) to apply broader set of languages with syntax highlighting.
+> It's highly recommended to install the [`MultimarkdownEditing`](https://sublimetext-markdown.github.io/MarkdownEditing/) package to apply broader set of languages with syntax highlighting.
 
 ### Proxy support
 
@@ -191,7 +192,7 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 > All selected code will be sent to the OpenAI servers (if not using custom API provider) for processing, so make sure you have all necessary permissions to do so.
 
 > [!NOTE]
-> This one was initially written at 80% written by a GPT3.5 back then. I was here mostly for debugging purposes, rather than digging ST API. This is a pure magic, I swear!
+> This one was initially written at 80% by a GPT3.5 back then. I was there mostly for debugging purposes, rather than digging in into ST API. This is a pure magic, I swear!
 
 [stars]: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/stargazers
 [img-stars]: static/media/star-on-github.svg
