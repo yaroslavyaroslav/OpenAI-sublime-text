@@ -64,11 +64,11 @@ class SharedOutputPanelListener(EventListener):
 
     def get_output_view_(self, window: Window, reversed: bool = False) -> View:
         view = self.get_active_tab_(window=window) or self.get_output_panel_(window=window)
+        view.set_name(self.OUTPUT_PANEL_NAME)
         return view
 
     def refresh_output_panel(self, window: Window):
         output_panel = self.get_output_view_(window=window)
-        output_panel.set_read_only(False)
         self.clear_output_panel(window)
 
         for line in self.cacher.read_all():
@@ -77,20 +77,20 @@ class SharedOutputPanelListener(EventListener):
             ## FIXME: This logic conflicts with multifile/multimessage request behaviour
             ## it presents ## Question above each message, while has to do it once for a pack.
             if line['role'] == 'user':
-                output_panel.run_command('append', {'characters': '\n\n## Question\n\n'})
+                output_panel.run_command('append', {'characters': '\n\n## Question\n\n', 'force': True})
             elif line['role'] == 'assistant':
-                output_panel.run_command('append', {'characters': '\n\n## Answer\n\n'})
+                output_panel.run_command('append', {'characters': '\n\n## Answer\n\n', 'force': True})
 
-            output_panel.run_command('append', {'characters': line['content']})
+            output_panel.run_command('append', {'characters': line['content'], 'force': True})
 
-        output_panel.set_read_only(True)
-        output_panel.set_name(self.OUTPUT_PANEL_NAME)
         self.scroll_to_botton(window=window)
 
     def clear_output_panel(self, window: Window):
         output_panel = self.get_output_view_(window=window)
         output_panel.run_command('select_all')
+        output_panel.set_read_only(False)
         output_panel.run_command('right_delete')
+        output_panel.set_read_only(True)
 
     ## FIXME: This command doesn't work as expected at first run
     ## despite that textpoint provides correct value.
