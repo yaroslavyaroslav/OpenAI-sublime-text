@@ -4,7 +4,16 @@ import logging
 from enum import Enum
 
 import mdpopups
-from sublime import NewFileFlags, Phantom, PhantomLayout, PhantomSet, View, active_window, set_clipboard
+from sublime import (
+    NewFileFlags,
+    Phantom,
+    PhantomLayout,
+    PhantomSet,
+    View,
+    active_window,
+    set_clipboard,
+    set_timeout,
+)
 
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
@@ -43,7 +52,12 @@ class PhantomStreamer:
             else Phantom(line_beginning, html, PhantomLayout.BLOCK, self.close_phantom)
         )
 
-        self.phantom_set.update([phantom])
+        def update_main_thread():
+            # Updating on the main thread
+            self.phantom_set.update([phantom])
+
+        # Switch to the main thread to update phantoms
+        set_timeout(update_main_thread)
 
     def close_phantom(self, attribute):
         logger.debug(f'attribure: `{attribute}`')
