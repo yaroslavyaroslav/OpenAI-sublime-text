@@ -189,7 +189,7 @@ class OpenAIWorker(Thread):
 
                 self.provider.close_connection()
                 break
-            chunk_str = chunk.decode('utf-8')
+            chunk_str = chunk.decode()
 
             # Check for SSE data
             if chunk_str.startswith('data:') and not re.search(r'\[DONE\]$', chunk_str):
