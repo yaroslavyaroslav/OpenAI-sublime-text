@@ -2,7 +2,8 @@
     "*": {
         "*": [
             "requests",
-            "mdpopups"
+            "mdpopups",
+            "typing_extensions"
         ]
     }
 }
