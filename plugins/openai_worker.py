@@ -390,6 +390,7 @@ class OpenAIWorker(Thread):
             if self.mode == CommandMode.handle_image_input.value:
                 fake_messages = self.create_image_fake_message(self.text, self.command)
                 self.cacher.append_to_cache(fake_messages)
+                new_messages = fake_messages
             else:
                 self.cacher.append_to_cache(new_messages)
 
@@ -445,7 +446,7 @@ class OpenAIWorker(Thread):
 
     def create_image_message(self, image_url: str | None, command: str | None) -> List[Dict[str, Any]]:
         """Create a message with a list of image URLs (in base64) and a command."""
-        messages = []
+        messages = self.cacher.read_all()
 
         # Split single image_urls_string by newline into multiple paths
         if image_url:
@@ -463,12 +464,11 @@ class OpenAIWorker(Thread):
                         }
                     )
 
-            # Add to the message with the command and all the base64 images
             messages.append(
                 {
                     'role': 'user',
                     'content': [
-                        {'type': 'text', 'text': command},
+                        {'type': 'text', 'text': command},  # type: ignore
                         *image_data_list,  # Add all the image data
                     ],
                     'name': 'OpenAI_completion',
