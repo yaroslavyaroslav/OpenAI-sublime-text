@@ -317,26 +317,32 @@ class OpenAIWorker(Thread):
             logger.debug('on UnknownException event status: %s', self.stop_event.is_set())
             present_error(title='OpenAI error', error=error)
 
+    @classmethod
+    def wrap_content_with_scope(cls, scope_name: str, content: str) -> str:
+        logger.debug(f'scope_name {scope_name}')
+        if scope_name.strip().lower() in ['markdown', 'multimarkdown']:
+            wrapped_content = content
+        else:
+            wrapped_content = f'```{scope_name}\n{content}\n```'
+        logger.debug(f'wrapped_content {wrapped_content}')
+        return wrapped_content
+
     def wrap_sheet_contents_with_scope(self) -> List[str]:
         wrapped_selection: List[str] = []
 
         if self.sheets:
             for sheet in self.sheets:
-                # Convert the sheet to a view
                 view = sheet.view() if sheet else None
                 if not view:
                     continue  # If for some reason the sheet cannot be converted to a view, skip.
 
-                # Deriving the scope from the beginning of the view's content
                 scope_region = view.scope_name(0)  # Assuming you want the scope at the start of the document
                 scope_name = scope_region.split(' ')[0].split('.')[-1]
 
-                # Extracting the text from the view
                 content = view.substr(sublime.Region(0, view.size()))
+                content = OpenAIWorker.wrap_content_with_scope(scope_name, content)
 
-                # Wrapping the content with the derived scope name
-                # FIXME: make captured path relative to the project root
-                wrapped_content = f'`{view.file_name()}`\n' + f'```{scope_name}\n{content}\n```'
+                wrapped_content = f'`{view.file_name()}`\n' + content
                 wrapped_selection.append(wrapped_content)
 
         return wrapped_selection
@@ -348,7 +354,7 @@ class OpenAIWorker(Thread):
         elif self.region:
             scope_region = self.window.active_view().scope_name(self.region.begin())
             scope_name = scope_region.split('.')[-1]  # in case of precise selection take the last scope
-            wrapped_selection = [f'```{scope_name}\n' + self.text + '\n```']
+            wrapped_selection = [OpenAIWorker.wrap_content_with_scope(scope_name, self.text)]
 
         if self.mode == CommandMode.handle_image_input.value:
             messages = self.create_image_message(image_url=self.text, command=self.command)
