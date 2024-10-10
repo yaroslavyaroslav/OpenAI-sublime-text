@@ -64,8 +64,7 @@ class NetworkClient:
         internal_messages: List[Dict[str, str]] = []
         if assitant_setting.assistant_role:
             req_tok, out_tok = self.cacher.read_tokens_count()
-            internal_messages.insert(
-                0,
+            internal_messages.append(
                 {
                     'role': 'system',
                     'content': assitant_setting.assistant_role
@@ -81,10 +80,6 @@ class NetworkClient:
                     else '',
                 },
             )
-        if assitant_setting.prompt_mode == PromptMode.panel.value:
-            ## FIXME: This is error prone and should be rewritten
-            #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
-            internal_messages += self.cacher.read_all()
         internal_messages += messages
 
         prompt_tokens_amount = self.calculate_prompt_tokens(internal_messages)

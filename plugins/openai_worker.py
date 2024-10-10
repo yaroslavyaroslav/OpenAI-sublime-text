@@ -343,14 +343,12 @@ class OpenAIWorker(Thread):
 
     def manage_chat_completion(self):
         wrapped_selection = None
-        if self.region:
+        if self.sheets:  # no sheets should be passed unintentionaly
+            wrapped_selection = self.wrap_sheet_contents_with_scope()
+        elif self.region:
             scope_region = self.window.active_view().scope_name(self.region.begin())
             scope_name = scope_region.split('.')[-1]  # in case of precise selection take the last scope
             wrapped_selection = [f'```{scope_name}\n' + self.text + '\n```']
-        if self.sheets:  # no sheets should be passed unintentionaly
-            wrapped_selection = (
-                self.wrap_sheet_contents_with_scope()
-            )  # in case of unprecise selection take the last scope
 
         if self.mode == CommandMode.handle_image_input.value:
             messages = self.create_image_message(image_url=self.text, command=self.command)
@@ -358,11 +356,11 @@ class OpenAIWorker(Thread):
             image_assistant = copy.deepcopy(self.assistant)
             image_assistant.assistant_role = (
                 "Follow user's request on an image provided."
-                '\n If none provided do either:'
-                '\n 1. Describe this image that it be possible to drop it from the chat history without any context lost.'
-                "\n 2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope)."
-                "\n 3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise."
-                '\n Pay attention between text screnshot and a mock of the design in figma or sketch'
+                '\nIf none provided do either:'
+                '\n1. Describe this image that it be possible to drop it from the chat history without any context lost.'
+                "\n2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope)."
+                "\n3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise."
+                '\nPay attention between text screnshot and a mock of the design in figma or sketch'
             )
             payload = self.provider.prepare_payload(assitant_setting=image_assistant, messages=messages)
         else:
@@ -371,29 +369,31 @@ class OpenAIWorker(Thread):
                 command=self.command,
                 placeholder=self.assistant.placeholder,
             )
-            ## MARK: This should be here, otherwise it would duplicates the messages.
             payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
         if self.assistant.prompt_mode == PromptMode.panel.name:
+            new_messages_len = (
+                len(wrapped_selection) + 1 if wrapped_selection else 1  # 1 stands for user input
+            )
+
+            new_messages = messages[-new_messages_len:]
+
+            # MARK: Read only last few messages from cache with a len of a messages list
+            # questions = [value['content'] for value in self.cacher.read_all()[-len(messages) :]]
+            fake_messages = None
             if self.mode == CommandMode.handle_image_input.value:
                 fake_messages = self.create_image_fake_message(self.text, self.command)
                 self.cacher.append_to_cache(fake_messages)
             else:
-                self.cacher.append_to_cache(messages)
+                self.cacher.append_to_cache(new_messages)
+
             self.update_output_panel('\n\n## Question\n\n')
-
-            # MARK: Read only last few messages from cache with a len of a messages list
-            questions = [value['content'] for value in self.cacher.read_all()[-len(messages) :]]
-
             # MARK: \n\n for splitting command from selected text
             # FIXME: This logic adds redundant line breaks on a single message.
-            [self.update_output_panel(question + '\n\n') for question in questions]
+            [self.update_output_panel(question['content'] + '\n\n') for question in new_messages]
 
             # Clearing selection area, coz it's easy to forget that there's something selected during a chat conversation.
             # And it designed be a one shot action rather then persistant one.
-            #
-            # We're doing it here just in sake of more clear user flow, because text got captured at the very beginning of a command evaluation,
-            # convenience is in being able see current selection while writting additional input to an assistant by input panel.
             self.view.sel().clear()
         try:
             self.provider.prepare_request(json_payload=payload)
@@ -408,7 +408,7 @@ class OpenAIWorker(Thread):
         command: str | None,
         placeholder: str | None = None,
     ) -> List[Dict[str, str]]:
-        messages = []
+        messages = self.cacher.read_all()
         if placeholder:
             messages.append(
                 {
