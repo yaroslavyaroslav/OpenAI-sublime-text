@@ -17,6 +17,22 @@ from .errors.OpenAIException import ContextLengthExceededException, UnknownExcep
 
 logger = logging.getLogger(__name__)
 
+FUNCTION_DATA = {
+    'type': 'function',
+    'function': {
+        'name': 'get_region_for_text',
+        'description': 'Get the Sublime Text Region bounds that is matching the content provided',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'file_path': {'type': 'string', 'description': 'The content for which Region should be found'}
+            },
+            'required': ['file_path'],
+            'additionalProperties': False,
+        },
+    },
+}
+
 
 class NetworkClient:
     response: HTTPResponse | None = None
@@ -97,6 +113,7 @@ class NetworkClient:
                     'max_completion_tokens': assitant_setting.max_completion_tokens,
                     'top_p': assitant_setting.top_p,
                     'stream': assitant_setting.stream,
+                    'tools': [FUNCTION_DATA],
                 }.items()
                 if value is not None
             }
