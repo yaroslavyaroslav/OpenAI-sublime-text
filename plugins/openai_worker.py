@@ -277,42 +277,39 @@ class OpenAIWorker(Thread):
         # Close the connection
         self.provider.close_connection()
 
-    def handle_chat_response(self):
-        response: HTTPResponse | None = self.provider.execute_response()
-
-        if response is None or response.status != 200:
-            return
-
-        try:
-            self.prepare_to_response()  # TODO: This could be moved earlier in request pipeline.
-        except Exception:
-            logger.error('prepare_to_response failed')
-            self.provider.close_connection()
-            raise
-
-        (
-            self.handle_streaming_response(response)
-            if self.assistant.stream
-            else self.handle_plain_response(response)
-        )
-
     def handle_response(self):
         try:
-            self.handle_chat_response()
+            ## Step 1: Prepare and get the chat response
+            response = self.provider.execute_response()
+
+            if response is None or response.status != 200:
+                return  # Exit if there's no valid response
+
+            # Step 2: Handle the response based on whether it's streaming
+            if self.assistant.stream:
+                self.handle_streaming_response(response)
+            else:
+                self.handle_plain_response(response)
+
+        # Step 3: Exception Handling
         except ContextLengthExceededException as error:
             do_delete = sublime.ok_cancel_dialog(
                 msg=f'Delete the two farthest pairs?\n\n{error.message}',
                 ok_title='Delete',
             )
             if do_delete:
-                self.cacher.drop_first(2)
+                self.cacher.drop_first(2)  # Drop old requests from the cache
                 messages = self.create_message(selected_text=[self.text], command=self.command)
                 payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
                 self.provider.prepare_request(json_payload=payload)
+
+                # Retry after dropping extra cache loads
                 self.handle_response()
+
         except WrongUserInputException as error:
             logger.debug('on WrongUserInputException event status: %s', self.stop_event.is_set())
             present_error(title='OpenAI error', error=error)
+
         except UnknownException as error:
             logger.debug('on UnknownException event status: %s', self.stop_event.is_set())
             present_error(title='OpenAI error', error=error)
@@ -407,6 +404,9 @@ class OpenAIWorker(Thread):
         except Exception as error:
             present_unknown_error(title='OpenAI error', error=error)
             return
+
+        self.prepare_to_response()
+
         self.handle_response()
 
     def create_message(
