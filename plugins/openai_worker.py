@@ -7,7 +7,7 @@ import re
 from http.client import HTTPResponse
 from json import JSONDecodeError, JSONDecoder
 from threading import Event, Thread
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 import sublime
 from sublime import Region, Settings, Sheet, View
@@ -31,6 +31,11 @@ from .openai_network_client import NetworkClient
 from .phantom_streamer import PhantomStreamer
 
 logger = logging.getLogger(__name__)
+
+
+JSONObject = Dict[str, Any]  # A JSON object is typically a dict with string keys
+JSONArray = List[Any]  # A JSON array is typically a list of any types
+JSONType = Union[JSONObject, JSONArray, str, int, float, bool, None]  # Any valid JSON type
 
 
 class OpenAIWorker(Thread):
@@ -130,6 +135,50 @@ class OpenAIWorker(Thread):
             if 'content' in delta:
                 self.update_completion(delta['content'])
 
+    @staticmethod
+    def append_non_null(original: JSONType, append: JSONType) -> JSONType:
+        """
+        Recursively processes the object, returning only non-null fields.
+        """
+        if isinstance(original, int) and isinstance(append, int):
+            logger.debug(f'original: int `{original}`, append: int `{append}`')
+            original += append
+            return original
+
+        elif isinstance(original, str) and isinstance(append, str):
+            logger.debug(f'original: str `{original}`, append: str `{append}`')
+            original += append
+            return original
+
+        elif isinstance(original, dict) and isinstance(append, dict):
+            logger.debug(f'original: dict `{original}`, append: dict `{append}`')
+            for key, value in append.items():
+                if value is not None:
+                    if key in original:
+                        original[key] = OpenAIWorker.append_non_null(original[key], value)
+                    else:
+                        original[key] = value
+            return original
+
+        elif isinstance(append, list) and isinstance(original, list):
+            logger.debug(f'original: list `{original}`, append: list `{append}`')
+            # Append non-null values from append to the original list
+            for index, item in enumerate(append):
+                if (
+                    isinstance(original, list)
+                    and isinstance(original[index], dict)
+                    and isinstance(item, dict)
+                ):
+                    if original[index].get('index') == item['index']:
+                        OpenAIWorker.append_non_null(original[index], item)
+                        return original
+                if isinstance(item, dict):
+                    original.append(item)
+            return original
+
+        # If the object is neither a dictionary nor a list, return it directly
+        return original
+
     def prepare_to_response(self):
         if self.assistant.prompt_mode == PromptMode.panel.name:
             self.update_output_panel('\n\n## Answer\n\n')
@@ -180,9 +229,13 @@ class OpenAIWorker(Thread):
             except Exception:
                 raise
 
+    def handle_function_call(self, response: HTTPResponse):
+        pass
+
     def handle_streaming_response(self, response: HTTPResponse):
         # without key declaration it would failt to append there later in code.
         full_response_content = {'role': '', 'content': ''}
+        full_function_call = {}
 
         logger.debug('OpenAIWorker execution self.stop_event id: %s', id(self.stop_event))
 
@@ -210,11 +263,16 @@ class OpenAIWorker(Thread):
                     response_dict: Dict[str, Any] = JSONDecoder().decode(chunk_str)
                     if 'delta' in response_dict['choices'][0]:
                         delta: Dict[str, Any] = response_dict['choices'][0]['delta']
-                        self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
+                        if delta.get('content'):
+                            self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
+                        elif delta.get('tool_calls'):
+                            self.append_non_null(full_function_call, delta)
+
                 except:
                     self.provider.close_connection()
                     raise
 
+        logger.debug(f'function_call {full_function_call}')
         self.provider.close_connection()
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if full_response_content['role'] == '':
