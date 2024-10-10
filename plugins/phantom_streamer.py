@@ -36,8 +36,9 @@ class PhantomStreamer:
         self.completion: str = ''
         self.phantom: Phantom | None = None
         self.phantom_id: int | None = None
-        logger.debug(f'view selection: {view.sel()[0]}')
-        self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
+        if len(view.sel()) > 0:
+            logger.debug(f'view selection: {view.sel()[0]}')
+            self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
 
     def update_completion(self, completion: str):
         line_beginning = self.view.line(self.view.sel()[0])
