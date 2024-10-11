@@ -16,7 +16,7 @@ class PromptMode(Enum):
 @dataclass
 class Function:
     name: str
-    arguments: Dict[str, Union[str, int, bool]]
+    arguments: Dict[str, Union[str, int, bool, Dict[str, int]]]
 
 
 @dataclass

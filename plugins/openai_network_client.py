@@ -77,6 +77,66 @@ FUNCTION_DATA = [
             },
         },
     },
+    {
+        'type': 'function',
+        'function': {
+            'name': 'append_text_to_point',
+            'description': 'Replace the content of a region with the content provided',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'file_path': {
+                        'type': 'string',
+                        'description': 'The path of the file where content to search is stored',
+                    },
+                    'position': {
+                        'type': 'integer',
+                        'description': 'The position to append text to',
+                    },
+                    'content': {
+                        'type': 'string',
+                        'description': 'The content to replace in the specified region',
+                    },
+                },
+                'required': ['file_path', 'position', 'content'],
+                'additionalProperties': False,
+            },
+        },
+    },
+    {
+        'type': 'function',
+        'function': {
+            'name': 'erase_content_of_region',
+            'description': 'Replace the content of a region with the content provided',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'file_path': {
+                        'type': 'string',
+                        'description': 'The path of the file where content to search is stored',
+                    },
+                    'region': {
+                        'type': 'object',
+                        'description': 'The region in the file to replace text',
+                        'properties': {
+                            'a': {
+                                'type': 'integer',
+                                'description': 'The beginning point of the region to be replaced',
+                            },
+                            'b': {
+                                'type': 'integer',
+                                'description': 'The ending point of the region to be replaced',
+                            },
+                        },
+                        'required': ['a', 'b'],
+                        'additionalProperties': False,
+                    },
+                },
+                'required': ['file_path', 'region'],
+                'additionalProperties': False,
+            },
+        },
+    },
 ]
 
 
@@ -159,7 +219,7 @@ class NetworkClient:
                     'max_completion_tokens': assitant_setting.max_completion_tokens,
                     'top_p': assitant_setting.top_p,
                     'stream': assitant_setting.stream,
-                    'tools': FUNCTION_DATA if assitant_setting.token else None,
+                    'tools': FUNCTION_DATA if assitant_setting.tools else None,
                 }.items()
                 if value is not None
             }

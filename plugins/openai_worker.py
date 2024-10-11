@@ -233,12 +233,14 @@ class OpenAIWorker(Thread):
 
     def handle_function_call(self, tool_calls: List[ToolCall]):
         for tool in tool_calls:
+            logger.debug(f'{tool.function.name} function called')
             if tool.function.name == 'get_region_for_text':
                 path = tool.function.arguments.get('file_path')
                 content = tool.function.arguments.get('content')
                 if path and isinstance(path, str) and content and isinstance(content, str):
                     view = self.window.find_open_file(path)
                     if view:
+                        logger.debug(f'{tool.function.name} executing')
                         escaped_string = (
                             content.replace('(', r'\(')
                             .replace(')', r'\)')
@@ -281,15 +283,57 @@ class OpenAIWorker(Thread):
                 ):
                     view = self.window.find_open_file(path)
                     if view:
-                        escaped_string = (
-                            content.replace('(', r'\(')
-                            .replace(')', r'\)')
-                            .replace('[', r'\[')
-                            .replace(']', r'\]')
-                            .replace('{', r'\{')
-                            .replace('}', r'\}')
+                        view.run_command('replace_region', {'region': content, 'text': escaped_string})
+                        messages = self.create_message(
+                            command=dumps('{"success": true }'), tool_call_id=tool.id
                         )
-                        view.run_command('replace_region', {'region': region, 'text': escaped_string})
+                        payload = self.provider.prepare_payload(
+                            assitant_setting=self.assistant, messages=messages
+                        )
+
+                        new_messages = messages[-1:]
+
+                        self.cacher.append_to_cache(new_messages)
+                        self.provider.prepare_request(json_payload=payload)
+                        self.prepare_to_response()
+
+                        self.handle_response()
+            elif tool.function.name == 'append_text_to_point':
+                path = tool.function.arguments.get('file_path')
+                position = tool.function.arguments.get('position')
+                content = tool.function.arguments.get('content')
+                if (
+                    path
+                    and isinstance(path, str)
+                    and position
+                    and isinstance(position, Dict)
+                    and content
+                    and isinstance(content, str)
+                ):
+                    view = self.window.find_open_file(path)
+                    if view:
+                        view.run_command('text_stream_at', {'position': position, 'text': content})
+                        messages = self.create_message(
+                            command=dumps('{"success": true }'), tool_call_id=tool.id
+                        )
+                        payload = self.provider.prepare_payload(
+                            assitant_setting=self.assistant, messages=messages
+                        )
+
+                        new_messages = messages[-1:]
+
+                        self.cacher.append_to_cache(new_messages)
+                        self.provider.prepare_request(json_payload=payload)
+                        self.prepare_to_response()
+
+                        self.handle_response()
+            elif tool.function.name == 'erase_content_of_region':
+                path = tool.function.arguments.get('file_path')
+                region = tool.function.arguments.get('region')
+                if path and isinstance(path, str) and region and isinstance(region, Dict):
+                    view = self.window.find_open_file(path)
+                    if view:
+                        view.run_command('erase_region_command', {'region': region})
                         messages = self.create_message(
                             command=dumps('{"success": true }'), tool_call_id=tool.id
                         )
