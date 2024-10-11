@@ -81,7 +81,7 @@ FUNCTION_DATA = [
         'type': 'function',
         'function': {
             'name': 'append_text_to_point',
-            'description': 'Replace the content of a region with the content provided',
+            'description': 'Append the content to a given position with the content provided',
             'parameters': {
                 'type': 'object',
                 'properties': {
@@ -107,7 +107,41 @@ FUNCTION_DATA = [
         'type': 'function',
         'function': {
             'name': 'erase_content_of_region',
-            'description': 'Replace the content of a region with the content provided',
+            'description': 'Erase the content of a given region',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'file_path': {
+                        'type': 'string',
+                        'description': 'The path of the file where content to erase is stored',
+                    },
+                    'region': {
+                        'type': 'object',
+                        'description': 'The region in the file to be erased',
+                        'properties': {
+                            'a': {
+                                'type': 'integer',
+                                'description': 'The beginning point of the region to be erased',
+                            },
+                            'b': {
+                                'type': 'integer',
+                                'description': 'The ending point of the region to be erased',
+                            },
+                        },
+                        'required': ['a', 'b'],
+                        'additionalProperties': False,
+                    },
+                },
+                'required': ['file_path', 'region'],
+                'additionalProperties': False,
+            },
+        },
+    },
+    {
+        'type': 'function',
+        'function': {
+            'name': 'read_region_content',
+            'description': 'Read the content of the particular region',
             'parameters': {
                 'type': 'object',
                 'properties': {
@@ -117,15 +151,15 @@ FUNCTION_DATA = [
                     },
                     'region': {
                         'type': 'object',
-                        'description': 'The region in the file to replace text',
+                        'description': 'The region in the file to read',
                         'properties': {
                             'a': {
                                 'type': 'integer',
-                                'description': 'The beginning point of the region to be replaced',
+                                'description': 'The beginning point of the region to read',
                             },
                             'b': {
                                 'type': 'integer',
-                                'description': 'The ending point of the region to be replaced',
+                                'description': 'The ending point of the region to read',
                             },
                         },
                         'required': ['a', 'b'],
@@ -219,6 +253,7 @@ class NetworkClient:
                     'max_completion_tokens': assitant_setting.max_completion_tokens,
                     'top_p': assitant_setting.top_p,
                     'stream': assitant_setting.stream,
+                    'parallel_tool_calls': assitant_setting.parallel_tool_calls,
                     'tools': FUNCTION_DATA if assitant_setting.tools else None,
                 }.items()
                 if value is not None

@@ -285,8 +285,10 @@ class OpenAIWorker(Thread):
                     if view:
                         logger.debug(f'{tool.function.name} executing')
                         view.run_command('replace_region', {'region': region, 'text': content})
+                        region = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
+                        text = view.substr(region)
                         messages = self.create_message(
-                            command=dumps('{"success": true }'), tool_call_id=tool.id
+                            command=dumps({'result_with_vicinity': text}), tool_call_id=tool.id
                         )
                         payload = self.provider.prepare_payload(
                             assitant_setting=self.assistant, messages=messages
@@ -315,8 +317,10 @@ class OpenAIWorker(Thread):
                     if view:
                         logger.debug(f'{tool.function.name} executing')
                         view.run_command('text_stream_at', {'position': position, 'text': content})
+                        region = Region(a=position - 30, b=position + len(content) + 30)
+                        text = view.substr(region)
                         messages = self.create_message(
-                            command=dumps('{"success": true }'), tool_call_id=tool.id
+                            command=dumps({'result_with_vicinity': text}), tool_call_id=tool.id
                         )
                         payload = self.provider.prepare_payload(
                             assitant_setting=self.assistant, messages=messages
@@ -331,14 +335,38 @@ class OpenAIWorker(Thread):
                         self.handle_response()
             elif tool.function.name == 'erase_content_of_region':
                 path = tool.function.arguments.get('file_path')
-                region = tool.function.arguments.get('region')
                 if path and isinstance(path, str) and region and isinstance(region, Dict):
                     view = self.window.find_open_file(path)
                     if view:
                         logger.debug(f'{tool.function.name} executing')
                         view.run_command('erase_region', {'region': region})
+                        region_ = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
+                        text = view.substr(region_)
                         messages = self.create_message(
-                            command=dumps('{"success": true }'), tool_call_id=tool.id
+                            command=dumps({'result_with_vicinity': text}), tool_call_id=tool.id
+                        )
+                        payload = self.provider.prepare_payload(
+                            assitant_setting=self.assistant, messages=messages
+                        )
+
+                        new_messages = messages[-1:]
+
+                        self.cacher.append_to_cache(new_messages)
+                        self.provider.prepare_request(json_payload=payload)
+                        self.prepare_to_response()
+
+                        self.handle_response()
+            elif tool.function.name == 'read_region_content':
+                path = tool.function.arguments.get('file_path')
+                region = tool.function.arguments.get('region')
+                if path and isinstance(path, str) and region and isinstance(region, Dict):
+                    view = self.window.find_open_file(path)
+                    if view:
+                        logger.debug(f'{tool.function.name} executing')
+                        region_ = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
+                        text = view.substr(region_)
+                        messages = self.create_message(
+                            command=dumps({'content': f'{text}'}), tool_call_id=tool.id
                         )
                         payload = self.provider.prepare_payload(
                             assitant_setting=self.assistant, messages=messages

@@ -53,7 +53,8 @@ class AssistantSettings:
     presence_penalty: int | None
     placeholder: str | None
     tools: bool
-    stream: bool | None
+    parallel_tool_calls: bool
+    stream: bool
     advertisement: bool
 
 
@@ -69,6 +70,7 @@ DEFAULT_ASSISTANT_SETTINGS: Dict[str, Any] = {
     'frequency_penalty': None,
     'presence_penalty': None,
     'tools': False,
+    'parallel_tool_calls': False,
     'stream': True,
     'advertisement': True,
 }
