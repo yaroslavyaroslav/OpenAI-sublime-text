@@ -72,6 +72,8 @@ class SharedOutputPanelListener(EventListener):
         self.clear_output_panel(window)
 
         for line in self.cacher.read_all():
+            if line.get('hidden'):
+                continue
             ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
             ## (it's not that easy, since question and answer are the different lines)
             ## FIXME: This logic conflicts with multifile/multimessage request behaviour

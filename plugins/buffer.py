@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Dict
 
 from sublime import Edit, Region, View
-from sublime_types import Point
 from sublime_plugin import TextCommand
+from sublime_types import Point
 
 
 class TextStreamer:

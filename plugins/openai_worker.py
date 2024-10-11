@@ -5,7 +5,7 @@ import copy
 import logging
 import re
 from http.client import HTTPResponse
-from json import JSONDecodeError, JSONDecoder, loads
+from json import JSONDecodeError, JSONDecoder, dumps, loads
 from threading import Event, Thread
 from typing import Any, Dict, List, Union
 
@@ -247,6 +247,24 @@ class OpenAIWorker(Thread):
                         )
                         region = view.find(pattern=escaped_string, start_pt=0)
                         logger.debug(f'region {region}')
+                        serializable_region = {
+                            'begin': region.begin(),
+                            'end': region.end(),
+                        }
+                        messages = self.create_message(
+                            command=dumps(serializable_region), tool_call_id=tool.id
+                        )
+                        payload = self.provider.prepare_payload(
+                            assitant_setting=self.assistant, messages=messages
+                        )
+
+                        new_messages = messages[-1:]
+
+                        self.cacher.append_to_cache(new_messages)
+                        self.provider.prepare_request(json_payload=payload)
+                        self.prepare_to_response()
+
+                        self.handle_response()
 
     def handle_streaming_response(self, response: HTTPResponse):
         # without key declaration it would failt to append there later in code.
@@ -256,7 +274,7 @@ class OpenAIWorker(Thread):
         logger.debug('OpenAIWorker execution self.stop_event id: %s', id(self.stop_event))
 
         for chunk in response:
-            # FIXME: With this implementation few last tokens get missed on cacnel action. (e.g. the're seen within a proxy, but not in the code)
+            # FIXME: With this implementation few last tokens get missed on cacnel action. (e.g. they're seen within a proxy, but not in the code)
             if self.stop_event.is_set():
                 self.handle_sse_delta(
                     delta={'role': 'assistant'},
@@ -303,6 +321,9 @@ class OpenAIWorker(Thread):
                 )
                 for call in full_function_call['tool_calls']
             ]
+            full_function_call['hidden'] = True
+            self.update_output_panel(f'Function calling: `{tool_calls[0].function.name}`')
+            self.cacher.append_to_cache([full_function_call])
             self.handle_function_call(tool_calls)
 
         if self.assistant.prompt_mode == PromptMode.panel.name:
@@ -500,9 +521,10 @@ class OpenAIWorker(Thread):
 
     def create_message(
         self,
-        selected_text: List[str] | None,
-        command: str | None,
+        selected_text: List[str] | None = None,
+        command: str | None = None,
         placeholder: str | None = None,
+        tool_call_id: str | None = None,
     ) -> List[Dict[str, str]]:
         messages = self.cacher.read_all()
         if placeholder:
@@ -518,7 +540,17 @@ class OpenAIWorker(Thread):
                 [{'role': 'user', 'content': text, 'name': 'OpenAI_completion'} for text in selected_text]
             )
         if command:
-            messages.append({'role': 'user', 'content': command, 'name': 'OpenAI_completion'})
+            if tool_call_id:
+                messages.append(
+                    {
+                        'role': 'tool',
+                        'content': command,
+                        'tool_call_id': tool_call_id,
+                        'name': 'OpenAI_completion',
+                    }
+                )
+            else:
+                messages.append({'role': 'user', 'content': command, 'name': 'OpenAI_completion'})
         return messages
 
     def create_image_fake_message(self, image_url: str | None, command: str | None) -> List[Dict[str, str]]:
