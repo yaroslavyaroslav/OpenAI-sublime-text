@@ -5,7 +5,7 @@ import copy
 import logging
 import re
 from http.client import HTTPResponse
-from json import JSONDecodeError, JSONDecoder
+from json import JSONDecodeError, JSONDecoder, loads
 from threading import Event, Thread
 from typing import Any, Dict, List, Union
 
@@ -16,7 +16,9 @@ from .assistant_settings import (
     DEFAULT_ASSISTANT_SETTINGS,
     AssistantSettings,
     CommandMode,
+    Function,
     PromptMode,
+    ToolCall,
 )
 from .buffer import TextStreamer
 from .cacher import Cacher
@@ -229,13 +231,27 @@ class OpenAIWorker(Thread):
             except Exception:
                 raise
 
-    def handle_function_call(self, response: HTTPResponse):
-        pass
+    def handle_function_call(self, tool_calls: List[ToolCall]):
+        for tool in tool_calls:
+            if tool.function.name == 'get_region_for_text':
+                path = tool.function.arguments.get('file_path')
+                content = tool.function.arguments.get('content')
+                if path and isinstance(path, str) and content and isinstance(content, str):
+                    view = self.window.find_open_file(path)
+                    if view:
+                        escaped_string = (
+                            content.replace('(', r'\(')
+                            .replace(')', r'\)')
+                            .replace('[', r'\[')
+                            .replace(']', r'\]')
+                        )
+                        region = view.find(pattern=escaped_string, start_pt=0)
+                        logger.debug(f'region {region}')
 
     def handle_streaming_response(self, response: HTTPResponse):
         # without key declaration it would failt to append there later in code.
         full_response_content = {'role': '', 'content': ''}
-        full_function_call = {}
+        full_function_call: Dict[str, Any] = {}
 
         logger.debug('OpenAIWorker execution self.stop_event id: %s', id(self.stop_event))
 
@@ -274,6 +290,21 @@ class OpenAIWorker(Thread):
 
         logger.debug(f'function_call {full_function_call}')
         self.provider.close_connection()
+
+        if full_function_call:
+            tool_calls = [
+                ToolCall(
+                    index=call['index'],
+                    id=call['id'],
+                    type=call['type'],
+                    function=Function(
+                        name=call['function']['name'], arguments=loads(call['function']['arguments'])
+                    ),
+                )
+                for call in full_function_call['tool_calls']
+            ]
+            self.handle_function_call(tool_calls)
+
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if full_response_content['role'] == '':
                 # together.ai never returns role value, so we have to set it manually

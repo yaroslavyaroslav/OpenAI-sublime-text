@@ -25,9 +25,16 @@ FUNCTION_DATA = {
         'parameters': {
             'type': 'object',
             'properties': {
-                'file_path': {'type': 'string', 'description': 'The content for which Region should be found'}
+                'file_path': {
+                    'type': 'string',
+                    'description': 'The path of the file where content to search is stored',
+                },
+                'content': {
+                    'type': 'string',
+                    'description': 'Content bounds of which to search for',
+                },
             },
-            'required': ['file_path'],
+            'required': ['file_path', 'content'],
             'additionalProperties': False,
         },
     },

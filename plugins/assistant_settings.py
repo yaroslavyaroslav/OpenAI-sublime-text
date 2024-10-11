@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional, Union
 
 
 class PromptMode(Enum):
@@ -11,6 +11,30 @@ class PromptMode(Enum):
     insert = 'insert'
     replace = 'replace'
     phantom = 'phantom'
+
+
+@dataclass
+class Function:
+    name: str
+    arguments: Dict[str, Union[str, int, bool]]
+
+
+@dataclass
+class ToolCall:
+    index: int
+    id: str
+    type: str
+    function: Function
+
+
+@dataclass
+class AssistantResponse:
+    role: str
+    content: Optional[str] = None
+    tool_calls: List[ToolCall] = field(default_factory=list)
+    refusal: Optional[str] = None
+    logprobs: Optional[str] = None
+    finish_reason: Optional[str] = None
 
 
 @dataclass
