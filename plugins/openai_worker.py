@@ -283,7 +283,8 @@ class OpenAIWorker(Thread):
                 ):
                     view = self.window.find_open_file(path)
                     if view:
-                        view.run_command('replace_region', {'region': content, 'text': escaped_string})
+                        logger.debug(f'{tool.function.name} executing')
+                        view.run_command('replace_region', {'region': region, 'text': content})
                         messages = self.create_message(
                             command=dumps('{"success": true }'), tool_call_id=tool.id
                         )
@@ -306,12 +307,13 @@ class OpenAIWorker(Thread):
                     path
                     and isinstance(path, str)
                     and position
-                    and isinstance(position, Dict)
+                    and isinstance(position, int)
                     and content
                     and isinstance(content, str)
                 ):
                     view = self.window.find_open_file(path)
                     if view:
+                        logger.debug(f'{tool.function.name} executing')
                         view.run_command('text_stream_at', {'position': position, 'text': content})
                         messages = self.create_message(
                             command=dumps('{"success": true }'), tool_call_id=tool.id
@@ -333,7 +335,8 @@ class OpenAIWorker(Thread):
                 if path and isinstance(path, str) and region and isinstance(region, Dict):
                     view = self.window.find_open_file(path)
                     if view:
-                        view.run_command('erase_region_command', {'region': region})
+                        logger.debug(f'{tool.function.name} executing')
+                        view.run_command('erase_region', {'region': region})
                         messages = self.create_message(
                             command=dumps('{"success": true }'), tool_call_id=tool.id
                         )
