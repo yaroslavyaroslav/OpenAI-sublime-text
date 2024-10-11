@@ -8,37 +8,76 @@ from http.client import HTTPConnection, HTTPResponse, HTTPSConnection
 from typing import Any, Dict, List
 from urllib.parse import urlparse
 
-import random
 import sublime
 
-from .assistant_settings import AssistantSettings, PromptMode
+from .assistant_settings import AssistantSettings
 from .cacher import Cacher
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException
 
 logger = logging.getLogger(__name__)
 
-FUNCTION_DATA = {
-    'type': 'function',
-    'function': {
-        'name': 'get_region_for_text',
-        'description': 'Get the Sublime Text Region bounds that is matching the content provided',
-        'parameters': {
-            'type': 'object',
-            'properties': {
-                'file_path': {
-                    'type': 'string',
-                    'description': 'The path of the file where content to search is stored',
+FUNCTION_DATA = [
+    {
+        'type': 'function',
+        'function': {
+            'name': 'get_region_for_text',
+            'description': 'Get the Sublime Text Region bounds that is matching the content provided',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'file_path': {
+                        'type': 'string',
+                        'description': 'The path of the file where content to search is stored',
+                    },
+                    'content': {
+                        'type': 'string',
+                        'description': 'Content bounds of which to search for',
+                    },
                 },
-                'content': {
-                    'type': 'string',
-                    'description': 'Content bounds of which to search for',
-                },
+                'required': ['file_path', 'content'],
+                'additionalProperties': False,
             },
-            'required': ['file_path', 'content'],
-            'additionalProperties': False,
         },
     },
-}
+    {
+        'type': 'function',
+        'function': {
+            'name': 'replace_text_for_region',
+            'description': 'Replace the content of a region with the content provided',
+            'parameters': {
+                'type': 'object',
+                'properties': {
+                    'file_path': {
+                        'type': 'string',
+                        'description': 'The path of the file where content to search is stored',
+                    },
+                    'region': {
+                        'type': 'object',
+                        'description': 'The region in the file to replace text',
+                        'properties': {
+                            'a': {
+                                'type': 'integer',
+                                'description': 'The beginning point of the region to be replaced',
+                            },
+                            'b': {
+                                'type': 'integer',
+                                'description': 'The ending point of the region to be replaced',
+                            },
+                        },
+                        'required': ['a', 'b'],
+                        'additionalProperties': False,
+                    },
+                    'content': {
+                        'type': 'string',
+                        'description': 'The content to replace in the specified region',
+                    },
+                },
+                'required': ['file_path', 'region', 'content'],
+                'additionalProperties': False,
+            },
+        },
+    },
+]
 
 
 class NetworkClient:
@@ -120,7 +159,7 @@ class NetworkClient:
                     'max_completion_tokens': assitant_setting.max_completion_tokens,
                     'top_p': assitant_setting.top_p,
                     'stream': assitant_setting.stream,
-                    'tools': [FUNCTION_DATA],
+                    'tools': FUNCTION_DATA if assitant_setting.token else None,
                 }.items()
                 if value is not None
             }

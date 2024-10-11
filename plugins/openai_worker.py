@@ -143,17 +143,17 @@ class OpenAIWorker(Thread):
         Recursively processes the object, returning only non-null fields.
         """
         if isinstance(original, int) and isinstance(append, int):
-            logger.debug(f'original: int `{original}`, append: int `{append}`')
+            # logger.debug(f'original: int `{original}`, append: int `{append}`')
             original += append
             return original
 
         elif isinstance(original, str) and isinstance(append, str):
-            logger.debug(f'original: str `{original}`, append: str `{append}`')
+            # logger.debug(f'original: str `{original}`, append: str `{append}`')
             original += append
             return original
 
         elif isinstance(original, dict) and isinstance(append, dict):
-            logger.debug(f'original: dict `{original}`, append: dict `{append}`')
+            # logger.debug(f'original: dict `{original}`, append: dict `{append}`')
             for key, value in append.items():
                 if value is not None:
                     if key in original:
@@ -163,7 +163,7 @@ class OpenAIWorker(Thread):
             return original
 
         elif isinstance(append, list) and isinstance(original, list):
-            logger.debug(f'original: list `{original}`, append: list `{append}`')
+            # logger.debug(f'original: list `{original}`, append: list `{append}`')
             # Append non-null values from append to the original list
             for index, item in enumerate(append):
                 if (
@@ -244,6 +244,8 @@ class OpenAIWorker(Thread):
                             .replace(')', r'\)')
                             .replace('[', r'\[')
                             .replace(']', r'\]')
+                            .replace('{', r'\{')
+                            .replace('}', r'\}')
                         )
                         region = view.find(pattern=escaped_string, start_pt=0)
                         logger.debug(f'region {region}')
@@ -253,6 +255,43 @@ class OpenAIWorker(Thread):
                         }
                         messages = self.create_message(
                             command=dumps(serializable_region), tool_call_id=tool.id
+                        )
+                        payload = self.provider.prepare_payload(
+                            assitant_setting=self.assistant, messages=messages
+                        )
+
+                        new_messages = messages[-1:]
+
+                        self.cacher.append_to_cache(new_messages)
+                        self.provider.prepare_request(json_payload=payload)
+                        self.prepare_to_response()
+
+                        self.handle_response()
+            elif tool.function.name == 'replace_text_for_region':
+                path = tool.function.arguments.get('file_path')
+                region = tool.function.arguments.get('region')
+                content = tool.function.arguments.get('content')
+                if (
+                    path
+                    and isinstance(path, str)
+                    and region
+                    and isinstance(region, Dict)
+                    and content
+                    and isinstance(content, str)
+                ):
+                    view = self.window.find_open_file(path)
+                    if view:
+                        escaped_string = (
+                            content.replace('(', r'\(')
+                            .replace(')', r'\)')
+                            .replace('[', r'\[')
+                            .replace(']', r'\]')
+                            .replace('{', r'\{')
+                            .replace('}', r'\}')
+                        )
+                        view.run_command('replace_region', {'region': region, 'text': escaped_string})
+                        messages = self.create_message(
+                            command=dumps('{"success": true }'), tool_call_id=tool.id
                         )
                         payload = self.provider.prepare_payload(
                             assitant_setting=self.assistant, messages=messages
