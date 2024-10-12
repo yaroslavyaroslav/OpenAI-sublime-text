@@ -80,66 +80,6 @@ FUNCTION_DATA = [
     {
         'type': 'function',
         'function': {
-            'name': 'append_text_to_point',
-            'description': 'Append the content to a given position with the content provided',
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'file_path': {
-                        'type': 'string',
-                        'description': 'The path of the file where content to search is stored',
-                    },
-                    'position': {
-                        'type': 'integer',
-                        'description': 'The position to append text to',
-                    },
-                    'content': {
-                        'type': 'string',
-                        'description': 'The content to replace in the specified region',
-                    },
-                },
-                'required': ['file_path', 'position', 'content'],
-                'additionalProperties': False,
-            },
-        },
-    },
-    {
-        'type': 'function',
-        'function': {
-            'name': 'erase_content_of_region',
-            'description': 'Erase the content of a given region',
-            'parameters': {
-                'type': 'object',
-                'properties': {
-                    'file_path': {
-                        'type': 'string',
-                        'description': 'The path of the file where content to erase is stored',
-                    },
-                    'region': {
-                        'type': 'object',
-                        'description': 'The region in the file to be erased',
-                        'properties': {
-                            'a': {
-                                'type': 'integer',
-                                'description': 'The beginning point of the region to be erased',
-                            },
-                            'b': {
-                                'type': 'integer',
-                                'description': 'The ending point of the region to be erased',
-                            },
-                        },
-                        'required': ['a', 'b'],
-                        'additionalProperties': False,
-                    },
-                },
-                'required': ['file_path', 'region'],
-                'additionalProperties': False,
-            },
-        },
-    },
-    {
-        'type': 'function',
-        'function': {
             'name': 'read_region_content',
             'description': 'Read the content of the particular region',
             'parameters': {

@@ -255,9 +255,12 @@ class OpenAIWorker(Thread):
                             'begin': region.begin(),
                             'end': region.end(),
                         }
-                        messages = self.create_message(
-                            command=dumps(serializable_region), tool_call_id=tool.id
-                        )
+                        if region.begin() == region.end() == -1:  # means search found nothing
+                            messages = self.create_message(command='Text not found', tool_call_id=tool.id)
+                        else:
+                            messages = self.create_message(
+                                command=dumps(serializable_region), tool_call_id=tool.id
+                            )
                         payload = self.provider.prepare_payload(
                             assitant_setting=self.assistant, messages=messages
                         )
@@ -287,61 +290,6 @@ class OpenAIWorker(Thread):
                         view.run_command('replace_region', {'region': region, 'text': content})
                         region = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
                         text = view.substr(region)
-                        messages = self.create_message(
-                            command=dumps({'result_with_vicinity': text}), tool_call_id=tool.id
-                        )
-                        payload = self.provider.prepare_payload(
-                            assitant_setting=self.assistant, messages=messages
-                        )
-
-                        new_messages = messages[-1:]
-
-                        self.cacher.append_to_cache(new_messages)
-                        self.provider.prepare_request(json_payload=payload)
-                        self.prepare_to_response()
-
-                        self.handle_response()
-            elif tool.function.name == 'append_text_to_point':
-                path = tool.function.arguments.get('file_path')
-                position = tool.function.arguments.get('position')
-                content = tool.function.arguments.get('content')
-                if (
-                    path
-                    and isinstance(path, str)
-                    and position
-                    and isinstance(position, int)
-                    and content
-                    and isinstance(content, str)
-                ):
-                    view = self.window.find_open_file(path)
-                    if view:
-                        logger.debug(f'{tool.function.name} executing')
-                        view.run_command('text_stream_at', {'position': position, 'text': content})
-                        region = Region(a=position - 30, b=position + len(content) + 30)
-                        text = view.substr(region)
-                        messages = self.create_message(
-                            command=dumps({'result_with_vicinity': text}), tool_call_id=tool.id
-                        )
-                        payload = self.provider.prepare_payload(
-                            assitant_setting=self.assistant, messages=messages
-                        )
-
-                        new_messages = messages[-1:]
-
-                        self.cacher.append_to_cache(new_messages)
-                        self.provider.prepare_request(json_payload=payload)
-                        self.prepare_to_response()
-
-                        self.handle_response()
-            elif tool.function.name == 'erase_content_of_region':
-                path = tool.function.arguments.get('file_path')
-                if path and isinstance(path, str) and region and isinstance(region, Dict):
-                    view = self.window.find_open_file(path)
-                    if view:
-                        logger.debug(f'{tool.function.name} executing')
-                        view.run_command('erase_region', {'region': region})
-                        region_ = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
-                        text = view.substr(region_)
                         messages = self.create_message(
                             command=dumps({'result_with_vicinity': text}), tool_call_id=tool.id
                         )

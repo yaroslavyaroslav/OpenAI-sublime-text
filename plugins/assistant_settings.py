@@ -52,8 +52,8 @@ class AssistantSettings:
     frequency_penalty: int | None
     presence_penalty: int | None
     placeholder: str | None
-    tools: bool
-    parallel_tool_calls: bool
+    tools: bool | None
+    parallel_tool_calls: bool | None
     stream: bool
     advertisement: bool
 
@@ -69,8 +69,8 @@ DEFAULT_ASSISTANT_SETTINGS: Dict[str, Any] = {
     'top_p': None,
     'frequency_penalty': None,
     'presence_penalty': None,
-    'tools': False,
-    'parallel_tool_calls': False,
+    'tools': None,
+    'parallel_tool_calls': None,
     'stream': True,
     'advertisement': True,
 }
