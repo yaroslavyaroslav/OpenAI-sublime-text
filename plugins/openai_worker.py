@@ -105,6 +105,17 @@ class OpenAIWorker(Thread):
     def update_completion(self, completion: str):
         self.buffer_manager.update_completion(completion=completion)
 
+    def handle_whole_response(self, content: Dict[str, Any]):
+        if self.assistant.prompt_mode == PromptMode.panel.name:
+            if 'content' in content:
+                self.update_output_panel(content['content'])
+        elif self.assistant.prompt_mode == PromptMode.phantom.name:
+            if 'content' in content:
+                self.phantom_manager.update_completion(content['content'])
+        else:
+            if 'content' in content:
+                self.update_completion(content['content'])
+
     def handle_sse_delta(self, delta: Dict[str, Any], full_response_content: Dict[str, str]):
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if 'role' in delta:
@@ -246,7 +257,7 @@ class OpenAIWorker(Thread):
             if full_response_content['role'] == '':
                 full_response_content['role'] = 'assistant'
 
-            self.handle_sse_delta(delta=full_response_content, full_response_content=full_response_content)
+            self.handle_whole_response(content=full_response_content)
             # Store the response in the cache
             self.cacher.append_to_cache([full_response_content])
 
