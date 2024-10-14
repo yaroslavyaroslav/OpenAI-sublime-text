@@ -134,14 +134,14 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 ### Open Source models support (llama.cpp, ollama)
 
 1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`"http://localhost:8080"`).
-2. [Optional] Provide a `"token"` if your provider required one. 
+2. ~~[Optional] Provide a `"token"` if your provider required one.~~ **Temporarily mandatory, see warning below.**
 3. Tweak `"chat_model"` to a model of your choice and you're set.
+
+> [!IMPORTANT]
+> Due to a known issue, a token value of 10 or more characters is currently required even for unsecured servers. [More details here.](#workaround-for-64)
 
 > [!NOTE]
 > You can set both `url` and `token` either global or on per assistant instance basis, thus being capable to freely switching between closed source and open sourced models within a single session.
-
-> [!TIP]
-> In some cases, even if your provider does not require authentication, you may receive an error message stating _"No API token provided, you have to set the OpenAI token into the settings to make things work."_ To resolve this, simply set your `token` value to any string with 10 characters or more.
 
 ## Settings
 
@@ -152,6 +152,9 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
     "token": "sk-your-token",
 }
 ```
+
+> [!IMPORTANT]
+> Due to a known issue, a token value of 10 or more characters is currently required even for unsecured servers. [More details here.](#workaround-for-64)
 
 ### Advertisement disabling
 
@@ -191,18 +194,57 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 
 ## Known bugs
 
-### "No API token provided" even if server does not require authentication
+### Workaround for [#64](/issues/64)
 
-There is currently a known issue which will trigger this error message even when connecting to an unsecured server:  
+> [!CAUTION]
+> There is currently a known issue which will trigger the following error even when connecting to an unsecured server.
+>
+> **"No API token provided, you have to set the OpenAI token into the settings to make things work."**
 
-> [!WARNING]
-> **Error:** "No API token provided, you have to set the OpenAI token into the settings to make things work."
-
-It is highly recommended to enable authentication in most cases, but especially when self-hosting models on your local this can be inconvenient.
-In such cases, there is a simple workaround which should allow you to avoid this error until a permanent solution can be released.
+It is highly recommended to enable authentication in most cases, but especially when self-hosting models on your local system this can be inconvenient.
 
 > [!TIP]
-> **Solution:** Simply ensure your assistant configuration includes a `token` value longer than 10 characters. It can be anything, since the server doesn't care, but must be present to prevent a validation error.
+> Use the following workaround to avoid this error until a permanent solution can be released.
+>
+> **Simply ensure your assistant configuration defines a `"token",` value longer than 10 characters. It can be anything, since the server doesn't care, but must be present to prevent a validation error.**
+
+#### Sample config
+
+```json
+{
+    "url": "http://localhost:1234", // Url to your unsecured server
+    "token": "xxxxxxxxxx", // Token can be anything so long as it is at least 10 characters long
+    "assistants": [
+        {
+            // Inherits token from top-level, no error
+            "name": "Code assistant",
+            "prompt_mode": "panel",
+            "chat_model": "codestral-22b-v0.1",
+            "assistant_role": "You are a software developer, you develop software programs and applications using programming languages and development tools.",
+            "temperature": 1,
+            "max_tokens": 2048,
+        },
+        {
+            // Overrides top-level token incorrectly, will get error
+            "name": "Lazy Assistant",
+            "token": "",
+            "prompt_mode": "phantom",
+            "chat_model": "llama-3-8b-instruct-32k-v0.1",
+            "assistant_role": "You are very unhelpful.",
+            "max_tokens": 4000,
+        },
+        {
+            // Overrides top-level token correctly, no error
+            "name": "General Assistant",
+            "token": "abcdefghijklmn",
+            "prompt_mode": "phantom",
+            "chat_model": "llama-3-8b-instruct-32k-v0.1",
+            "assistant_role": "You are very helpful.",
+            "max_tokens": 4000,
+        },
+    ]
+}
+```
 
 ## Disclaimers
 

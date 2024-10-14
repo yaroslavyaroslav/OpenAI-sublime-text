@@ -6,6 +6,8 @@
     "url": "https://api.openai.com",
 
     // Your openAI token
+    // IMPORTANT: Due to a known issue, a token value of 10 or more characters is currently required even for unsecured servers. 
+    // See this comment for a workaround: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/issues/64#issuecomment-2410170986
     "token": "",
 
     // Apply Sublime Text markdown syntax highlight to OpenAI completion output panel text.
