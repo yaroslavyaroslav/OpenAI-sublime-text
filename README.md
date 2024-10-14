@@ -140,6 +140,9 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 > [!NOTE]
 > You can set both `url` and `token` either global or on per assistant instance basis, thus being capable to freely switching between closed source and open sourced models within a single session.
 
+> [!TIP]
+> In some cases, even if your provider does not require authentication, you may receive an error message stating _"No API token provided, you have to set the OpenAI token into the settings to make things work."_ To resolve this, simply set your `token` value to any string with 10 characters or more.
+
 ## Settings
 
 The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the most of providers to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste your API key in the token property, as follows:
