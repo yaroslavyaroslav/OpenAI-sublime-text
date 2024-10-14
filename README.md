@@ -68,7 +68,7 @@ ChatGPT mode works the following way:
 You can separate a chat history and assistant settings for a given project by appending the following snippet to its settings:
 
 ```json
-{   
+{
     "settings": {
         "ai_assistant": {
             "cache_prefix": "your_project_name"
@@ -85,7 +85,7 @@ You can add a few things to your request:
 
 To perform the former just select something within an active view and initiate the request this way without switching to another tab, selection would be added to a request as a preceding message (each selection chunk would be split by a new line).
 
-To send the whole file(s) in advance to request you should `super+button1` on them to make all tabs of them to become visible in a **single view group** and then run `[New Message|Chat Model] with Sheets` command as shown on the screen below. Pay attention, that in given example only `README.md` and `4.0.0.md` will be sent to a server, but not a content of the `AI chat`. 
+To send the whole file(s) in advance to request you should `super+button1` on them to make all tabs of them to become visible in a **single view group** and then run `[New Message|Chat Model] with Sheets` command as shown on the screen below. Pay attention, that in given example only `README.md` and `4.0.0.md` will be sent to a server, but not a content of the `AI chat`.
 
 ![](static/media/file_selection_example.png)
 
@@ -105,7 +105,7 @@ It expects an absolute path to image to be selected in a buffer or stored in cli
 
 #### Phantom use case
 
-Phantom is the overlay UI placed inline in the editor view (see the picture below). It doesn't affects content of the view. 
+Phantom is the overlay UI placed inline in the editor view (see the picture below). It doesn't affects content of the view.
 
 1. You can set `"prompt_mode": "phantom"` for AI assistant in its settings.
 2. [optional] Select some text to pass in context in to manipulate with.
@@ -133,7 +133,7 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 
 ### Open Source models support (llama.cpp, ollama)
 
-1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`"http://localhost:8080"`). 
+1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`"http://localhost:8080"`).
 2. [Optional] Provide a `"token"` if your provider required one. 
 3. Tweak `"chat_model"` to a model of your choice and you're set.
 
