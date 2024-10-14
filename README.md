@@ -194,7 +194,7 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 
 ## Known bugs
 
-### Workaround for [#64](/issues/64)
+### Workaround for [#64](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/issues/64)
 
 > [!CAUTION]
 > There is currently a known issue which will trigger the following error even when connecting to an unsecured server.
