@@ -137,7 +137,7 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 2. ~~[Optional] Provide a `"token"` if your provider required one.~~ **Temporarily mandatory, see warning below.**
 3. Tweak `"chat_model"` to a model of your choice and you're set.
 
-> [!IMPORTANT]
+> [!WARNING]
 > Due to a known issue, a token value of 10 or more characters is currently required even for unsecured servers. [More details here.](#workaround-for-64)
 
 > [!NOTE]
@@ -153,7 +153,7 @@ The OpenAI Completion plugin has a settings file where you can set your OpenAI A
 }
 ```
 
-> [!IMPORTANT]
+> [!WARNING]
 > Due to a known issue, a token value of 10 or more characters is currently required even for unsecured servers. [More details here.](#workaround-for-64)
 
 ### Advertisement disabling
