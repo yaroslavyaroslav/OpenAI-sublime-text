@@ -164,7 +164,7 @@ To disable advertisement you have to add `"advertisement": false` line into an a
 
 You can bind keys for a given plugin command in `Preferences` -> `Package Settings` -> `OpenAI` -> `Key Bindings`. For example you can bind "New Message" including active tabs as context command like this:
 
-```json
+```javascript
 {
     "keys": [ "super+k", "super+'" ],
     "command": "openai", // or "openai_panel"
@@ -183,7 +183,7 @@ It just works.
 
 You can setup it up by overriding the proxy property in the `OpenAI completion` settings like follow:
 
-```json
+```javascript
 "proxy": {
     "address": "127.0.0.1", // required
     "port": 9898, // required
@@ -210,7 +210,7 @@ It is highly recommended to enable authentication in most cases, but especially 
 
 #### Sample config
 
-```json
+```javascript
 {
     "url": "http://localhost:1234", // Url to your unsecured server
     "token": "xxxxxxxxxx", // Token can be anything so long as it is at least 10 characters long
