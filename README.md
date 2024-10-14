@@ -189,6 +189,21 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 }
 ```
 
+## Known bugs
+
+### "No API token provided" even if server does not require authentication
+
+There is currently a known issue which will trigger this error message even when connecting to an unsecured server:  
+
+> [!WARNING]
+> **Error:** "No API token provided, you have to set the OpenAI token into the settings to make things work."
+
+It is highly recommended to enable authentication in most cases, but especially when self-hosting models on your local this can be inconvenient.
+In such cases, there is a simple workaround which should allow you to avoid this error until a permanent solution can be released.
+
+> [!TIP]
+> **Solution:** Simply ensure your assistant configuration includes a `token` value longer than 10 characters. It can be anything, since the server doesn't care, but must be present to prevent a validation error.
+
 ## Disclaimers
 
 > [!WARNING]
