@@ -196,55 +196,12 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 
 ### Workaround for [#64](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/issues/64)
 
-> [!CAUTION]
-> There is currently a known issue which will trigger the following error even when connecting to an unsecured server.
+> [!IMPORTANT]
+> If any of your assistants are configured with a `"token"` of less than 10 characters, they will always fail to establish a connection, even if the server does not require authentication at all. Instead, the plugin will produce the following error message:
 >
 > **"No API token provided, you have to set the OpenAI token into the settings to make things work."**
 
-It is highly recommended to enable authentication in most cases, but especially when self-hosting models on your local system this can be inconvenient.
-
-> [!TIP]
-> Use the following workaround to avoid this error until a permanent solution can be released.
->
-> **Simply ensure your assistant configuration defines a `"token",` value longer than 10 characters. It can be anything, since the server doesn't care, but must be present to prevent a validation error.**
-
-#### Sample config
-
-```javascript
-{
-    "url": "http://localhost:1234", // Url to your unsecured server
-    "token": "xxxxxxxxxx", // Token can be anything so long as it is at least 10 characters long
-    "assistants": [
-        {
-            // Inherits token from top-level, no error
-            "name": "Code assistant",
-            "prompt_mode": "panel",
-            "chat_model": "codestral-22b-v0.1",
-            "assistant_role": "You are a software developer, you develop software programs and applications using programming languages and development tools.",
-            "temperature": 1,
-            "max_tokens": 2048,
-        },
-        {
-            // Overrides top-level token incorrectly, will get error
-            "name": "Lazy Assistant",
-            "token": "",
-            "prompt_mode": "phantom",
-            "chat_model": "llama-3-8b-instruct-32k-v0.1",
-            "assistant_role": "You are very unhelpful.",
-            "max_tokens": 4000,
-        },
-        {
-            // Overrides top-level token correctly, no error
-            "name": "General Assistant",
-            "token": "abcdefghijklmn",
-            "prompt_mode": "phantom",
-            "chat_model": "llama-3-8b-instruct-32k-v0.1",
-            "assistant_role": "You are very helpful.",
-            "max_tokens": 4000,
-        },
-    ]
-}
-```
+[Luckily you'll find a quick and easy workaround here until a fix can be released!](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/issues/64#issuecomment-2410170986)
 
 ## Disclaimers
 
