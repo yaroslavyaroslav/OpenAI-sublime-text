@@ -6,6 +6,7 @@
     "url": "https://api.openai.com",
 
     // Your openAI token
+    // Token can be anything so long as it is at least 10 characters long.
     "token": "",
 
     // Apply Sublime Text markdown syntax highlight to OpenAI completion output panel text.
