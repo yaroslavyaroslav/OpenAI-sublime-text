@@ -4,7 +4,6 @@ import base64
 import copy
 import logging
 import re
-from .errors.OpenAIException import FunctionCallFailedException
 from http.client import HTTPResponse
 from json import JSONDecodeError, JSONDecoder, dumps, loads
 from threading import Event, Thread
@@ -25,6 +24,7 @@ from .buffer import TextStreamer
 from .cacher import Cacher
 from .errors.OpenAIException import (
     ContextLengthExceededException,
+    FunctionCallFailedException,
     UnknownException,
     WrongUserInputException,
     present_error,
@@ -304,7 +304,7 @@ class OpenAIWorker(Thread):
             else:
                 raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {region}')
         else:
-            raise FunctionCallFailedException(f'Wrong function call: {tool.function.name}')
+            raise FunctionCallFailedException(f"Called function don't exists: {tool.function.name}")
 
     def handle_function_call(self, tool_calls: List[ToolCall]):
         for tool in tool_calls:
@@ -486,7 +486,7 @@ class OpenAIWorker(Thread):
     @classmethod
     def wrap_content_with_scope(cls, scope_name: str, content: str) -> str:
         logger.debug(f'scope_name {scope_name}')
-        if scope_name.strip().lower() in ['markdown', 'multimarkdown']:
+        if scope_name.strip().lower() in ['markdown', 'multimarkdown', 'plain']:
             wrapped_content = content
         else:
             wrapped_content = f'```{scope_name}\n{content}\n```'
