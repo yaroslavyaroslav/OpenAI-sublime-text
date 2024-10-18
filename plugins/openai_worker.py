@@ -4,6 +4,7 @@ import base64
 import copy
 import logging
 import re
+from .errors.OpenAIException import FunctionCallFailedException
 from http.client import HTTPResponse
 from json import JSONDecodeError, JSONDecoder, dumps, loads
 from threading import Event, Thread
@@ -231,102 +232,97 @@ class OpenAIWorker(Thread):
             except Exception:
                 raise
 
+    def perform_function(self, tool: ToolCall) -> List[Dict[str, str]]:
+        if tool.function.name == 'get_region_for_text':
+            path = tool.function.arguments.get('file_path')
+            content = tool.function.arguments.get('content')
+            if path and isinstance(path, str) and content and isinstance(content, str):
+                view = self.window.find_open_file(path)
+                if view:
+                    logger.debug(f'{tool.function.name} executing')
+                    escaped_string = (
+                        content.replace('(', r'\(')
+                        .replace(')', r'\)')
+                        .replace('[', r'\[')
+                        .replace(']', r'\]')
+                        .replace('{', r'\{')
+                        .replace('}', r'\}')
+                    )
+                    region = view.find(pattern=escaped_string, start_pt=0)
+                    logger.debug(f'region {region}')
+                    serializable_region = {
+                        'begin': region.begin(),
+                        'end': region.end(),
+                    }
+                    if region.begin() == region.end() == -1:  # means search found nothing
+                        raise FunctionCallFailedException(f'Text not found: {content}')
+                    else:
+                        return self.create_message(command=dumps(serializable_region), tool_call_id=tool.id)
+                else:
+                    raise FunctionCallFailedException(f'File under path not found: {path}')
+            else:
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {content}')
+
+        elif tool.function.name == 'replace_text_for_region':
+            path = tool.function.arguments.get('file_path')
+            region = tool.function.arguments.get('region')
+            content = tool.function.arguments.get('content')
+            if (
+                path
+                and isinstance(path, str)
+                and region
+                and isinstance(region, Dict)
+                and content
+                and isinstance(content, str)
+            ):
+                view = self.window.find_open_file(path)
+                if view:
+                    logger.debug(f'{tool.function.name} executing')
+                    view.run_command('replace_region', {'region': region, 'text': content})
+                    region = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
+                    text = view.substr(region)
+                    return self.create_message(
+                        command=dumps({'result_with_vicinity_30': text}), tool_call_id=tool.id
+                    )
+                else:
+                    raise FunctionCallFailedException(f'File under path not found: {path}')
+            else:
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {region} {content}')
+
+        elif tool.function.name == 'read_region_content':
+            path = tool.function.arguments.get('file_path')
+            region = tool.function.arguments.get('region')
+            if path and isinstance(path, str) and region and isinstance(region, Dict):
+                view = self.window.find_open_file(path)
+                if view:
+                    logger.debug(f'{tool.function.name} executing')
+                    region_ = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
+                    text = view.substr(region_)
+                    return self.create_message(command=dumps({'content': f'{text}'}), tool_call_id=tool.id)
+                else:
+                    raise FunctionCallFailedException(f'File under path not found: {path}')
+            else:
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {region}')
+        else:
+            raise FunctionCallFailedException(f'Wrong function call: {tool.function.name}')
+
     def handle_function_call(self, tool_calls: List[ToolCall]):
         for tool in tool_calls:
             logger.debug(f'{tool.function.name} function called')
-            if tool.function.name == 'get_region_for_text':
-                path = tool.function.arguments.get('file_path')
-                content = tool.function.arguments.get('content')
-                if path and isinstance(path, str) and content and isinstance(content, str):
-                    view = self.window.find_open_file(path)
-                    if view:
-                        logger.debug(f'{tool.function.name} executing')
-                        escaped_string = (
-                            content.replace('(', r'\(')
-                            .replace(')', r'\)')
-                            .replace('[', r'\[')
-                            .replace(']', r'\]')
-                            .replace('{', r'\{')
-                            .replace('}', r'\}')
-                        )
-                        region = view.find(pattern=escaped_string, start_pt=0)
-                        logger.debug(f'region {region}')
-                        serializable_region = {
-                            'begin': region.begin(),
-                            'end': region.end(),
-                        }
-                        if region.begin() == region.end() == -1:  # means search found nothing
-                            messages = self.create_message(command='Text not found', tool_call_id=tool.id)
-                        else:
-                            messages = self.create_message(
-                                command=dumps(serializable_region), tool_call_id=tool.id
-                            )
-                        payload = self.provider.prepare_payload(
-                            assitant_setting=self.assistant, messages=messages
-                        )
+            messages = []
+            try:
+                messages = self.perform_function(tool=tool)
+            except FunctionCallFailedException as error:  # we have to notify assistant about error occured
+                messages = self.create_message(command=error.message, tool_call_id=tool.id)
+            except:
+                raise
+            payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
+            new_messages = messages[-1:]
+            self.cacher.append_to_cache(new_messages)
+            self.provider.prepare_request(json_payload=payload)
+            self.prepare_to_response()
 
-                        new_messages = messages[-1:]
-
-                        self.cacher.append_to_cache(new_messages)
-                        self.provider.prepare_request(json_payload=payload)
-                        self.prepare_to_response()
-
-                        self.handle_response()
-            elif tool.function.name == 'replace_text_for_region':
-                path = tool.function.arguments.get('file_path')
-                region = tool.function.arguments.get('region')
-                content = tool.function.arguments.get('content')
-                if (
-                    path
-                    and isinstance(path, str)
-                    and region
-                    and isinstance(region, Dict)
-                    and content
-                    and isinstance(content, str)
-                ):
-                    view = self.window.find_open_file(path)
-                    if view:
-                        logger.debug(f'{tool.function.name} executing')
-                        view.run_command('replace_region', {'region': region, 'text': content})
-                        region = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
-                        text = view.substr(region)
-                        messages = self.create_message(
-                            command=dumps({'result_with_vicinity': text}), tool_call_id=tool.id
-                        )
-                        payload = self.provider.prepare_payload(
-                            assitant_setting=self.assistant, messages=messages
-                        )
-
-                        new_messages = messages[-1:]
-
-                        self.cacher.append_to_cache(new_messages)
-                        self.provider.prepare_request(json_payload=payload)
-                        self.prepare_to_response()
-
-                        self.handle_response()
-            elif tool.function.name == 'read_region_content':
-                path = tool.function.arguments.get('file_path')
-                region = tool.function.arguments.get('region')
-                if path and isinstance(path, str) and region and isinstance(region, Dict):
-                    view = self.window.find_open_file(path)
-                    if view:
-                        logger.debug(f'{tool.function.name} executing')
-                        region_ = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
-                        text = view.substr(region_)
-                        messages = self.create_message(
-                            command=dumps({'content': f'{text}'}), tool_call_id=tool.id
-                        )
-                        payload = self.provider.prepare_payload(
-                            assitant_setting=self.assistant, messages=messages
-                        )
-
-                        new_messages = messages[-1:]
-
-                        self.cacher.append_to_cache(new_messages)
-                        self.provider.prepare_request(json_payload=payload)
-                        self.prepare_to_response()
-
-                        self.handle_response()
+            self.handle_response()
 
     def handle_streaming_response(self, response: HTTPResponse):
         # without key declaration it would failt to append there later in code.
@@ -336,7 +332,8 @@ class OpenAIWorker(Thread):
         logger.debug('OpenAIWorker execution self.stop_event id: %s', id(self.stop_event))
 
         for chunk in response:
-            # FIXME: With this implementation few last tokens get missed on cacnel action. (e.g. they're seen within a proxy, but not in the code)
+            # FIXME: With this implementation few last tokens get missed on cacnel action.
+            # (e.g. they're seen within a proxy, but not in the code)
             if self.stop_event.is_set():
                 self.handle_sse_delta(
                     delta={'role': 'assistant'},
@@ -511,7 +508,7 @@ class OpenAIWorker(Thread):
                 content = view.substr(sublime.Region(0, view.size()))
                 content = OpenAIWorker.wrap_content_with_scope(scope_name, content)
 
-                wrapped_content = f'`{view.file_name()}`\n' + content
+                wrapped_content = f'Path: `{view.file_name()}`\n' + content
                 wrapped_selection.append(wrapped_content)
 
         return wrapped_selection
