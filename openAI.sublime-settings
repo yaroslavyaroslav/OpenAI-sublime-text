@@ -123,7 +123,9 @@
             // The token count of your prompt plus `max_tokens` cannot exceed the model's context length.
             // (One token is roughly 4 characters for normal English text)
             // Does not affect editing mode.
-            "max_tokens": 2048,
+            // DEPRECATED for OpenAI endpoint
+            // USE EITHER this of `"max_completion_tokens"` settings
+            // "max_tokens": 2048,
 
             // Since o1 (September 2024) OpenAI deprecated max_token key,
             // Use this field to set the cap instead. The default value set here is recommended by OpenAI
