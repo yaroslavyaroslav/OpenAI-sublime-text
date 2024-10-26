@@ -15,13 +15,19 @@ from sublime import (
     set_timeout,
 )
 
+from plugins.assistant_settings import PromptMode
+
+from .cacher import Cacher
+from .output_panel import SharedOutputPanelListener
+from .response_manager import ResponseManager
+
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
 PHANTOM_TEMPLATE = (
     '---'
     + '\nallow_code_wrap: true'
     + '\n---'
-    + '\n\n<a href="close">[x]</a> | <a href="copy">Copy</a> | <a href="append">Append</a> | <a href="replace">Replace</a> | <a href="new_file">In New Tab</a>'
+    + '\n\n<a href="close">[x]</a> | <a href="copy">Copy</a> | <a href="append">Append</a> | <a href="replace">Replace</a> | <a href="new_file">In New Tab</a> | <a href="replace">Add to History</a>'
     + '\n\n{streaming_content}'
 )
 CLASS_NAME = 'openai-completion-phantom'
@@ -30,12 +36,14 @@ logger = logging.getLogger(__name__)
 
 
 class PhantomStreamer:
-    def __init__(self, view: View) -> None:
+    def __init__(self, view: View, cacher: Cacher) -> None:
         self.view = view
+        self.cacher = cacher
         self.phantom_set = PhantomSet(self.view, OPENAI_COMPLETION_KEY)
         self.completion: str = ''
         self.phantom: Phantom | None = None
         self.phantom_id: int | None = None
+        self.listner = SharedOutputPanelListener(markdown=True, cacher=self.cacher)
         if len(view.sel()) > 0:
             logger.debug(f'view selection: {view.sel()[0]}')
             self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
@@ -81,6 +89,15 @@ class PhantomStreamer:
                 )
                 new_tab.set_scratch(False)
                 new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion})
+            elif attribute == PhantomActions.history.value:
+                new_message = {'role': 'assistant', 'content': self.completion, 'name': 'OpenAI_completion'}
+                ResponseManager.handle_whole_response(
+                    self.listner,
+                    self.view.window(),  # type: ignore
+                    PromptMode.panel,
+                    new_message,
+                )
+                self.cacher.append_to_cache([new_message])
             elif attribute == PhantomActions.close.value:
                 pass
 
@@ -96,3 +113,4 @@ class PhantomActions(Enum):
     append = 'append'
     replace = 'replace'
     new_file = 'new_file'
+    history = 'history'
