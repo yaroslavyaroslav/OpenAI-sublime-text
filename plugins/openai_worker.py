@@ -20,7 +20,6 @@ from .assistant_settings import (
     PromptMode,
     ToolCall,
 )
-from .buffer import TextStreamer
 from .cacher import Cacher
 from .errors.OpenAIException import (
     ContextLengthExceededException,
@@ -32,6 +31,7 @@ from .errors.OpenAIException import (
 )
 from .openai_network_client import NetworkClient
 from .phantom_streamer import PhantomStreamer
+from .response_manager import ResponseManager
 
 logger = logging.getLogger(__name__)
 
@@ -99,44 +99,8 @@ class OpenAIWorker(Thread):
 
         self.listner = SharedOutputPanelListener(markdown=markdown_setting, cacher=self.cacher)
 
-        self.buffer_manager = TextStreamer(self.view)
-        self.phantom_manager = PhantomStreamer(self.view)
+        self.phantom_manager = PhantomStreamer(self.view, self.cacher)
         super(OpenAIWorker, self).__init__()
-
-    # This method appears redundant.
-    def update_output_panel(self, text_chunk: str):
-        self.listner.update_output_view(text=text_chunk, window=self.window)
-
-    def delete_selection(self, region: Region):
-        self.buffer_manager.delete_selected_region(region=region)
-
-    def update_completion(self, completion: str):
-        self.buffer_manager.update_completion(completion=completion)
-
-    def handle_whole_response(self, content: Dict[str, Any]):
-        if self.assistant.prompt_mode == PromptMode.panel.name:
-            if 'content' in content:
-                self.update_output_panel(content['content'])
-        elif self.assistant.prompt_mode == PromptMode.phantom.name:
-            if 'content' in content:
-                self.phantom_manager.update_completion(content['content'])
-        else:
-            if 'content' in content:
-                self.update_completion(content['content'])
-
-    def handle_sse_delta(self, delta: Dict[str, Any], full_response_content: Dict[str, str]):
-        if self.assistant.prompt_mode == PromptMode.panel.name:
-            if 'role' in delta:
-                full_response_content['role'] = delta['role']
-            if 'content' in delta:
-                full_response_content['content'] += delta['content']
-                self.update_output_panel(delta['content'])
-        elif self.assistant.prompt_mode == PromptMode.phantom.name:
-            if 'content' in delta:
-                self.phantom_manager.update_completion(delta['content'])
-        else:
-            if 'content' in delta:
-                self.update_completion(delta['content'])
 
     @staticmethod
     def append_non_null(original: JSONType, append: JSONType) -> JSONType:
@@ -183,54 +147,9 @@ class OpenAIWorker(Thread):
         return original
 
     def prepare_to_response(self):
-        if self.assistant.prompt_mode == PromptMode.panel.name:
-            self.update_output_panel('\n\n## Answer\n\n')
-            self.listner.show_panel(window=self.window)
-            self.listner.scroll_to_botton(window=self.window)
-
-        elif self.assistant.prompt_mode == PromptMode.append.name:
-            cursor_pos = self.view.sel()[0].end()
-            # clear selections
-            self.view.sel().clear()
-            # restore cursor position
-            self.view.sel().add(Region(cursor_pos, cursor_pos))
-            self.update_completion('\n')
-
-        elif self.assistant.prompt_mode == PromptMode.replace.name:
-            self.delete_selection(region=self.view.sel()[0])
-            cursor_pos = self.view.sel()[0].begin()
-            # clear selections
-            self.view.sel().clear()
-            # restore cursor position
-            self.view.sel().add(Region(cursor_pos, cursor_pos))
-
-        elif self.assistant.prompt_mode == PromptMode.insert.name:
-            selection_region = self.view.sel()[0]
-            try:
-                if self.assistant.placeholder:
-                    placeholder_region = self.view.find(
-                        self.assistant.placeholder,
-                        selection_region.begin(),
-                        sublime.LITERAL,
-                    )
-                    if len(placeholder_region) > 0:
-                        placeholder_begin = placeholder_region.begin()
-                        self.delete_selection(region=placeholder_region)
-                        self.view.sel().clear()
-                        self.view.sel().add(Region(placeholder_begin, placeholder_begin))
-                    else:
-                        raise WrongUserInputException(
-                            "There is no placeholder '"
-                            + self.assistant.placeholder
-                            + "' within the selected text. There should be exactly one."
-                        )
-                elif not self.assistant.placeholder:
-                    raise WrongUserInputException(
-                        'There is no placeholder value set for this assistant. '
-                        + 'Please add `placeholder` property in a given assistant setting.'
-                    )
-            except Exception:
-                raise
+        ResponseManager.update_output_panel_(self.listner, self.window, '\n\n## Answer\n\n')
+        self.listner.show_panel(window=self.window)
+        self.listner.scroll_to_botton(window=self.window)
 
     def perform_function(self, tool: ToolCall) -> List[Dict[str, str]]:
         if tool.function.name == 'get_region_for_text':
@@ -320,7 +239,8 @@ class OpenAIWorker(Thread):
             new_messages = messages[-1:]
             self.cacher.append_to_cache(new_messages)
             self.provider.prepare_request(json_payload=payload)
-            self.prepare_to_response()
+            if self.assistant.prompt_mode == PromptMode.panel.value:
+                self.prepare_to_response()
 
             self.handle_response()
 
@@ -330,16 +250,25 @@ class OpenAIWorker(Thread):
         full_function_call: Dict[str, Any] = {}
 
         logger.debug('OpenAIWorker execution self.stop_event id: %s', id(self.stop_event))
+        listner = (
+            self.phantom_manager if self.assistant.prompt_mode == PromptMode.phantom.value else self.listner
+        )
 
         for chunk in response:
             # FIXME: With this implementation few last tokens get missed on cacnel action.
             # (e.g. they're seen within a proxy, but not in the code)
             if self.stop_event.is_set():
-                self.handle_sse_delta(
+                ResponseManager.handle_sse_delta(
+                    listner,
+                    self.window,
+                    self.assistant.prompt_mode,
                     delta={'role': 'assistant'},
                     full_response_content=full_response_content,
                 )
-                self.handle_sse_delta(
+                ResponseManager.handle_sse_delta(
+                    listner,
+                    self.window,
+                    self.assistant.prompt_mode,
                     delta={'content': '\n\n[Aborted]'},
                     full_response_content=full_response_content,
                 )
@@ -357,7 +286,13 @@ class OpenAIWorker(Thread):
                     if 'delta' in response_dict['choices'][0]:
                         delta: Dict[str, Any] = response_dict['choices'][0]['delta']
                         if delta.get('content'):
-                            self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
+                            ResponseManager.handle_sse_delta(
+                                listner,
+                                self.window,
+                                self.assistant.prompt_mode,
+                                delta=delta,
+                                full_response_content=full_response_content,
+                            )
                         elif delta.get('tool_calls'):
                             self.append_non_null(full_function_call, delta)
 
@@ -381,7 +316,9 @@ class OpenAIWorker(Thread):
                 for call in full_function_call['tool_calls']
             ]
             full_function_call['hidden'] = True
-            self.update_output_panel(f'Function calling: `{tool_calls[0].function.name}`')
+            ResponseManager.update_output_panel_(
+                self.listner, self.window, f'Function calling: `{tool_calls[0].function.name}`'
+            )
             self.cacher.append_to_cache([full_function_call])
             self.handle_function_call(tool_calls)
 
@@ -399,6 +336,7 @@ class OpenAIWorker(Thread):
 
         logger.debug('Handling plain (non-streaming) response for OpenAIWorker.')
 
+        listner = self.phantom_manager if self.assistant.prompt_mode == PromptMode.phantom else self.listner
         # Read the complete response directly
         response_data = response.read().decode()
         logger.debug(f'raw response: {response_data}')
@@ -426,7 +364,9 @@ class OpenAIWorker(Thread):
             if full_response_content['role'] == '':
                 full_response_content['role'] = 'assistant'
 
-            self.handle_whole_response(content=full_response_content)
+            ResponseManager.handle_whole_response(
+                listner, self.window, self.assistant.prompt_mode, content=full_response_content
+            )
             # Store the response in the cache
             self.cacher.append_to_cache([full_response_content])
 
@@ -539,7 +479,6 @@ class OpenAIWorker(Thread):
             messages = self.create_message(
                 selected_text=wrapped_selection,
                 command=self.command,
-                placeholder=self.assistant.placeholder,
             )
             payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
@@ -560,10 +499,13 @@ class OpenAIWorker(Thread):
             else:
                 self.cacher.append_to_cache(new_messages)
 
-            self.update_output_panel('\n\n## Question\n\n')
+            ResponseManager.update_output_panel_(self.listner, self.window, '\n\n## Question\n\n')
             # MARK: \n\n for splitting command from selected text
             # FIXME: This logic adds redundant line breaks on a single message.
-            [self.update_output_panel(question['content'] + '\n\n') for question in new_messages]
+            [
+                ResponseManager.update_output_panel_(self.listner, self.window, question['content'] + '\n\n')
+                for question in new_messages
+            ]
 
             # Clearing selection area, coz it's easy to forget that there's something selected during a chat conversation.
             # And it designed be a one shot action rather then persistant one.
@@ -573,8 +515,8 @@ class OpenAIWorker(Thread):
         except Exception as error:
             present_unknown_error(title='OpenAI error', error=error)
             return
-
-        self.prepare_to_response()
+        if self.assistant.prompt_mode == PromptMode.panel.value:
+            self.prepare_to_response()
 
         self.handle_response()
 
@@ -582,18 +524,9 @@ class OpenAIWorker(Thread):
         self,
         selected_text: List[str] | None = None,
         command: str | None = None,
-        placeholder: str | None = None,
         tool_call_id: str | None = None,
     ) -> List[Dict[str, str]]:
         messages = self.cacher.read_all()
-        if placeholder:
-            messages.append(
-                {
-                    'role': 'system',
-                    'content': f'placeholder: {placeholder}',
-                    'name': 'OpenAI_completion',
-                }
-            )
         if selected_text:
             messages.extend(
                 [{'role': 'user', 'content': text, 'name': 'OpenAI_completion'} for text in selected_text]
