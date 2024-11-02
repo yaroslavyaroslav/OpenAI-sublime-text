@@ -11,9 +11,22 @@
     //         "super+k",
     //         "super+'"
     //     ],
+            // This command sends new message and selected text within the active tab
+            // to the server.
+            // Equal to `OpenAI completion: Chat Model Select`
+    //     "command": "openai",
+    // },
+    // {
+    //     "keys": [
+    //         "super+k",
+    //         "super+'"
+    //     ],
+            // This command sends new message and all the active Sheets within the active Views Group
+            // to the server.
+            // Equal to `OpenAI completion: Chat Model Select`
     //     "command": "openai",
     //     "args": {
-    //         "mode": "chat_completion"
+    //          "files_included": true
     //     }
     // },
     // {
@@ -21,43 +34,61 @@
     //         "super+k",
     //         "super+["
     //     ],
+            // This command pops up assistants settings palette and then sends new message
+            // and all the active Sheets within the active Views Group to the server.
+            // Equal to `OpenAI completion: New Message`
     //     "command": "openai_panel",
+    //     "args": {
+    //          "files_included": true
+    //     }
+    // },
+    // {
+    //     "keys": [],
+            // This command sends image on path to the server
+            // It read history but never stores image in it, it writes the response in history thought.
+            // Equal to `OpenAI completion: Handle Image`
+    //     "command": "openai",
+    //     "args": {
+    //         "mode": "handle_image_input"
+    //     }
+    // },
+    // {
+    //     "keys": [],
+            // This command creates a new output tab for itself in the window
+            // Equal to `OpenAI completion: Open in Tab`
+    //     "command": "openai",
+    //     "args": {
+    //         "mode": "create_new_tab"
+    //     }
+    // },
+    // {
+    //     "keys": [],
+            // This command refreshes (reloads) chat log from the history storage
+            // Equal to `OpenAI completion: Refresh Chat`
+    //     "command": "openai",
+    //     "args": {
+    //         "mode": "refresh_output_panel"
+    //     }
+    // },
+    // {
+    //     "keys": [],
+            // This command deletes current history
+            // Equal to `OpenAI completion: Reset Chat History`
+    //     "command": "openai",
+    //     "args": {
+    //         "mode": "reset_chat_history"
+    //     }
     // },
     // {
     //     "keys": [
     //         "super+k",
     //         "super+;"
     //     ],
+            // This command shows history output panel, it doesn't refresh it or something
+            // just pops it up
     //     "command": "show_panel",
     //     "args": {
     //         "panel": "output.AI Chat"
     //     }
     // },
-    // {
-    //     "keys": [
-    //         "super+shift+'"
-    //     ],
-    //     "command": "openai",
-    //     "args": {
-    //         "mode": "completion"
-    //     }
-    // },
-    // {
-    //     "keys": [
-    //         "super+shift+'"
-    //     ],
-    //     "command": "openai",
-    //     "args": {
-    //         "mode": "edition"
-    //     }
-    // },
-    // {
-    //     "keys": [
-    //         "super+shift+'"
-    //     ],
-    //     "command": "openai",
-    //     "args": {
-    //         "mode": "insertion"
-    //     }
-    // }
 ]
