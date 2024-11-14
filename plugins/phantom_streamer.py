@@ -15,11 +15,11 @@ from sublime import (
     set_timeout,
 )
 
-from plugins.assistant_settings import PromptMode
+from .assistant_settings import PromptMode
 
 from .cacher import Cacher
 from .output_panel import SharedOutputPanelListener
-from .response_manager import ResponseManager
+# from .response_manager import ResponseManager
 
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
@@ -75,10 +75,14 @@ class PhantomStreamer:
                 set_clipboard(self.completion)
             if attribute == PhantomActions.append.value:
                 self.view.run_command(
-                    'text_stream_at', {'position': self.selected_region.end(), 'text': self.completion}
+                    'text_stream_at',
+                    {'position': self.selected_region.end(), 'text': self.completion},
                 )
             elif attribute == PhantomActions.replace.value:
-                region_object = {'a': self.selected_region.begin(), 'b': self.selected_region.end()}
+                region_object = {
+                    'a': self.selected_region.begin(),
+                    'b': self.selected_region.end(),
+                }
                 self.view.run_command('replace_region', {'region': region_object, 'text': self.completion})
             elif attribute == PhantomActions.new_file.value:
                 new_tab = (self.view.window() or active_window()).new_file(
@@ -90,14 +94,18 @@ class PhantomStreamer:
                 new_tab.set_scratch(False)
                 new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion})
             elif attribute == PhantomActions.history.value:
-                new_message = {'role': 'assistant', 'content': self.completion, 'name': 'OpenAI_completion'}
-                ResponseManager.handle_whole_response(
-                    self.listner,
-                    self.view.window(),  # type: ignore
-                    PromptMode.panel,
-                    new_message,
-                )
-                self.cacher.append_to_cache([new_message])
+                new_message = {
+                    'role': 'assistant',
+                    'content': self.completion,
+                    'name': 'OpenAI_completion',
+                }
+                # ResponseManager.handle_whole_response(
+                #     self.listner,
+                #     self.view.window(),  # type: ignore
+                #     PromptMode.panel,
+                #     new_message,
+                # )
+                # self.cacher.append_to_cache([new_message])
             elif attribute == PhantomActions.close.value:
                 pass
 
