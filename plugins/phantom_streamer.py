@@ -15,11 +15,8 @@ from sublime import (
     set_timeout,
 )
 
-from .assistant_settings import PromptMode
-
 from .cacher import Cacher
 from .output_panel import SharedOutputPanelListener
-# from .response_manager import ResponseManager
 
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
@@ -27,7 +24,12 @@ PHANTOM_TEMPLATE = (
     '---'
     + '\nallow_code_wrap: true'
     + '\n---'
-    + '\n\n<a href="close">[x]</a> | <a href="copy">Copy</a> | <a href="append">Append</a> | <a href="replace">Replace</a> | <a href="new_file">In New Tab</a> | <a href="replace">Add to History</a>'
+    + '\n\n<a href="close">[x]</a> \
+    | <a href="copy">Copy</a> \
+    | <a href="append">Append</a> \
+    | <a href="replace">Replace</a> \
+    | <a href="new_file">In New Tab</a> \
+    | <a href="history">Add to History</a>'
     + '\n\n{streaming_content}'
 )
 CLASS_NAME = 'openai-completion-phantom'
@@ -86,9 +88,7 @@ class PhantomStreamer:
                 self.view.run_command('replace_region', {'region': region_object, 'text': self.completion})
             elif attribute == PhantomActions.new_file.value:
                 new_tab = (self.view.window() or active_window()).new_file(
-                    flags=NewFileFlags.REPLACE_MRU
-                    | NewFileFlags.ADD_TO_SELECTION
-                    | NewFileFlags.CLEAR_TO_RIGHT,
+                    flags=NewFileFlags.ADD_TO_SELECTION | NewFileFlags.CLEAR_TO_RIGHT,
                     syntax='Packages/Markdown/MultiMarkdown.sublime-syntax',
                 )
                 new_tab.set_scratch(False)
@@ -99,13 +99,8 @@ class PhantomStreamer:
                     'content': self.completion,
                     'name': 'OpenAI_completion',
                 }
-                # ResponseManager.handle_whole_response(
-                #     self.listner,
-                #     self.view.window(),  # type: ignore
-                #     PromptMode.panel,
-                #     new_message,
-                # )
-                # self.cacher.append_to_cache([new_message])
+                self.listner.update_output_view(self.completion, self.view.window())
+                self.cacher.append_to_cache([new_message])
             elif attribute == PhantomActions.close.value:
                 pass
 
