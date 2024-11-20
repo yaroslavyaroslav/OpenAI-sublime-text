@@ -15,6 +15,8 @@ from sublime import (
     set_timeout,
 )
 
+from typing import Any, Dict, List
+
 from .cacher import Cacher
 from .output_panel import SharedOutputPanelListener
 
@@ -38,6 +40,8 @@ logger = logging.getLogger(__name__)
 
 
 class PhantomStreamer:
+    user_input: List[Dict[str, Any]] | List[Dict[str, str]]
+
     def __init__(self, view: View, cacher: Cacher) -> None:
         self.view = view
         self.cacher = cacher
@@ -50,9 +54,10 @@ class PhantomStreamer:
             logger.debug(f'view selection: {view.sel()[0]}')
             self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
 
-    def update_completion(self, completion: str):
+    def update_completion(self, user_input: List[Dict[str, Any]] | List[Dict[str, str]], completion: str):
         line_beginning = self.view.line(self.view.sel()[0])
         self.completion += completion
+        self.user_input = user_input
 
         content = PHANTOM_TEMPLATE.format(streaming_content=self.completion)
         html = mdpopups._create_html(self.view, content, wrapper_class=CLASS_NAME)
@@ -99,8 +104,17 @@ class PhantomStreamer:
                     'content': self.completion,
                     'name': 'OpenAI_completion',
                 }
-                self.listner.update_output_view(self.completion, self.view.window())
+                self.cacher.append_to_cache(self.user_input)
                 self.cacher.append_to_cache([new_message])
+                self.listner.update_output_view('\n\n## Question\n\n', self.view.window())  # type: ignore
+                # MARK: \n\n for splitting command from selected text
+                # FIXME: This logic adds redundant line breaks on a single message.
+                [
+                    self.listner.update_output_view(question['content'] + '\n\n', self.view.window())  # type: ignore
+                    for question in self.user_input
+                ]
+                self.listner.update_output_view('\n\n## Answer\n\n', self.view.window())  # type: ignore
+                self.listner.update_output_view(self.completion, self.view.window())  # type: ignore
             elif attribute == PhantomActions.close.value:
                 pass
 

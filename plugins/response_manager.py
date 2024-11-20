@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from sublime import Window
 
@@ -17,6 +17,7 @@ class ResponseManager:
     @staticmethod
     def handle_whole_response(
         listner: SharedOutputPanelListener | PhantomStreamer,
+        user_input: List[Dict[str, Any]] | List[Dict[str, str]],
         window: Window,
         prompt_mode: PromptMode,
         content: Dict[str, Any],
@@ -26,11 +27,12 @@ class ResponseManager:
                 ResponseManager.update_output_panel_(listner, window, content['content'])
         elif prompt_mode == PromptMode.phantom.name and type(listner) is PhantomStreamer:
             if 'content' in content:
-                listner.update_completion(content['content'])
+                listner.update_completion(user_input, content['content'])
 
     @staticmethod
     def handle_sse_delta(
         listner: SharedOutputPanelListener | PhantomStreamer,
+        user_input: List[Dict[str, Any]] | List[Dict[str, str]],
         window: Window,
         prompt_mode: PromptMode,
         delta: Dict[str, Any],
@@ -44,4 +46,4 @@ class ResponseManager:
                 ResponseManager.update_output_panel_(listner, window, delta['content'])
         elif prompt_mode == PromptMode.phantom.name and type(listner) is PhantomStreamer:
             if 'content' in delta:
-                listner.update_completion(delta['content'])
+                listner.update_completion(user_input, delta['content'])

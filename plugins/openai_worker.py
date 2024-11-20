@@ -42,6 +42,8 @@ JSONType = Union[JSONObject, JSONArray, str, int, float, bool, None]  # Any vali
 
 
 class OpenAIWorker(Thread):
+    current_request: List[Dict[str, Any]] | List[Dict[str, str]]
+
     def __init__(
         self,
         stop_event: Event,
@@ -198,7 +200,7 @@ class OpenAIWorker(Thread):
                 if view:
                     logger.debug(f'{tool.function.name} executing')
                     view.run_command('replace_region', {'region': region, 'text': content})
-                    region = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
+                    region = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))  # type: ignore
                     text = view.substr(region)
                     return self.create_message(
                         command=dumps({'result_with_vicinity_30': text}), tool_call_id=tool.id
@@ -215,7 +217,7 @@ class OpenAIWorker(Thread):
                 view = self.window.find_open_file(path)
                 if view:
                     logger.debug(f'{tool.function.name} executing')
-                    region_ = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))
+                    region_ = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))  # type: ignore
                     text = view.substr(region_)
                     return self.create_message(command=dumps({'content': f'{text}'}), tool_call_id=tool.id)
                 else:
@@ -260,6 +262,7 @@ class OpenAIWorker(Thread):
             if self.stop_event.is_set():
                 ResponseManager.handle_sse_delta(
                     listner,
+                    self.current_request,
                     self.window,
                     self.assistant.prompt_mode,
                     delta={'role': 'assistant'},
@@ -267,6 +270,7 @@ class OpenAIWorker(Thread):
                 )
                 ResponseManager.handle_sse_delta(
                     listner,
+                    self.current_request,
                     self.window,
                     self.assistant.prompt_mode,
                     delta={'content': '\n\n[Aborted]'},
@@ -288,6 +292,7 @@ class OpenAIWorker(Thread):
                         if delta.get('content'):
                             ResponseManager.handle_sse_delta(
                                 listner,
+                                self.current_request,
                                 self.window,
                                 self.assistant.prompt_mode,
                                 delta=delta,
@@ -365,7 +370,11 @@ class OpenAIWorker(Thread):
                 full_response_content['role'] = 'assistant'
 
             ResponseManager.handle_whole_response(
-                listner, self.window, self.assistant.prompt_mode, content=full_response_content
+                listner,
+                self.current_request,
+                self.window,
+                self.assistant.prompt_mode,
+                content=full_response_content,
             )
             # Store the response in the cache
             self.cacher.append_to_cache([full_response_content])
@@ -482,13 +491,13 @@ class OpenAIWorker(Thread):
             )
             payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
+        new_messages_len = (
+            len(wrapped_selection) + 1 if wrapped_selection else 1  # 1 stands for user input
+        )
+        new_messages = messages[-new_messages_len:]
+
+        self.current_request = new_messages
         if self.assistant.prompt_mode == PromptMode.panel.name:
-            new_messages_len = (
-                len(wrapped_selection) + 1 if wrapped_selection else 1  # 1 stands for user input
-            )
-
-            new_messages = messages[-new_messages_len:]
-
             # MARK: Read only last few messages from cache with a len of a messages list
             # questions = [value['content'] for value in self.cacher.read_all()[-len(messages) :]]
             fake_messages = None
