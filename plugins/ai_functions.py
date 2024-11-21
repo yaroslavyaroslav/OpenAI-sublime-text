@@ -100,7 +100,7 @@ GET_WORKING_DIRECTORY_CONTENT = {
     'type': 'function',
     'function': {
         'name': 'get_working_directory_content',
-        'description': 'Get complete structure of directories and files within the working directory',
+        'description': 'Get complete structure of directories and files within the working directory, current dir is a working dir, i.e. . is the roor project',
         'parameters': {
             'type': 'object',
             'properties': {

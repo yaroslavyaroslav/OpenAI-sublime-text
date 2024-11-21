@@ -32,6 +32,7 @@ from .errors.OpenAIException import (
 from .openai_network_client import NetworkClient
 from .phantom_streamer import PhantomStreamer
 from .response_manager import ResponseManager
+from .project_structure import build_folder_structure
 
 logger = logging.getLogger(__name__)
 
@@ -224,6 +225,17 @@ class OpenAIWorker(Thread):
                     raise FunctionCallFailedException(f'File under path not found: {path}')
             else:
                 raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {region}')
+        elif tool.function.name == 'get_working_directory_content':
+            path = tool.function.arguments.get('directory_path')
+            if path and isinstance(path, str):
+                folder_structure = build_folder_structure(path)
+                logger.debug(f'{tool.function.name} executing')
+
+                return self.create_message(
+                    command=dumps({'content': f'{folder_structure}'}), tool_call_id=tool.id
+                )
+            else:
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}')
         else:
             raise FunctionCallFailedException(f"Called function don't exists: {tool.function.name}")
 
