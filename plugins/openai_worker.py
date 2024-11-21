@@ -7,7 +7,7 @@ import re
 from http.client import HTTPResponse
 from json import JSONDecodeError, JSONDecoder, dumps, loads
 from threading import Event, Thread
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import sublime
 from sublime import Region, Settings, Sheet, View
@@ -57,7 +57,7 @@ class OpenAIWorker(Thread):
     ):
         self.region = region
         # Selected text within editor (as `user`)
-        self.text = text
+        self.selected_text = text
         # Text from input panel (as `user`)
         self.command = command
         self.view = view
@@ -417,7 +417,7 @@ class OpenAIWorker(Thread):
             )
             if do_delete:
                 self.cacher.drop_first(2)  # Drop old requests from the cache
-                messages = self.create_message(selected_text=[self.text], command=self.command)
+                messages = self.create_message(selected_text=[self.selected_text], command=self.command)
                 payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
                 self.provider.prepare_request(json_payload=payload)
 
@@ -442,37 +442,44 @@ class OpenAIWorker(Thread):
         logger.debug(f'wrapped_content {wrapped_content}')
         return wrapped_content
 
-    def wrap_sheet_contents_with_scope(self) -> List[str]:
-        wrapped_selection: List[str] = []
+    def wrap_sheet_contents_with_scope(self) -> List[Tuple[str, str | None, str]]:
+        wrapped_selection: List[Tuple[str, str | None, str]] = []
 
         if self.sheets:
             for sheet in self.sheets:
-                view = sheet.view() if sheet else None
+                view = sheet.view()
                 if not view:
                     continue  # If for some reason the sheet cannot be converted to a view, skip.
 
                 scope_region = view.scope_name(0)  # Assuming you want the scope at the start of the document
                 scope_name = scope_region.split(' ')[0].split('.')[-1]
 
+                file_path = view.file_name()
                 content = view.substr(sublime.Region(0, view.size()))
                 content = OpenAIWorker.wrap_content_with_scope(scope_name, content)
 
-                wrapped_content = f'Path: `{view.file_name()}`\n' + content
-                wrapped_selection.append(wrapped_content)
+                wrapped_content = f'Path: `{file_path}`\n\n' + content
+                wrapped_selection.append((scope_name, file_path, wrapped_content))
 
         return wrapped_selection
 
     def manage_chat_completion(self):
         wrapped_selection = None
-        if self.sheets:  # no sheets should be passed unintentionaly
+        if self.sheets:
             wrapped_selection = self.wrap_sheet_contents_with_scope()
         elif self.region:
             scope_region = self.window.active_view().scope_name(self.region.begin())
             scope_name = scope_region.split('.')[-1]  # in case of precise selection take the last scope
-            wrapped_selection = [OpenAIWorker.wrap_content_with_scope(scope_name, self.text)]
+            wrapped_selection = [
+                (
+                    scope_name,
+                    None,
+                    OpenAIWorker.wrap_content_with_scope(scope_name, self.selected_text),
+                )
+            ]
 
         if self.mode == CommandMode.handle_image_input.value:
-            messages = self.create_image_message(image_url=self.text, command=self.command)
+            messages = self.create_image_message(image_url=self.selected_text, command=self.command)
             ## MARK: This should be here, otherwise it would duplicates the messages.
             image_assistant = copy.deepcopy(self.assistant)
             image_assistant.assistant_role = (
@@ -502,7 +509,7 @@ class OpenAIWorker(Thread):
             # questions = [value['content'] for value in self.cacher.read_all()[-len(messages) :]]
             fake_messages = None
             if self.mode == CommandMode.handle_image_input.value:
-                fake_messages = self.create_image_fake_message(self.text, self.command)
+                fake_messages = self.create_image_fake_message(self.selected_text, self.command)
                 self.cacher.append_to_cache(fake_messages)
                 new_messages = fake_messages
             else:
@@ -531,15 +538,30 @@ class OpenAIWorker(Thread):
 
     def create_message(
         self,
-        selected_text: List[str] | None = None,
+        selected_text: List[Tuple[str, str | None, str]] | None = None,
         command: str | None = None,
         tool_call_id: str | None = None,
     ) -> List[Dict[str, str]]:
         messages = self.cacher.read_all()
+        logger.debug(len(selected_text) if selected_text else None)
         if selected_text:
-            messages.extend(
-                [{'role': 'user', 'content': text, 'name': 'OpenAI_completion'} for text in selected_text]
-            )
+            new_messages = [
+                {
+                    key: value
+                    for key, value in {
+                        'role': 'user',
+                        'file_path': file_path,
+                        'scope_name': scope,
+                        'content': text,  # Content
+                        'name': 'OpenAI_completion',
+                    }.items()
+                }
+                for scope, file_path, text in selected_text  # Iterates over provided non-None selected_text
+            ]
+
+            logger.debug(['content' in message for message in new_messages])
+            messages.extend(new_messages)
+
         if command:
             if tool_call_id:
                 messages.append(
@@ -552,6 +574,8 @@ class OpenAIWorker(Thread):
                 )
             else:
                 messages.append({'role': 'user', 'content': command, 'name': 'OpenAI_completion'})
+
+        logger.debug(['content' in message for message in messages])
         return messages
 
     def create_image_fake_message(self, image_url: str | None, command: str | None) -> List[Dict[str, str]]:
