@@ -72,14 +72,28 @@ class SharedOutputPanelListener(EventListener):
         self.clear_output_panel(window)
 
         for line in self.cacher.read_all():
-            if line.get('hidden'):
-                continue
             ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
             ## (it's not that easy, since question and answer are the different lines)
             ## FIXME: This logic conflicts with multifile/multimessage request behaviour
             ## it presents ## Question above each message, while has to do it once for a pack.
             if line['role'] == 'user':
                 output_panel.run_command('append', {'characters': '\n\n## Question\n\n', 'force': True})
+            elif line['role'] == 'assistant' and 'tool_calls' in line:
+                output_panel.run_command('append', {'characters': '\n\n## Tool Call\n\n', 'force': True})
+                function_name = line['tool_calls'][0]['function']['name']
+                function_name = f'`{function_name}`'
+                output_panel.run_command('append', {'characters': function_name, 'force': True})
+                continue
+            elif line['role'] == 'tool':
+                output_panel.run_command('append', {'characters': '\n\n## Tool Result\n\n', 'force': True})
+                if len(line['content']) > 50:
+                    output_panel.run_command(
+                        'append', {'characters': 'Function response is too long', 'force': True}
+                    )
+                else:
+                    output_panel.run_command('append', {'characters': line['content'], 'force': True})
+
+                continue
             elif line['role'] == 'assistant':
                 output_panel.run_command('append', {'characters': '\n\n## Answer\n\n', 'force': True})
 
