@@ -34,6 +34,7 @@ class SharedOutputPanelListener(EventListener):
         self.setup_common_presentation_style_(new_view, reversed=self.reverse_for_tab)
         ## FIXME: This is temporary, should be moved to plugin settings
         new_view.set_name(self.OUTPUT_PANEL_NAME)
+        new_view.settings().set('sheet_view', self.OUTPUT_PANEL_NAME)
 
     def get_output_panel_(self, window: Window) -> View:
         output_panel = window.find_output_panel(self.OUTPUT_PANEL_NAME) or window.create_output_panel(
