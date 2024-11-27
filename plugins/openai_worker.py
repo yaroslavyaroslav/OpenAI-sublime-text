@@ -332,7 +332,6 @@ class OpenAIWorker(Thread):
                 )
                 for call in full_function_call['tool_calls']
             ]
-            full_function_call['hidden'] = True
             ResponseManager.update_output_panel_(
                 self.listner, self.window, f'Function calling: `{tool_calls[0].function.name}`'
             )
@@ -505,7 +504,7 @@ class OpenAIWorker(Thread):
             payload = self.provider.prepare_payload(assitant_setting=image_assistant, messages=messages)
         else:
             messages = self.create_message(
-                selected_text=wrapped_selection,
+                selected_text=wrapped_selection,  # type: ignore
                 command=self.command,
             )
             payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
@@ -559,14 +558,11 @@ class OpenAIWorker(Thread):
         if selected_text:
             new_messages = [
                 {
-                    key: value
-                    for key, value in {
-                        'role': 'user',
-                        'file_path': file_path,
-                        'scope_name': scope,
-                        'content': text,  # Content
-                        'name': 'OpenAI_completion',
-                    }.items()
+                    'role': 'user',
+                    **({'file_path': file_path} if file_path is not None else {}),
+                    **({'scope_name': scope} if scope is not None else {}),
+                    'content': text,  # Content
+                    'name': 'OpenAI_completion',
                 }
                 for scope, file_path, text in selected_text  # Iterates over provided non-None selected_text
             ]

@@ -100,8 +100,9 @@ class Cacher:
 
     @staticmethod
     def expand_placeholders(line: Dict[str, str]) -> Dict[str, str]:
-        if {'file_path', 'scope_name'}.issubset(line.keys()):
+        if {'file_path', 'scope_name'}.issubset(line.keys()) and line['file_path']:
             file_path = line['file_path']
+            logger.debug(f'file_path {file_path}')
             scope = line['scope_name']
             file_content = Cacher.read_file_from_project(file_path)
             content = f'Path: `{file_path}`\n\n'
@@ -127,7 +128,7 @@ class Cacher:
         next(writer)
         for line in cache_lines:
             if {'content', 'file_path', 'scope_name'}.issubset(line.keys()):
-                if line['file_path'] is not None:
+                if line['file_path']:
                     copy_of_line = line.copy()
                     del copy_of_line['content']
                     writer.send(copy_of_line)
