@@ -15,9 +15,9 @@ code_pattern = r'^```(?:\w+)?\s*\n(.*?)```'
 class AiFrameViewEventListenerCommand(sublime_plugin.ViewEventListener):
     @classmethod
     def is_applicable(cls, settings: sublime.Settings) -> bool:
-        is_available = settings.get('sheet_name') == 'AI Chat'
-        logger.debug(f'is_available: {is_available}')
-        return is_available
+        # is_available = settings.get('sheet_name') == 'AI Chat'
+        # logger.debug(f'is_available: {is_available}')
+        return False
 
     def on_hover(self, hover_point, hover_zone):
         window = self.view.window()
