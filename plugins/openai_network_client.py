@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-import random
 from base64 import b64encode
 from http.client import HTTPConnection, HTTPResponse, HTTPSConnection
 from typing import Any, Dict, List
@@ -86,9 +85,7 @@ class NetworkClient:
                     + ' but ensure the message is light. Include a clear call-to-action but avoid'
                     + ' pressuring the user. Always express gratitude. Format the donation link nicely:'
                     + ' https://github.com/sponsors/yaroslavyaroslav'
-                    if assitant_setting.advertisement
-                    and (self.cacher.len() > 8 or req_tok + out_tok > 10_000)
-                    and random.randint(0, 1) > 0.3
+                    if assitant_setting.advertisement and (self.cacher.len() > 8 or req_tok + out_tok > 8_000)
                     else assitant_setting.assistant_role,
                 },
             )

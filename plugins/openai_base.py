@@ -36,8 +36,9 @@ class CommonMethods:
         logger.debug('Region: %s', region)
         build_input = kwargs.pop('build_output', False)
         logger.debug('build_input {build_input}')
-        if build_input:
-            text = CommonMethods.get_build_output_lines(view)
+        if build_input and settings:
+            output_limit: int = settings.get('build_output_limit', 100)  # type: ignore
+            text = CommonMethods.get_build_output_lines(view, output_limit)
         else:
             for region in view.sel():
                 if not region.empty():
@@ -64,13 +65,14 @@ class CommonMethods:
             cls.handle_chat_completion(view, region, text, mode, assistant, files_included)
 
     @classmethod
-    def get_build_output_lines(cls, view: View) -> str:
+    def get_build_output_lines(cls, view: View, limit: int) -> str:
         output_view = sublime.active_window().find_output_panel('exec')
         if output_view:
             content = output_view.substr(sublime.Region(0, output_view.size()))
             lines = content.splitlines()
-            last_100_lines = lines[-100:]
-            return '\n'.join(last_100_lines)
+            if limit == -1:
+                return '\n'.join(lines)
+            return '\n'.join(lines[-limit:])
         return ''
 
     @classmethod

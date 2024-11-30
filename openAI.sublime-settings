@@ -33,6 +33,10 @@
     // Minimum amount of characters selected to perform completion.
     "minimum_selection_length": 10,
 
+    // The number of lines to read from the end of the standard build output panel (exec)
+    // -1 to read all the output (be carefull with that build output can be reeeeeeeeealy long)
+    "build_output_limit": 100,
+
     // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistant objects above)
     // Possible options:
     //  - name: User defined assistant setup name

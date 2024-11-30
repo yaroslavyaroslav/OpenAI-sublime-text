@@ -493,7 +493,7 @@ class OpenAIWorker(Thread):
             wrapped_selection = [
                 (
                     'log',
-                    None,
+                    'Build log',
                     OpenAIWorker.wrap_content_with_scope('log', self.selected_text),
                 )
             ]
