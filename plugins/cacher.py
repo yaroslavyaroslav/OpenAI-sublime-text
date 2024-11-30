@@ -34,6 +34,9 @@ class Cacher:
             '{file_name}tokens_count.json'.format(file_name=name + '_' if name else ''),
         )
 
+        for item in [self.history_file, self.current_model_file, self.tokens_count_file]:
+            self.check_and_create(item)
+
     def check_and_create(self, path: str):
         if not os.path.isfile(path):
             open(path, 'w').close()
@@ -151,3 +154,7 @@ class Cacher:
     def drop_all(self):
         with open(self.history_file, 'w') as _:
             pass  # Truncate the file by opening it in 'w' mode and doing nothing
+
+    def delete_all_caches_(self):
+        for item in [self.history_file, self.current_model_file, self.tokens_count_file]:
+            os.remove(item)

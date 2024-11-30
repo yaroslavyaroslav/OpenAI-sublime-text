@@ -89,7 +89,7 @@ class NetworkClient:
                     if assitant_setting.advertisement
                     and (self.cacher.len() > 8 or req_tok + out_tok > 10_000)
                     and random.randint(0, 1) > 0.3
-                    else '',
+                    else assitant_setting.assistant_role,
                 },
             )
         internal_messages += messages
@@ -120,7 +120,7 @@ class NetworkClient:
         self.connection.request(method='POST', url=self.path, body=json_payload, headers=self.headers)
 
     def execute_response(self) -> HTTPResponse | None:
-        return self._execute_network_request()
+        return self.execute_network_request_()
 
     def close_connection(self):
         if self.response:
@@ -129,7 +129,7 @@ class NetworkClient:
             self.connection.close()
             logger.debug('Connection close status: %s', self.connection)
 
-    def _execute_network_request(self) -> HTTPResponse | None:
+    def execute_network_request_(self) -> HTTPResponse | None:
         self.response = self.connection.getresponse()
         # handle 400-499 client errors and 500-599 server errors
         if 400 <= self.response.status < 600:

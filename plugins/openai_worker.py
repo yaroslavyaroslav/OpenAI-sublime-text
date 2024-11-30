@@ -428,7 +428,7 @@ class OpenAIWorker(Thread):
             )
             if do_delete:
                 self.cacher.drop_first(2)  # Drop old requests from the cache
-                messages = self.create_message(selected_text=[self.selected_text], command=self.command)
+                messages = self.create_message()
                 payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
                 self.provider.prepare_request(json_payload=payload)
 
