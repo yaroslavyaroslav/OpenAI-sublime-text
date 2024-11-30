@@ -59,6 +59,7 @@ class OpenAIWorker(Thread):
         self.region = region
         # Selected text within editor (as `user`)
         self.selected_text = text
+        logger.debug('selected_text in worker %s:', text)
         # Text from input panel (as `user`)
         self.command = command
         self.view = view
@@ -486,6 +487,14 @@ class OpenAIWorker(Thread):
                     scope_name,
                     None,
                     OpenAIWorker.wrap_content_with_scope(scope_name, self.selected_text),
+                )
+            ]
+        elif self.selected_text:  # build_input
+            wrapped_selection = [
+                (
+                    'log',
+                    None,
+                    OpenAIWorker.wrap_content_with_scope('log', self.selected_text),
                 )
             ]
 

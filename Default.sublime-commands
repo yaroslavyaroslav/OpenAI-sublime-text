@@ -32,6 +32,20 @@
 		}
 	},
 	{
+		"caption": "OpenAI: New Message With Build Output",
+		"command": "openai",
+		"args": {
+			"build_output": true
+		}
+	},
+	{
+		"caption": "OpenAI: Chat Model Select With Build Output",
+		"command": "openai_panel",
+		"args": {
+			"build_output": true
+		}
+	},
+	{
 		"caption": "OpenAI: Reset Chat History",
 		"command": "openai",
 		"args": {

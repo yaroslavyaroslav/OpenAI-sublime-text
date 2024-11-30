@@ -30,13 +30,18 @@ class CommonMethods:
         files_included = kwargs.get('files_included', False)
 
         region: Region | None = None
-        text: str | None = ''
+        text: str = ''
 
         logger.debug('mode: %s', mode)
         logger.debug('Region: %s', region)
-        for region in view.sel():
-            if not region.empty():
-                text += view.substr(region) + '\n'
+        build_input = kwargs.pop('build_output', False)
+        logger.debug('build_input {build_input}')
+        if build_input:
+            text = CommonMethods.get_build_output_lines(view)
+        else:
+            for region in view.sel():
+                if not region.empty():
+                    text += view.substr(region) + '\n'
 
         logger.debug('Selected text: %s', text)
         # Checking that user selected some text
@@ -57,6 +62,16 @@ class CommonMethods:
             cls.handle_image_input(region, text, view, mode)
         else:
             cls.handle_chat_completion(view, region, text, mode, assistant, files_included)
+
+    @classmethod
+    def get_build_output_lines(cls, view: View) -> str:
+        output_view = sublime.active_window().find_output_panel('exec')
+        if output_view:
+            content = output_view.substr(sublime.Region(0, output_view.size()))
+            lines = content.splitlines()
+            last_100_lines = lines[-100:]
+            return '\n'.join(last_100_lines)
+        return ''
 
     @classmethod
     def handle_image_input(cls, region: Region | None, text: str, view: View, mode: str):
@@ -100,6 +115,7 @@ class CommonMethods:
     @classmethod
     def handle_input(cls, user_input, region, text, view, mode, assistant, sheets):
         logger.debug('User input received: %s', user_input)
+        logger.debug('User text received: %s', text)
         cls.on_input(region, text, view, mode, user_input, assistant, sheets)
 
     @classmethod
