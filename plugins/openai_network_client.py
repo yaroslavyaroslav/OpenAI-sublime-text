@@ -78,7 +78,7 @@ class NetworkClient:
                     if assitant_setting.advertisement
                     and (self.cacher.len() > 8 or req_tok + out_tok > 10_000)
                     and random.randint(0, 1) > 0.3
-                    else '',
+                    else assitant_setting.assistant_role,
                 },
             )
         if assitant_setting.prompt_mode == PromptMode.panel.value:
