@@ -39,7 +39,7 @@ def plugin_loaded():
             package_logger.setLevel(new_log_level)  # Just set it again to be sure
 
     _settings().add_on_change(__name__, on_settings_reload)
-    on_settings_reload()  # trigger on inital settings load, too
+    on_settings_reload()  # trigger on initial settings load, too
 
 
 def plugin_unloaded():
