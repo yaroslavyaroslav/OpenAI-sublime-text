@@ -5,7 +5,7 @@ from threading import Event
 from typing import Any, Dict, List
 
 import sublime
-from sublime import Region, Settings, Sheet, View
+from sublime import Region, Settings, Sheet, View, Window
 
 from .assistant_settings import (
     AssistantSettings,
@@ -30,13 +30,18 @@ class CommonMethods:
         files_included = kwargs.get('files_included', False)
 
         region: Region | None = None
-        text: str | None = ''
+        text: str = ''
 
         logger.debug('mode: %s', mode)
         logger.debug('Region: %s', region)
-        for region in view.sel():
-            if not region.empty():
-                text += view.substr(region) + '\n'
+        build_input = kwargs.pop('build_output', False)
+        logger.debug('build_input {build_input}')
+        if build_input:
+            text = CommonMethods.get_build_output_lines(view)
+        else:
+            for region in view.sel():
+                if not region.empty():
+                    text += view.substr(region) + '\n'
 
         logger.debug('Selected text: %s', text)
         # Checking that user selected some text
@@ -59,15 +64,26 @@ class CommonMethods:
             cls.handle_chat_completion(view, region, text, mode, assistant, files_included)
 
     @classmethod
+    def get_build_output_lines(cls, view: View) -> str:
+        output_view = sublime.active_window().find_output_panel('exec')
+        if output_view:
+            content = output_view.substr(sublime.Region(0, output_view.size()))
+            lines = content.splitlines()
+            last_100_lines = lines[-100:]
+            return '\n'.join(last_100_lines)
+        return ''
+
+    @classmethod
     def handle_image_input(cls, region: Region | None, text: str, view: View, mode: str):
         valid_input = ImageValidator.get_valid_image_input(text)
-
+        window = view.window() or sublime.active_window()
+        logger.debug('handle_image_input hit')
         sublime.active_window().show_input_panel(
             'Command for Image: ',
-            '',
+            window.settings().get('OPENAI_INPUT_TMP_STORAGE') or '',  # type: ignore
             lambda user_input: cls.on_input(region, valid_input, view, mode, user_input, None, None),
-            None,
-            None,
+            lambda user_input: cls.save_input(user_input, window),
+            lambda: cls.save_input('', window),
         )
 
     @classmethod
@@ -81,17 +97,25 @@ class CommonMethods:
         files_included: bool,
     ):
         sheets = sublime.active_window().selected_sheets() if files_included else None
+        window = view.window() or sublime.active_window()
+        logger.debug('handle_chat_completion hit')
         sublime.active_window().show_input_panel(
-            'Question: ',
-            '',
+            'Question:',
+            window.settings().get('OPENAI_INPUT_TMP_STORAGE') or '',  # type: ignore
             lambda user_input: cls.handle_input(user_input, region, text, view, mode, assistant, sheets),
-            None,
-            None,
+            lambda user_input: cls.save_input(user_input, window),
+            lambda: cls.save_input('', window),
         )
+
+    @classmethod
+    def save_input(cls, user_input: str, window: Window):
+        logger.debug(f'user_input: {user_input}')
+        window.settings().set('OPENAI_INPUT_TMP_STORAGE', user_input)
 
     @classmethod
     def handle_input(cls, user_input, region, text, view, mode, assistant, sheets):
         logger.debug('User input received: %s', user_input)
+        logger.debug('User text received: %s', text)
         cls.on_input(region, text, view, mode, user_input, assistant, sheets)
 
     @classmethod

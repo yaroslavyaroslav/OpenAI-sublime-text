@@ -5,9 +5,9 @@ import copy
 import logging
 import re
 from http.client import HTTPResponse
-from json import JSONDecodeError, JSONDecoder
+from json import JSONDecodeError, JSONDecoder, dumps, loads
 from threading import Event, Thread
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
 import sublime
 from sublime import Region, Settings, Sheet, View
@@ -16,12 +16,14 @@ from .assistant_settings import (
     DEFAULT_ASSISTANT_SETTINGS,
     AssistantSettings,
     CommandMode,
+    Function,
     PromptMode,
+    ToolCall,
 )
-from .buffer import TextStreamer
 from .cacher import Cacher
 from .errors.OpenAIException import (
     ContextLengthExceededException,
+    FunctionCallFailedException,
     UnknownException,
     WrongUserInputException,
     present_error,
@@ -29,11 +31,20 @@ from .errors.OpenAIException import (
 )
 from .openai_network_client import NetworkClient
 from .phantom_streamer import PhantomStreamer
+from .response_manager import ResponseManager
+from .project_structure import build_folder_structure
 
 logger = logging.getLogger(__name__)
 
 
+JSONObject = Dict[str, Any]  # A JSON object is typically a dict with string keys
+JSONArray = List[Any]  # A JSON array is typically a list of any types
+JSONType = Union[JSONObject, JSONArray, str, int, float, bool, None]  # Any valid JSON type
+
+
 class OpenAIWorker(Thread):
+    current_request: List[Dict[str, Any]] | List[Dict[str, str]]
+
     def __init__(
         self,
         stop_event: Event,
@@ -47,7 +58,8 @@ class OpenAIWorker(Thread):
     ):
         self.region = region
         # Selected text within editor (as `user`)
-        self.text = text
+        self.selected_text = text
+        logger.debug('selected_text in worker %s:', text)
         # Text from input panel (as `user`)
         self.command = command
         self.view = view
@@ -91,109 +103,189 @@ class OpenAIWorker(Thread):
 
         self.listner = SharedOutputPanelListener(markdown=markdown_setting, cacher=self.cacher)
 
-        self.buffer_manager = TextStreamer(self.view)
-        self.phantom_manager = PhantomStreamer(self.view)
+        self.phantom_manager = PhantomStreamer(self.view, self.cacher)
         super(OpenAIWorker, self).__init__()
 
-    # This method appears redundant.
-    def update_output_panel(self, text_chunk: str):
-        self.listner.update_output_view(text=text_chunk, window=self.window)
+    @staticmethod
+    def append_non_null(original: JSONType, append: JSONType) -> JSONType:
+        """
+        Recursively processes the object, returning only non-null fields.
+        """
+        if isinstance(original, int) and isinstance(append, int):
+            # logger.debug(f'original: int `{original}`, append: int `{append}`')
+            original += append
+            return original
 
-    def delete_selection(self, region: Region):
-        self.buffer_manager.delete_selected_region(region=region)
+        elif isinstance(original, str) and isinstance(append, str):
+            # logger.debug(f'original: str `{original}`, append: str `{append}`')
+            original += append
+            return original
 
-    def update_completion(self, completion: str):
-        self.buffer_manager.update_completion(completion=completion)
+        elif isinstance(original, dict) and isinstance(append, dict):
+            # logger.debug(f'original: dict `{original}`, append: dict `{append}`')
+            for key, value in append.items():
+                if value is not None:
+                    if key in original:
+                        original[key] = OpenAIWorker.append_non_null(original[key], value)
+                    else:
+                        original[key] = value
+            return original
 
-    def handle_whole_response(self, content: Dict[str, Any]):
-        if self.assistant.prompt_mode == PromptMode.panel.name:
-            if 'content' in content:
-                self.update_output_panel(content['content'])
-        elif self.assistant.prompt_mode == PromptMode.phantom.name:
-            if 'content' in content:
-                self.phantom_manager.update_completion(content['content'])
-        else:
-            if 'content' in content:
-                self.update_completion(content['content'])
+        elif isinstance(append, list) and isinstance(original, list):
+            # logger.debug(f'original: list `{original}`, append: list `{append}`')
+            # Append non-null values from append to the original list
+            for index, item in enumerate(append):
+                if (
+                    isinstance(original, list)
+                    and isinstance(original[index], dict)
+                    and isinstance(item, dict)
+                ):
+                    if original[index].get('index') == item['index']:
+                        OpenAIWorker.append_non_null(original[index], item)
+                        return original
+                if isinstance(item, dict):
+                    original.append(item)
+            return original
 
-    def handle_sse_delta(self, delta: Dict[str, Any], full_response_content: Dict[str, str]):
-        if self.assistant.prompt_mode == PromptMode.panel.name:
-            if 'role' in delta:
-                full_response_content['role'] = delta['role']
-            if 'content' in delta:
-                full_response_content['content'] += delta['content']
-                self.update_output_panel(delta['content'])
-        elif self.assistant.prompt_mode == PromptMode.phantom.name:
-            if 'content' in delta:
-                self.phantom_manager.update_completion(delta['content'])
-        else:
-            if 'content' in delta:
-                self.update_completion(delta['content'])
+        # If the object is neither a dictionary nor a list, return it directly
+        return original
 
     def prepare_to_response(self):
-        if self.assistant.prompt_mode == PromptMode.panel.name:
-            self.update_output_panel('\n\n## Answer\n\n')
-            self.listner.show_panel(window=self.window)
-            self.listner.scroll_to_botton(window=self.window)
+        ResponseManager.update_output_panel_(self.listner, self.window, '\n\n## Answer\n\n')
+        self.listner.show_panel(window=self.window)
+        self.listner.scroll_to_botton(window=self.window)
 
-        elif self.assistant.prompt_mode == PromptMode.append.name:
-            cursor_pos = self.view.sel()[0].end()
-            # clear selections
-            self.view.sel().clear()
-            # restore cursor position
-            self.view.sel().add(Region(cursor_pos, cursor_pos))
-            self.update_completion('\n')
-
-        elif self.assistant.prompt_mode == PromptMode.replace.name:
-            self.delete_selection(region=self.view.sel()[0])
-            cursor_pos = self.view.sel()[0].begin()
-            # clear selections
-            self.view.sel().clear()
-            # restore cursor position
-            self.view.sel().add(Region(cursor_pos, cursor_pos))
-
-        elif self.assistant.prompt_mode == PromptMode.insert.name:
-            selection_region = self.view.sel()[0]
-            try:
-                if self.assistant.placeholder:
-                    placeholder_region = self.view.find(
-                        self.assistant.placeholder,
-                        selection_region.begin(),
-                        sublime.LITERAL,
+    def perform_function(self, tool: ToolCall) -> List[Dict[str, str]]:
+        if tool.function.name == 'get_region_for_text':
+            path = tool.function.arguments.get('file_path')
+            content = tool.function.arguments.get('content')
+            if path and isinstance(path, str) and content and isinstance(content, str):
+                view = self.window.find_open_file(path)
+                if view:
+                    logger.debug(f'{tool.function.name} executing')
+                    escaped_string = (
+                        content.replace('(', r'\(')
+                        .replace(')', r'\)')
+                        .replace('[', r'\[')
+                        .replace(']', r'\]')
+                        .replace('{', r'\{')
+                        .replace('}', r'\}')
                     )
-                    if len(placeholder_region) > 0:
-                        placeholder_begin = placeholder_region.begin()
-                        self.delete_selection(region=placeholder_region)
-                        self.view.sel().clear()
-                        self.view.sel().add(Region(placeholder_begin, placeholder_begin))
+                    region = view.find(pattern=escaped_string, start_pt=0)
+                    logger.debug(f'region {region}')
+                    serializable_region = {
+                        'begin': region.begin(),
+                        'end': region.end(),
+                    }
+                    if region.begin() == region.end() == -1:  # means search found nothing
+                        raise FunctionCallFailedException(f'Text not found: {content}')
                     else:
-                        raise WrongUserInputException(
-                            "There is no placeholder '"
-                            + self.assistant.placeholder
-                            + "' within the selected text. There should be exactly one."
-                        )
-                elif not self.assistant.placeholder:
-                    raise WrongUserInputException(
-                        'There is no placeholder value set for this assistant. '
-                        + 'Please add `placeholder` property in a given assistant setting.'
+                        return self.create_message(command=dumps(serializable_region), tool_call_id=tool.id)
+                else:
+                    raise FunctionCallFailedException(f'File under path not found: {path}')
+            else:
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {content}')
+
+        elif tool.function.name == 'replace_text_for_region':
+            path = tool.function.arguments.get('file_path')
+            region = tool.function.arguments.get('region')
+            content = tool.function.arguments.get('content')
+            if (
+                path
+                and isinstance(path, str)
+                and region
+                and isinstance(region, Dict)
+                and content
+                and isinstance(content, str)
+            ):
+                view = self.window.find_open_file(path)
+                if view:
+                    logger.debug(f'{tool.function.name} executing')
+                    view.run_command('replace_region', {'region': region, 'text': content})
+                    region = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))  # type: ignore
+                    text = view.substr(region)
+                    return self.create_message(
+                        command=dumps({'result_with_vicinity_30': text}), tool_call_id=tool.id
                     )
-            except Exception:
+                else:
+                    raise FunctionCallFailedException(f'File under path not found: {path}')
+            else:
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {region} {content}')
+
+        elif tool.function.name == 'read_region_content':
+            path = tool.function.arguments.get('file_path')
+            region = tool.function.arguments.get('region')
+            if path and isinstance(path, str) and region and isinstance(region, Dict):
+                view = self.window.find_open_file(path)
+                if view:
+                    logger.debug(f'{tool.function.name} executing')
+                    region_ = Region(a=(region.get('a') - 30), b=(region.get('b') + 30))  # type: ignore
+                    text = view.substr(region_)
+                    return self.create_message(command=dumps({'content': f'{text}'}), tool_call_id=tool.id)
+                else:
+                    raise FunctionCallFailedException(f'File under path not found: {path}')
+            else:
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {region}')
+        elif tool.function.name == 'get_working_directory_content':
+            path = tool.function.arguments.get('directory_path')
+            if path and isinstance(path, str):
+                folder_structure = build_folder_structure(path)
+                logger.debug(f'{tool.function.name} executing')
+
+                return self.create_message(
+                    command=dumps({'content': f'{folder_structure}'}), tool_call_id=tool.id
+                )
+            else:
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}')
+        else:
+            raise FunctionCallFailedException(f"Called function don't exists: {tool.function.name}")
+
+    def handle_function_call(self, tool_calls: List[ToolCall]):
+        for tool in tool_calls:
+            logger.debug(f'{tool.function.name} function called')
+            messages = []
+            try:
+                messages = self.perform_function(tool=tool)
+            except FunctionCallFailedException as error:  # we have to notify assistant about error occured
+                messages = self.create_message(command=error.message, tool_call_id=tool.id)
+            except:
                 raise
+            payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
+            new_messages = messages[-1:]
+            self.cacher.append_to_cache(new_messages)
+            self.provider.prepare_request(json_payload=payload)
+            if self.assistant.prompt_mode == PromptMode.panel.value:
+                self.prepare_to_response()
+
+            self.handle_response()
 
     def handle_streaming_response(self, response: HTTPResponse):
         # without key declaration it would failt to append there later in code.
         full_response_content = {'role': '', 'content': ''}
+        full_function_call: Dict[str, Any] = {}
 
         logger.debug('OpenAIWorker execution self.stop_event id: %s', id(self.stop_event))
+        listner = (
+            self.phantom_manager if self.assistant.prompt_mode == PromptMode.phantom.value else self.listner
+        )
 
         for chunk in response:
-            # FIXME: With this implementation few last tokens get missed on cacnel action. (e.g. the're seen within a proxy, but not in the code)
+            # FIXME: With this implementation few last tokens get missed on cacnel action.
+            # (e.g. they're seen within a proxy, but not in the code)
             if self.stop_event.is_set():
-                self.handle_sse_delta(
+                ResponseManager.handle_sse_delta(
+                    listner,
+                    self.current_request,
+                    self.window,
+                    self.assistant.prompt_mode,
                     delta={'role': 'assistant'},
                     full_response_content=full_response_content,
                 )
-                self.handle_sse_delta(
+                ResponseManager.handle_sse_delta(
+                    listner,
+                    self.current_request,
+                    self.window,
+                    self.assistant.prompt_mode,
                     delta={'content': '\n\n[Aborted]'},
                     full_response_content=full_response_content,
                 )
@@ -210,12 +302,43 @@ class OpenAIWorker(Thread):
                     response_dict: Dict[str, Any] = JSONDecoder().decode(chunk_str)
                     if 'delta' in response_dict['choices'][0]:
                         delta: Dict[str, Any] = response_dict['choices'][0]['delta']
-                        self.handle_sse_delta(delta=delta, full_response_content=full_response_content)
+                        if delta.get('content'):
+                            ResponseManager.handle_sse_delta(
+                                listner,
+                                self.current_request,
+                                self.window,
+                                self.assistant.prompt_mode,
+                                delta=delta,
+                                full_response_content=full_response_content,
+                            )
+                        elif delta.get('tool_calls'):
+                            self.append_non_null(full_function_call, delta)
+
                 except:
                     self.provider.close_connection()
                     raise
 
+        logger.debug(f'function_call {full_function_call}')
         self.provider.close_connection()
+
+        if full_function_call:
+            tool_calls = [
+                ToolCall(
+                    index=call['index'],
+                    id=call['id'],
+                    type=call['type'],
+                    function=Function(
+                        name=call['function']['name'], arguments=loads(call['function']['arguments'])
+                    ),
+                )
+                for call in full_function_call['tool_calls']
+            ]
+            ResponseManager.update_output_panel_(
+                self.listner, self.window, f'Function calling: `{tool_calls[0].function.name}`'
+            )
+            self.cacher.append_to_cache([full_function_call])
+            self.handle_function_call(tool_calls)
+
         if self.assistant.prompt_mode == PromptMode.panel.name:
             if full_response_content['role'] == '':
                 # together.ai never returns role value, so we have to set it manually
@@ -230,6 +353,7 @@ class OpenAIWorker(Thread):
 
         logger.debug('Handling plain (non-streaming) response for OpenAIWorker.')
 
+        listner = self.phantom_manager if self.assistant.prompt_mode == PromptMode.phantom else self.listner
         # Read the complete response directly
         response_data = response.read().decode()
         logger.debug(f'raw response: {response_data}')
@@ -257,7 +381,13 @@ class OpenAIWorker(Thread):
             if full_response_content['role'] == '':
                 full_response_content['role'] = 'assistant'
 
-            self.handle_whole_response(content=full_response_content)
+            ResponseManager.handle_whole_response(
+                listner,
+                self.current_request,
+                self.window,
+                self.assistant.prompt_mode,
+                content=full_response_content,
+            )
             # Store the response in the cache
             self.cacher.append_to_cache([full_response_content])
 
@@ -277,152 +407,192 @@ class OpenAIWorker(Thread):
         # Close the connection
         self.provider.close_connection()
 
-    def handle_chat_response(self):
-        response: HTTPResponse | None = self.provider.execute_response()
-
-        if response is None or response.status != 200:
-            return
-
-        try:
-            self.prepare_to_response()  # TODO: This could be moved earlier in request pipeline.
-        except Exception:
-            logger.error('prepare_to_response failed')
-            self.provider.close_connection()
-            raise
-
-        (
-            self.handle_streaming_response(response)
-            if self.assistant.stream
-            else self.handle_plain_response(response)
-        )
-
     def handle_response(self):
         try:
-            self.handle_chat_response()
+            ## Step 1: Prepare and get the chat response
+            response = self.provider.execute_response()
+
+            if response is None or response.status != 200:
+                return  # Exit if there's no valid response
+
+            # Step 2: Handle the response based on whether it's streaming
+            if self.assistant.stream:
+                self.handle_streaming_response(response)
+            else:
+                self.handle_plain_response(response)
+
+        # Step 3: Exception Handling
         except ContextLengthExceededException as error:
             do_delete = sublime.ok_cancel_dialog(
                 msg=f'Delete the two farthest pairs?\n\n{error.message}',
                 ok_title='Delete',
             )
             if do_delete:
-                self.cacher.drop_first(2)
-                messages = self.create_message(selected_text=[self.text], command=self.command)
+                self.cacher.drop_first(2)  # Drop old requests from the cache
+                messages = self.create_message()
                 payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
                 self.provider.prepare_request(json_payload=payload)
+
+                # Retry after dropping extra cache loads
                 self.handle_response()
+
         except WrongUserInputException as error:
             logger.debug('on WrongUserInputException event status: %s', self.stop_event.is_set())
             present_error(title='OpenAI error', error=error)
+
         except UnknownException as error:
             logger.debug('on UnknownException event status: %s', self.stop_event.is_set())
             present_error(title='OpenAI error', error=error)
 
-    def wrap_sheet_contents_with_scope(self) -> List[str]:
-        wrapped_selection: List[str] = []
+    @classmethod
+    def wrap_content_with_scope(cls, scope_name: str, content: str) -> str:
+        logger.debug(f'scope_name {scope_name}')
+        if scope_name.strip().lower() in ['markdown', 'multimarkdown', 'plain']:
+            wrapped_content = content
+        else:
+            wrapped_content = f'```{scope_name}\n{content}\n```'
+        logger.debug(f'wrapped_content {wrapped_content}')
+        return wrapped_content
+
+    def wrap_sheet_contents_with_scope(self) -> List[Tuple[str, str | None, str]]:
+        wrapped_selection: List[Tuple[str, str | None, str]] = []
 
         if self.sheets:
             for sheet in self.sheets:
-                # Convert the sheet to a view
-                view = sheet.view() if sheet else None
+                view = sheet.view()
                 if not view:
                     continue  # If for some reason the sheet cannot be converted to a view, skip.
 
-                # Deriving the scope from the beginning of the view's content
                 scope_region = view.scope_name(0)  # Assuming you want the scope at the start of the document
                 scope_name = scope_region.split(' ')[0].split('.')[-1]
 
-                # Extracting the text from the view
+                file_path = view.file_name()
                 content = view.substr(sublime.Region(0, view.size()))
+                content = OpenAIWorker.wrap_content_with_scope(scope_name, content)
 
-                # Wrapping the content with the derived scope name
-                # FIXME: make captured path relative to the project root
-                wrapped_content = f'`{view.file_name()}`\n' + f'```{scope_name}\n{content}\n```'
-                wrapped_selection.append(wrapped_content)
+                wrapped_content = f'Path: `{file_path}`\n\n' + content
+                wrapped_selection.append((scope_name, file_path, wrapped_content))
 
         return wrapped_selection
 
     def manage_chat_completion(self):
         wrapped_selection = None
-        if self.region:
+        if self.sheets:
+            wrapped_selection = self.wrap_sheet_contents_with_scope()
+        elif self.region:
             scope_region = self.window.active_view().scope_name(self.region.begin())
             scope_name = scope_region.split('.')[-1]  # in case of precise selection take the last scope
-            wrapped_selection = [f'```{scope_name}\n' + self.text + '\n```']
-        if self.sheets:  # no sheets should be passed unintentionaly
-            wrapped_selection = (
-                self.wrap_sheet_contents_with_scope()
-            )  # in case of unprecise selection take the last scope
+            wrapped_selection = [
+                (
+                    scope_name,
+                    None,
+                    OpenAIWorker.wrap_content_with_scope(scope_name, self.selected_text),
+                )
+            ]
+        elif self.selected_text:  # build_input
+            wrapped_selection = [
+                (
+                    'log',
+                    None,
+                    OpenAIWorker.wrap_content_with_scope('log', self.selected_text),
+                )
+            ]
 
         if self.mode == CommandMode.handle_image_input.value:
-            messages = self.create_image_message(image_url=self.text, command=self.command)
+            messages = self.create_image_message(image_url=self.selected_text, command=self.command)
             ## MARK: This should be here, otherwise it would duplicates the messages.
             image_assistant = copy.deepcopy(self.assistant)
             image_assistant.assistant_role = (
                 "Follow user's request on an image provided."
-                '\n If none provided do either:'
-                '\n 1. Describe this image that it be possible to drop it from the chat history without any context lost.'
-                "\n 2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope)."
-                "\n 3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise."
-                '\n Pay attention between text screnshot and a mock of the design in figma or sketch'
+                '\nIf none provided do either:'
+                '\n1. Describe this image that it be possible to drop it from the chat history without any context lost.'
+                "\n2. It it's just a text screenshot prompt its literally with markdown formatting (don't wrapp the text into markdown scope)."
+                "\n3. If it's a figma/sketch mock, provide the exact code of the exact following layout with the tools of user's choise."
+                '\nPay attention between text screnshot and a mock of the design in figma or sketch'
             )
             payload = self.provider.prepare_payload(assitant_setting=image_assistant, messages=messages)
         else:
             messages = self.create_message(
-                selected_text=wrapped_selection,
+                selected_text=wrapped_selection,  # type: ignore
                 command=self.command,
-                placeholder=self.assistant.placeholder,
             )
-            ## MARK: This should be here, otherwise it would duplicates the messages.
             payload = self.provider.prepare_payload(assitant_setting=self.assistant, messages=messages)
 
+        new_messages_len = (
+            len(wrapped_selection) + 1 if wrapped_selection else 1  # 1 stands for user input
+        )
+        new_messages = messages[-new_messages_len:]
+
+        self.current_request = new_messages
         if self.assistant.prompt_mode == PromptMode.panel.name:
-            if self.mode == CommandMode.handle_image_input.value:
-                fake_messages = self.create_image_fake_message(self.text, self.command)
-                self.cacher.append_to_cache(fake_messages)
-            else:
-                self.cacher.append_to_cache(messages)
-            self.update_output_panel('\n\n## Question\n\n')
-
             # MARK: Read only last few messages from cache with a len of a messages list
-            questions = [value['content'] for value in self.cacher.read_all()[-len(messages) :]]
+            # questions = [value['content'] for value in self.cacher.read_all()[-len(messages) :]]
+            fake_messages = None
+            if self.mode == CommandMode.handle_image_input.value:
+                fake_messages = self.create_image_fake_message(self.selected_text, self.command)
+                self.cacher.append_to_cache(fake_messages)
+                new_messages = fake_messages
+            else:
+                self.cacher.append_to_cache(new_messages)
 
+            ResponseManager.update_output_panel_(self.listner, self.window, '\n\n## Question\n\n')
             # MARK: \n\n for splitting command from selected text
             # FIXME: This logic adds redundant line breaks on a single message.
-            [self.update_output_panel(question + '\n\n') for question in questions]
+            [
+                ResponseManager.update_output_panel_(self.listner, self.window, question['content'] + '\n\n')
+                for question in new_messages
+            ]
 
             # Clearing selection area, coz it's easy to forget that there's something selected during a chat conversation.
             # And it designed be a one shot action rather then persistant one.
-            #
-            # We're doing it here just in sake of more clear user flow, because text got captured at the very beginning of a command evaluation,
-            # convenience is in being able see current selection while writting additional input to an assistant by input panel.
             self.view.sel().clear()
         try:
             self.provider.prepare_request(json_payload=payload)
         except Exception as error:
             present_unknown_error(title='OpenAI error', error=error)
             return
+        if self.assistant.prompt_mode == PromptMode.panel.value:
+            self.prepare_to_response()
+
         self.handle_response()
 
     def create_message(
         self,
-        selected_text: List[str] | None,
-        command: str | None,
-        placeholder: str | None = None,
+        selected_text: List[Tuple[str, str | None, str]] | None = None,
+        command: str | None = None,
+        tool_call_id: str | None = None,
     ) -> List[Dict[str, str]]:
-        messages = []
-        if placeholder:
-            messages.append(
+        messages = self.cacher.read_all()
+        logger.debug(len(selected_text) if selected_text else None)
+        if selected_text:
+            new_messages = [
                 {
-                    'role': 'system',
-                    'content': f'placeholder: {placeholder}',
+                    'role': 'user',
+                    **({'file_path': file_path} if file_path is not None else {}),
+                    **({'scope_name': scope} if scope is not None else {}),
+                    'content': text,  # Content
                     'name': 'OpenAI_completion',
                 }
-            )
-        if selected_text:
-            messages.extend(
-                [{'role': 'user', 'content': text, 'name': 'OpenAI_completion'} for text in selected_text]
-            )
+                for scope, file_path, text in selected_text  # Iterates over provided non-None selected_text
+            ]
+
+            logger.debug(['content' in message for message in new_messages])
+            messages.extend(new_messages)
+
         if command:
-            messages.append({'role': 'user', 'content': command, 'name': 'OpenAI_completion'})
+            if tool_call_id:
+                messages.append(
+                    {
+                        'role': 'tool',
+                        'content': command,
+                        'tool_call_id': tool_call_id,
+                        'name': 'OpenAI_completion',
+                    }
+                )
+            else:
+                messages.append({'role': 'user', 'content': command, 'name': 'OpenAI_completion'})
+
+        logger.debug(['content' in message for message in messages])
         return messages
 
     def create_image_fake_message(self, image_url: str | None, command: str | None) -> List[Dict[str, str]]:
@@ -439,7 +609,7 @@ class OpenAIWorker(Thread):
 
     def create_image_message(self, image_url: str | None, command: str | None) -> List[Dict[str, Any]]:
         """Create a message with a list of image URLs (in base64) and a command."""
-        messages = []
+        messages = self.cacher.read_all()
 
         # Split single image_urls_string by newline into multiple paths
         if image_url:
@@ -457,12 +627,11 @@ class OpenAIWorker(Thread):
                         }
                     )
 
-            # Add to the message with the command and all the base64 images
             messages.append(
                 {
                     'role': 'user',
                     'content': [
-                        {'type': 'text', 'text': command},
+                        {'type': 'text', 'text': command},  # type: ignore
                         *image_data_list,  # Add all the image data
                     ],
                     'name': 'OpenAI_completion',

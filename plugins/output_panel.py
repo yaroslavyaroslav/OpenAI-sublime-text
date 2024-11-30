@@ -34,6 +34,7 @@ class SharedOutputPanelListener(EventListener):
         self.setup_common_presentation_style_(new_view, reversed=self.reverse_for_tab)
         ## FIXME: This is temporary, should be moved to plugin settings
         new_view.set_name(self.OUTPUT_PANEL_NAME)
+        new_view.settings().set('sheet_view', self.OUTPUT_PANEL_NAME)
 
     def get_output_panel_(self, window: Window) -> View:
         output_panel = window.find_output_panel(self.OUTPUT_PANEL_NAME) or window.create_output_panel(
@@ -78,6 +79,22 @@ class SharedOutputPanelListener(EventListener):
             ## it presents ## Question above each message, while has to do it once for a pack.
             if line['role'] == 'user':
                 output_panel.run_command('append', {'characters': '\n\n## Question\n\n', 'force': True})
+            elif line['role'] == 'assistant' and 'tool_calls' in line:
+                output_panel.run_command('append', {'characters': '\n\n## Tool Call\n\n', 'force': True})
+                function_name = line['tool_calls'][0]['function']['name']
+                function_name = f'`{function_name}`'
+                output_panel.run_command('append', {'characters': function_name, 'force': True})
+                continue
+            elif line['role'] == 'tool':
+                output_panel.run_command('append', {'characters': '\n\n## Tool Result\n\n', 'force': True})
+                if len(line['content']) > 50:
+                    output_panel.run_command(
+                        'append', {'characters': 'Function response is too long', 'force': True}
+                    )
+                else:
+                    output_panel.run_command('append', {'characters': line['content'], 'force': True})
+
+                continue
             elif line['role'] == 'assistant':
                 output_panel.run_command('append', {'characters': '\n\n## Answer\n\n', 'force': True})
 

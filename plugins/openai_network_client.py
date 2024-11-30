@@ -8,14 +8,26 @@ from http.client import HTTPConnection, HTTPResponse, HTTPSConnection
 from typing import Any, Dict, List
 from urllib.parse import urlparse
 
-import random
 import sublime
 
-from .assistant_settings import AssistantSettings, PromptMode
+from .ai_functions import (
+    GET_REGION_FOR_TEXT,
+    GET_WORKING_DIRECTORY_CONTENT,
+    READ_REGION_CONTENT,
+    REPLACE_TEXT_FOR_REGION,
+)
+from .assistant_settings import AssistantSettings
 from .cacher import Cacher
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException
 
 logger = logging.getLogger(__name__)
+
+FUNCTION_DATA = [
+    GET_REGION_FOR_TEXT,
+    REPLACE_TEXT_FOR_REGION,
+    READ_REGION_CONTENT,
+    GET_WORKING_DIRECTORY_CONTENT,
+]
 
 
 class NetworkClient:
@@ -64,8 +76,7 @@ class NetworkClient:
         internal_messages: List[Dict[str, str]] = []
         if assitant_setting.assistant_role:
             req_tok, out_tok = self.cacher.read_tokens_count()
-            internal_messages.insert(
-                0,
+            internal_messages.append(
                 {
                     'role': 'system',
                     'content': assitant_setting.assistant_role
@@ -78,13 +89,9 @@ class NetworkClient:
                     if assitant_setting.advertisement
                     and (self.cacher.len() > 8 or req_tok + out_tok > 10_000)
                     and random.randint(0, 1) > 0.3
-                    else '',
+                    else assitant_setting.assistant_role,
                 },
             )
-        if assitant_setting.prompt_mode == PromptMode.panel.value:
-            ## FIXME: This is error prone and should be rewritten
-            #  Messages shouldn't be written in cache and passing as an attribute, should use either one.
-            internal_messages += self.cacher.read_all()
         internal_messages += messages
 
         prompt_tokens_amount = self.calculate_prompt_tokens(internal_messages)
@@ -102,6 +109,8 @@ class NetworkClient:
                     'max_completion_tokens': assitant_setting.max_completion_tokens,
                     'top_p': assitant_setting.top_p,
                     'stream': assitant_setting.stream,
+                    'parallel_tool_calls': assitant_setting.parallel_tool_calls,
+                    'tools': FUNCTION_DATA if assitant_setting.tools else None,
                 }.items()
                 if value is not None
             }
@@ -111,7 +120,7 @@ class NetworkClient:
         self.connection.request(method='POST', url=self.path, body=json_payload, headers=self.headers)
 
     def execute_response(self) -> HTTPResponse | None:
-        return self._execute_network_request()
+        return self.execute_network_request_()
 
     def close_connection(self):
         if self.response:
@@ -120,7 +129,7 @@ class NetworkClient:
             self.connection.close()
             logger.debug('Connection close status: %s', self.connection)
 
-    def _execute_network_request(self) -> HTTPResponse | None:
+    def execute_network_request_(self) -> HTTPResponse | None:
         self.response = self.connection.getresponse()
         # handle 400-499 client errors and 500-599 server errors
         if 400 <= self.response.status < 600:

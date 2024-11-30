@@ -102,6 +102,16 @@
             // OpenAI and any other alike API token to put.
             "token": "",
 
+            // Toggle for function calls llm capability
+            // Check if your llm supports this feature before toggling this on
+            "tools": false,
+
+            // Parallel function execution, i.e. llm calls few function in one response,
+            // we should response with few functions result in the very next request
+            // This toggle has to be always off, but it has to be uncommented if "tools": "true"
+            // Parallel function processing NOT IMPLEMENTED YET
+            // "parallel_tool_calls": false,
+
             // Placeholder requires for performing `insert` action.
             // It got passed to OpenAI as an additional system command for additional context, to let it know
             // what it should replace within the user's input.

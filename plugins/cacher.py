@@ -34,6 +34,9 @@ class Cacher:
             '{file_name}tokens_count.json'.format(file_name=name + '_' if name else ''),
         )
 
+        for item in [self.history_file, self.current_model_file, self.tokens_count_file]:
+            self.check_and_create(item)
+
     def check_and_create(self, path: str):
         if not os.path.isfile(path):
             open(path, 'w').close()
@@ -66,6 +69,12 @@ class Cacher:
         with open(self.tokens_count_file, 'w') as _:
             pass  # Truncate the file by opening it in 'w' mode and doing nothing
 
+    @staticmethod
+    def read_file_from_project(file_path: str) -> str:
+        with open(file_path, 'r') as data:
+            content = data.read()
+            return content
+
     def read_tokens_count(self) -> Tuple[int, int]:
         self.check_and_create(self.tokens_count_file)
         with open(self.tokens_count_file, 'r') as file:
@@ -92,32 +101,27 @@ class Cacher:
                 return None
         return data
 
+    @staticmethod
+    def expand_placeholders(line: Dict[str, str]) -> Dict[str, str]:
+        if {'file_path', 'scope_name'}.issubset(line.keys()) and line['file_path']:
+            file_path = line['file_path']
+            logger.debug(f'file_path {file_path}')
+            scope = line['scope_name']
+            file_content = Cacher.read_file_from_project(file_path)
+            content = f'Path: `{file_path}`\n\n'
+            content += f'```{scope}\n'
+            content += f'{file_content}\n'
+            content += '```'
+            line['content'] = content
+        return line
+
     def read_all(self) -> List[Dict[str, str]]:
         self.check_and_create(self.history_file)
         json_objects: List[Dict[str, str]] = []
         reader: Iterator[Dict[str, str]] = jl.reader(self.history_file)
         for json_object in reader:
-            json_objects.append(json_object)
-
-        return json_objects
-
-    def read_last(self, number: int) -> List[Dict[str, str]]:
-        self.check_and_create(self.history_file)
-        json_objects: List[Dict[str, str]] = []
-
-        with open(self.history_file, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
-
-        last_n_lines = lines[-number:]  # Get the last n lines
-
-        for line in last_n_lines:
-            try:
-                json_object: Dict[str, str] = json.loads(line)
-                json_objects.append(json_object)
-            except json.JSONDecodeError:
-                # FIXME: raise an error here that should be handled somewhere on top of the file
-                print('Error decoding JSON from line:', line)
-                pass
+            expanded_json = Cacher.expand_placeholders(json_object)
+            json_objects.append(expanded_json)
 
         return json_objects
 
@@ -126,6 +130,12 @@ class Cacher:
         writer = jl.writer(self.history_file)
         next(writer)
         for line in cache_lines:
+            if {'content', 'file_path', 'scope_name'}.issubset(line.keys()):
+                if line['file_path']:
+                    copy_of_line = line.copy()
+                    del copy_of_line['content']
+                    writer.send(copy_of_line)
+                    continue
             writer.send(line)
 
     def drop_first(self, number=4):
@@ -144,3 +154,7 @@ class Cacher:
     def drop_all(self):
         with open(self.history_file, 'w') as _:
             pass  # Truncate the file by opening it in 'w' mode and doing nothing
+
+    def delete_all_caches_(self):
+        for item in [self.history_file, self.current_model_file, self.tokens_count_file]:
+            os.remove(item)
