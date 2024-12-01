@@ -35,10 +35,14 @@ class CommonMethods:
         logger.debug('mode: %s', mode)
         logger.debug('Region: %s', region)
         build_input = kwargs.pop('build_output', False)
-        logger.debug('build_input {build_input}')
-        if build_input and settings:
+        lsp_diagnostics = kwargs.pop('lsp_diagnostics', False)
+        logger.debug(f'build_input {build_input}')
+        logger.debug(f'lsp_diagnostics {lsp_diagnostics}')
+        if lsp_diagnostics:
+            text = CommonMethods.get_build_output_lines('diagnostics', -1)
+        elif build_input and settings:
             output_limit: int = settings.get('build_output_limit', 100)  # type: ignore
-            text = CommonMethods.get_build_output_lines(view, output_limit)
+            text = CommonMethods.get_build_output_lines('exec', output_limit)
         else:
             for region in view.sel():
                 if not region.empty():
@@ -65,8 +69,8 @@ class CommonMethods:
             cls.handle_chat_completion(view, region, text, mode, assistant, files_included)
 
     @classmethod
-    def get_build_output_lines(cls, view: View, limit: int) -> str:
-        output_view = sublime.active_window().find_output_panel('exec')
+    def get_build_output_lines(cls, view_name: str, limit: int) -> str:
+        output_view = sublime.active_window().find_output_panel(view_name)
         if output_view:
             content = output_view.substr(sublime.Region(0, output_view.size()))
             lines = content.splitlines()
@@ -131,8 +135,6 @@ class CommonMethods:
         assistant: AssistantSettings | None,
         selected_sheets: List[Sheet] | None,
     ):
-        # from .openai_worker import OpenAIWorker  # https://stackoverflow.com/a/52927102
-
         cls.stop_worker()  # Stop any existing worker before starting a new one
         cls.stop_event.clear()
 
@@ -150,10 +152,8 @@ class CommonMethods:
 
     @classmethod
     def stop_worker(cls):
-        # if cls.worker_thread and cls.worker_thread.is_alive():
         logger.debug('Stopping worker...')
         cls.stop_event.set()  # Signal the thread to stop
-        # cls.worker_thread = None
 
 
 settings: Settings | None = None

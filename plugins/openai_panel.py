@@ -60,7 +60,7 @@ class OpenaiPanelCommand(WindowCommand):
         if settings and settings.get('cache_prefix'):
             prefix = settings.get('cache_prefix')
             if prefix:
-                self.cacher = Cacher(prefix)  # noqa: E701
+                self.cacher = Cacher(prefix)
 
     def on_done(self, index: int):
         if index == -1:

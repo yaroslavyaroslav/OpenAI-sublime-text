@@ -57,11 +57,9 @@ class OpenAIWorker(Thread):
         sheets: List[Sheet] | None = None,
     ):
         self.region = region
-        # Selected text within editor (as `user`)
-        self.selected_text = text
+        self.selected_text = text  # Selected text within editor (as `user`)
         logger.debug('selected_text in worker %s:', text)
-        # Text from input panel (as `user`)
-        self.command = command
+        self.command = command  # Text from input panel (as `user`)
         self.view = view
         self.mode = mode
         # Text input from input panel

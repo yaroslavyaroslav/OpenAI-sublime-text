@@ -46,6 +46,20 @@
 		}
 	},
 	{
+		"caption": "OpenAI: New Message With LSP Output",
+		"command": "openai",
+		"args": {
+			"lsp_diagnostics": true
+		}
+	},
+	{
+		"caption": "OpenAI: Chat Model Select With LSP Output",
+		"command": "openai_panel",
+		"args": {
+			"lsp_diagnostics": true
+		}
+	},
+	{
 		"caption": "OpenAI: Reset Chat History",
 		"command": "openai",
 		"args": {
