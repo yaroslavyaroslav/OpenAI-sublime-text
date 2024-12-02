@@ -33,6 +33,10 @@ REPLACE_TEXT_FOR_REGION = {
                     'type': 'string',
                     'description': 'The path of the file where content to search is stored',
                 },
+                'create': {
+                    'type': 'boolean',
+                    'description': "To create a new pane and file for it under a given path and with a given content. File created that way won't be visible by `get_working_directory_content` function call until user manually saves it",
+                },
                 'region': {
                     'type': 'object',
                     'description': 'The region in the file to replace text',

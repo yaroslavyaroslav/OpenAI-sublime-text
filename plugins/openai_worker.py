@@ -186,6 +186,7 @@ class OpenAIWorker(Thread):
 
         elif tool.function.name == 'replace_text_for_region':
             path = tool.function.arguments.get('file_path')
+            create = tool.function.arguments.get('create')
             region = tool.function.arguments.get('region')
             content = tool.function.arguments.get('content')
             if (
@@ -196,6 +197,8 @@ class OpenAIWorker(Thread):
                 and content
                 and isinstance(content, str)
             ):
+                if isinstance(create, bool):
+                    self.window.open_file(path)
                 view = self.window.find_open_file(path)
                 if view:
                     logger.debug(f'{tool.function.name} executing')
@@ -491,7 +494,7 @@ class OpenAIWorker(Thread):
             wrapped_selection = [
                 (
                     'log',
-                    'Build log',
+                    None,
                     OpenAIWorker.wrap_content_with_scope('log', self.selected_text),
                 )
             ]
