@@ -4,7 +4,6 @@ from typing import Dict
 
 from sublime import Settings, View, Window, load_settings
 from sublime_plugin import EventListener
-
 from .cacher import Cacher
 
 

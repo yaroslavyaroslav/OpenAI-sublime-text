@@ -11,6 +11,15 @@ from .phantom_streamer import PhantomStreamer
 
 class ResponseManager:
     @staticmethod
+    def prepare_to_response(
+        listner: SharedOutputPanelListener,
+        window: Window,
+    ):
+        ResponseManager.update_output_panel_(listner, window, '\n\n## Answer\n\n')
+        listner.show_panel(window=window)
+        listner.scroll_to_botton(window=window)
+
+    @staticmethod
     def update_output_panel_(listner: SharedOutputPanelListener, window: Window, text_chunk: str):
         listner.update_output_view(text=text_chunk, window=window)
 

@@ -9,24 +9,12 @@ from urllib.parse import urlparse
 
 import sublime
 
-from .ai_functions import (
-    GET_REGION_FOR_TEXT,
-    GET_WORKING_DIRECTORY_CONTENT,
-    READ_REGION_CONTENT,
-    REPLACE_TEXT_FOR_REGION,
-)
+from .ai_functions import FUNCTION_DATA
 from .assistant_settings import AssistantSettings
 from .cacher import Cacher
 from .errors.OpenAIException import ContextLengthExceededException, UnknownException
 
 logger = logging.getLogger(__name__)
-
-FUNCTION_DATA = [
-    GET_REGION_FOR_TEXT,
-    REPLACE_TEXT_FOR_REGION,
-    READ_REGION_CONTENT,
-    GET_WORKING_DIRECTORY_CONTENT,
-]
 
 
 class NetworkClient:

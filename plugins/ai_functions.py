@@ -64,6 +64,32 @@ REPLACE_TEXT_FOR_REGION = {
     },
 }
 
+REPLACE_TEXT_FOR_WHOLE_FILE = {
+    'type': 'function',
+    'function': {
+        'name': 'replace_text_for_whole_file',
+        'description': 'Replace the content of a region with the content provided',
+        'parameters': {
+            'type': 'object',
+            'properties': {
+                'file_path': {
+                    'type': 'string',
+                    'description': 'The path of the file where content to search is stored',
+                },
+                'create': {
+                    'type': 'boolean',
+                    'description': "To create a new pane and file for it under a given path and with a given content. File created that way won't be visible by `get_working_directory_content` function call until user manually saves it",
+                },
+                'content': {
+                    'type': 'string',
+                    'description': 'The New content of the file',
+                },
+            },
+            'required': ['file_path', 'content'],
+            'additionalProperties': False,
+        },
+    },
+}
 
 READ_REGION_CONTENT = {
     'type': 'function',
@@ -83,11 +109,11 @@ READ_REGION_CONTENT = {
                     'properties': {
                         'a': {
                             'type': 'integer',
-                            'description': 'The beginning point of the region to read',
+                            'description': 'The beginning point of the region to read, set -1 to read the file till the start',
                         },
                         'b': {
                             'type': 'integer',
-                            'description': 'The ending point of the region to read',
+                            'description': 'The ending point of the region to read, set -1 to read the file till the end',
                         },
                     },
                     'required': ['a', 'b'],
@@ -118,3 +144,12 @@ GET_WORKING_DIRECTORY_CONTENT = {
         },
     },
 }
+
+
+FUNCTION_DATA = [
+    GET_REGION_FOR_TEXT,
+    REPLACE_TEXT_FOR_REGION,
+    READ_REGION_CONTENT,
+    GET_WORKING_DIRECTORY_CONTENT,
+    REPLACE_TEXT_FOR_WHOLE_FILE,
+]
