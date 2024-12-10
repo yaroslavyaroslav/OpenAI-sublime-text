@@ -307,21 +307,6 @@ class OpenAIWorker(Thread):
             present_error(title='OpenAI error', error=error)
 
     def run(self):
-        try:
-            # FIXME: It's better to have such check locally, but it's pretty complicated with all those different modes and models
-            # if (self.settings.get("max_tokens") + len(self.text)) > 4000:
-            #     raise AssertionError("OpenAI accepts max. 4000 tokens, so the selected text and the max_tokens setting must be lower than 4000.")
-            api_token = self.settings.get('token')
-            if not isinstance(api_token, str):
-                raise WrongUserInputException('The token must be a string.')
-            if len(api_token) < 10:
-                raise WrongUserInputException(
-                    'No API token provided, you have to set the OpenAI token into the settings to make things work.'
-                )
-        except WrongUserInputException as error:
-            present_error(title='OpenAI error', error=error)
-            return
-
         wrapped_selection = None
         if self.sheets:
             wrapped_selection = BufferContentManager.wrap_sheet_contents_with_scope(self.sheets)
