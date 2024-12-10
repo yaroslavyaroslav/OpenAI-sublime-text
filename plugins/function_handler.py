@@ -12,6 +12,7 @@ from .errors.OpenAIException import FunctionCallFailedException
 from .messages import MessageCreator
 from .project_structure import build_folder_structure
 from .support_types import JSONType
+from .ai_functions import Function
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,8 @@ logger = logging.getLogger(__name__)
 class FunctionHandler:
     @staticmethod
     def perform_function(cacher: Cacher, window: Window, tool: ToolCall) -> List[Dict[str, str]]:
-        if tool.function.name == 'replace_text_with_another_text':
+        logger.debug(f'executing: {tool.function.name}')
+        if tool.function.name == Function.replace_text_with_another_text.value:
             path = tool.function.arguments.get('file_path')
             old_content = tool.function.arguments.get('old_content')
             new_content = tool.function.arguments.get('new_content')
@@ -34,7 +36,6 @@ class FunctionHandler:
             ):
                 view = window.find_open_file(path)
                 if view:
-                    logger.debug(f'{tool.function.name} executing')
                     escaped_string = (
                         old_content.replace('(', r'\(')
                         .replace(')', r'\)')
@@ -70,7 +71,7 @@ class FunctionHandler:
                 raise FunctionCallFailedException(
                     f'Wrong attributes passed: {path}, {old_content}, {new_content}'
                 )
-        elif tool.function.name == 'replace_text_for_whole_file':
+        elif tool.function.name == Function.replace_text_for_whole_file.value:
             path = tool.function.arguments.get('file_path')
             create = tool.function.arguments.get('create')
             content = tool.function.arguments.get('content')
@@ -80,12 +81,6 @@ class FunctionHandler:
                 view = window.find_open_file(path)
                 if view:
                     region = Region(0, len(view))
-                    len_view = len(view)
-                    if len_view > 0 and region == {'a': 0, 'b': 0}:
-                        raise FunctionCallFailedException(
-                            f'Zero region could be passed only for empty file, {path} has lengh of: {len_view}. Please define the exact region to work with.'
-                        )
-                    logger.debug(f'{tool.function.name} executing')
                     view.run_command(
                         'replace_region',
                         {'region': {'a': region.begin(), 'b': region.end()}, 'text': content},
@@ -99,13 +94,12 @@ class FunctionHandler:
             else:
                 raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {content}')
 
-        elif tool.function.name == 'read_region_content':
+        elif tool.function.name == Function.read_region_content.value:
             path = tool.function.arguments.get('file_path')
             region = tool.function.arguments.get('region')
             if path and isinstance(path, str) and region and isinstance(region, Dict):
                 view = window.find_open_file(path)
                 if view:
-                    logger.debug(f'{tool.function.name} executing')
                     a_reg: int = region.get('a') if region.get('a') != -1 else 0  # type: ignore
                     b_reg = region.get('b') if region.get('b') != -1 else len(view)
                     region_ = Region(a=a_reg, b=b_reg)
@@ -117,11 +111,10 @@ class FunctionHandler:
                     raise FunctionCallFailedException(f'File under path not found: {path}')
             else:
                 raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {region}')
-        elif tool.function.name == 'get_working_directory_content':
+        elif tool.function.name == Function.get_working_directory_content.value:
             path = tool.function.arguments.get('directory_path')
             if path and isinstance(path, str):
                 folder_structure = build_folder_structure(path)
-                logger.debug(f'{tool.function.name} executing')
 
                 return MessageCreator.create_message(
                     cacher, command=dumps({'content': f'{folder_structure}'}), tool_call_id=tool.id

@@ -1,7 +1,17 @@
+from enum import Enum
+
+
+class Function(str, Enum):
+    replace_text_with_another_text = 'replace_text_with_another_text'
+    replace_text_for_whole_file = 'replace_text_for_whole_file'
+    read_region_content = 'read_region_content'
+    get_working_directory_content = 'get_working_directory_content'
+
+
 REPLACE_TEXT_WITH_ANOTHER_TEXT = {
     'type': 'function',
     'function': {
-        'name': 'replace_text_with_another_text',
+        'name': Function.replace_text_with_another_text.value,
         'description': 'Replace the existed text in the file with the new one',
         'parameters': {
             'type': 'object',
@@ -29,7 +39,7 @@ REPLACE_TEXT_WITH_ANOTHER_TEXT = {
 REPLACE_TEXT_FOR_WHOLE_FILE = {
     'type': 'function',
     'function': {
-        'name': 'replace_text_for_whole_file',
+        'name': Function.replace_text_for_whole_file.value,
         'description': 'Replace the content of a region with the content provided',
         'parameters': {
             'type': 'object',
@@ -56,7 +66,7 @@ REPLACE_TEXT_FOR_WHOLE_FILE = {
 READ_REGION_CONTENT = {
     'type': 'function',
     'function': {
-        'name': 'read_region_content',
+        'name': Function.read_region_content.value,
         'description': 'Read the content of the particular region',
         'parameters': {
             'type': 'object',
@@ -91,7 +101,7 @@ READ_REGION_CONTENT = {
 GET_WORKING_DIRECTORY_CONTENT = {
     'type': 'function',
     'function': {
-        'name': 'get_working_directory_content',
+        'name': Function.get_working_directory_content.value,
         'description': 'Get complete structure of directories and files within the working directory, current dir is a working dir, i.e. `.` is the roor project',
         'parameters': {
             'type': 'object',
