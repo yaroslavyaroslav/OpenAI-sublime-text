@@ -19,57 +19,67 @@ logger = logging.getLogger(__name__)
 class FunctionHandler:
     @staticmethod
     def perform_function(cacher: Cacher, window: Window, tool: ToolCall) -> List[Dict[str, str]]:
-        if tool.function.name == 'get_region_for_text':
+        if tool.function.name == 'replace_text_with_another_text':
             path = tool.function.arguments.get('file_path')
-            content = tool.function.arguments.get('content')
-            if path and isinstance(path, str) and content and isinstance(content, str):
+            old_content = tool.function.arguments.get('old_content')
+            new_content = tool.function.arguments.get('new_content')
+
+            if (
+                path
+                and isinstance(path, str)
+                and old_content
+                and isinstance(old_content, str)
+                and new_content
+                and isinstance(new_content, str)
+            ):
                 view = window.find_open_file(path)
                 if view:
                     logger.debug(f'{tool.function.name} executing')
                     escaped_string = (
-                        content.replace('(', r'\(')
+                        old_content.replace('(', r'\(')
                         .replace(')', r'\)')
                         .replace('[', r'\[')
                         .replace(']', r'\]')
                         .replace('{', r'\{')
                         .replace('}', r'\}')
+                        .replace('|', r'\|')
+                        .replace('"', r'\"')
+                        .replace('\\', r'\\\\')
                     )
                     region = view.find(pattern=escaped_string, start_pt=0)
                     logger.debug(f'region {region}')
                     serializable_region = {
-                        'begin': region.begin(),
-                        'end': region.end(),
+                        'a': region.begin(),
+                        'b': region.end(),
                     }
-                    if region.begin() == region.end() == -1:  # means search found nothing
-                        raise FunctionCallFailedException(f'Text not found: {content}')
+                    if (
+                        region.begin() == region.end() == -1 or region.begin() == region.end() == 0
+                    ):  # means search found nothing
+                        raise FunctionCallFailedException(f'Text not found: {old_content}')
                     else:
+                        view.run_command(
+                            'replace_region',
+                            {'region': serializable_region, 'text': new_content},
+                        )
                         return MessageCreator.create_message(
                             cacher, command=dumps(serializable_region), tool_call_id=tool.id
                         )
                 else:
                     raise FunctionCallFailedException(f'File under path not found: {path}')
             else:
-                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {content}')
-
-        elif (
-            tool.function.name == 'replace_text_for_region'
-            or tool.function.name == 'replace_text_for_whole_file'
-        ):
+                raise FunctionCallFailedException(
+                    f'Wrong attributes passed: {path}, {old_content}, {new_content}'
+                )
+        elif tool.function.name == 'replace_text_for_whole_file':
             path = tool.function.arguments.get('file_path')
             create = tool.function.arguments.get('create')
-            region = tool.function.arguments.get('region')
             content = tool.function.arguments.get('content')
             if path and isinstance(path, str) and content and isinstance(content, str):
                 if isinstance(create, bool):
                     window.open_file(path)
                 view = window.find_open_file(path)
-                if region and isinstance(region, Dict) or tool.function.name == 'replace_text_for_whole_file':
-                    if tool.function.name == 'replace_text_for_whole_file':
-                        region = {'a': -1, 'b': -1}
                 if view:
-                    a_reg: int = region.get('a') if region and region.get('a') != -1 else 0  # type: ignore
-                    b_reg: int = region.get('b') if region and region.get('b') != -1 else len(view)  # type: ignore
-                    region = Region(a_reg, b_reg)
+                    region = Region(0, len(view))
                     len_view = len(view)
                     if len_view > 0 and region == {'a': 0, 'b': 0}:
                         raise FunctionCallFailedException(
@@ -87,7 +97,7 @@ class FunctionHandler:
                 else:
                     raise FunctionCallFailedException(f'File under path not found: {path}')
             else:
-                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {region} {content}')
+                raise FunctionCallFailedException(f'Wrong attributes passed: {path}, {content}')
 
         elif tool.function.name == 'read_region_content':
             path = tool.function.arguments.get('file_path')
@@ -119,7 +129,7 @@ class FunctionHandler:
             else:
                 raise FunctionCallFailedException(f'Wrong attributes passed: {path}')
         else:
-            raise FunctionCallFailedException(f"Called function don't exists: {tool.function.name}")
+            raise FunctionCallFailedException(f"Called function doen't exists: {tool.function.name}")
 
     @staticmethod
     def append_non_null(original: JSONType, append: JSONType) -> JSONType:

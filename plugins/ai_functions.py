@@ -1,8 +1,8 @@
-GET_REGION_FOR_TEXT = {
+REPLACE_TEXT_WITH_ANOTHER_TEXT = {
     'type': 'function',
     'function': {
-        'name': 'get_region_for_text',
-        'description': 'Get the Sublime Text Region bounds that is matching the content provided',
+        'name': 'replace_text_with_another_text',
+        'description': 'Replace the existed text in the file with the new one',
         'parameters': {
             'type': 'object',
             'properties': {
@@ -10,59 +10,21 @@ GET_REGION_FOR_TEXT = {
                     'type': 'string',
                     'description': 'The path of the file where content to search is stored',
                 },
-                'content': {
+                'old_content': {
                     'type': 'string',
-                    'description': 'Content bounds of which to search for',
+                    'description': 'The existing old content to be replaced with new content',
+                },
+                'new_content': {
+                    'type': 'string',
+                    'description': 'The content to replace the old one',
                 },
             },
-            'required': ['file_path', 'content'],
+            'required': ['file_path', 'old_content', 'new_content'],
             'additionalProperties': False,
         },
     },
 }
 
-REPLACE_TEXT_FOR_REGION = {
-    'type': 'function',
-    'function': {
-        'name': 'replace_text_for_region',
-        'description': 'Replace the content of a region with the content provided',
-        'parameters': {
-            'type': 'object',
-            'properties': {
-                'file_path': {
-                    'type': 'string',
-                    'description': 'The path of the file where content to search is stored',
-                },
-                'create': {
-                    'type': 'boolean',
-                    'description': "To create a new pane and file for it under a given path and with a given content. File created that way won't be visible by `get_working_directory_content` function call until user manually saves it",
-                },
-                'region': {
-                    'type': 'object',
-                    'description': 'The region in the file to replace text',
-                    'properties': {
-                        'a': {
-                            'type': 'integer',
-                            'description': 'The beginning point of the region to be replaced',
-                        },
-                        'b': {
-                            'type': 'integer',
-                            'description': 'The ending point of the region to be replaced',
-                        },
-                    },
-                    'required': ['a', 'b'],
-                    'additionalProperties': False,
-                },
-                'content': {
-                    'type': 'string',
-                    'description': 'The content to replace in the specified region',
-                },
-            },
-            'required': ['file_path', 'region', 'content'],
-            'additionalProperties': False,
-        },
-    },
-}
 
 REPLACE_TEXT_FOR_WHOLE_FILE = {
     'type': 'function',
@@ -147,8 +109,7 @@ GET_WORKING_DIRECTORY_CONTENT = {
 
 
 FUNCTION_DATA = [
-    GET_REGION_FOR_TEXT,
-    REPLACE_TEXT_FOR_REGION,
+    REPLACE_TEXT_WITH_ANOTHER_TEXT,
     READ_REGION_CONTENT,
     GET_WORKING_DIRECTORY_CONTENT,
     REPLACE_TEXT_FOR_WHOLE_FILE,
