@@ -21,7 +21,7 @@ from .plugins.settings_reloader import ReloadSettingsListener  # noqa: E402, F40
 from .plugins.stop_worker_execution import (  # noqa: E402
     StopOpenaiExecutionCommand,  # noqa: F401
 )
-from .plugins.view_goodies import AiFrameViewEventListenerCommand  # noqa: E402, F401
+
 from .plugins.worker_running_context import (  # noqa: E402,
     OpenaiWorkerRunningContext,  # noqa: F401
 )
