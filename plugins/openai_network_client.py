@@ -120,12 +120,17 @@ class NetworkClient:
         if 400 <= self.response.status < 600:
             error_object = self.response.read().decode('utf-8')
             error_data: Dict[str, Any] = json.loads(error_object)
-            if error_data.get('error', {}).get('code') == 'context_length_exceeded' or (
-                error_data.get('error', {}).get('type') == 'invalid_request_error'
-                and error_data.get('error', {}).get('param') == 'max_tokens'
-            ):
-                raise ContextLengthExceededException(error_data['error']['message'])
-            raise UnknownException(error_data.get('error').get('message'))
+            if 'error' in error_data:
+                error_field = error_data.get('error')
+                if isinstance(error_field, dict):
+                    if error_data.get('error', {}).get('code') == 'context_length_exceeded' or (
+                        error_data.get('error', {}).get('type') == 'invalid_request_error'
+                        and error_data.get('error', {}).get('param') == 'max_tokens'
+                    ):
+                        raise ContextLengthExceededException(error_data['error']['message'])
+                else:
+                    raise UnknownException(f'{error_data}')
+            raise UnknownException(f'{error_data}')
         return self.response
 
     def calculate_prompt_tokens(self, responses: List[Dict[str, str]]) -> int:
