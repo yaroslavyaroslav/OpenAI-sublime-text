@@ -13,6 +13,7 @@ from sublime import (
     active_window,
     set_clipboard,
     set_timeout,
+    load_settings,
 )
 
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
@@ -36,6 +37,11 @@ class PhantomStreamer:
         self.completion: str = ''
         self.phantom: Phantom | None = None
         self.phantom_id: int | None = None
+        self.is_discardable: bool = (
+            load_settings('openAI.sublime-settings')
+            .get('chat_presentation', {})
+            .get('is_tabs_discardable', False)
+        )
         if len(view.sel()) > 0:
             logger.debug(f'view selection: {view.sel()[0]}')
             self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
@@ -74,12 +80,11 @@ class PhantomStreamer:
                 self.view.run_command('replace_region', {'region': region_object, 'text': self.completion})
             elif attribute == PhantomActions.new_file.value:
                 new_tab = (self.view.window() or active_window()).new_file(
-                    flags=NewFileFlags.REPLACE_MRU
-                    | NewFileFlags.ADD_TO_SELECTION
-                    | NewFileFlags.CLEAR_TO_RIGHT,
+                    flags=NewFileFlags.ADD_TO_SELECTION | NewFileFlags.CLEAR_TO_RIGHT,
                     syntax='Packages/Markdown/MultiMarkdown.sublime-syntax',
                 )
-                new_tab.set_scratch(False)
+                logger.debug(f'self.is_discardable: {self.is_discardable}')
+                new_tab.set_scratch(self.is_discardable)
                 new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion})
             elif attribute == PhantomActions.close.value:
                 pass
