@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
+from typing import Any, Dict, List
 
 import mdpopups
 from sublime import (
@@ -11,12 +12,10 @@ from sublime import (
     PhantomSet,
     View,
     active_window,
+    load_settings,
     set_clipboard,
     set_timeout,
-    load_settings,
 )
-
-from typing import Any, Dict, List
 
 from .cacher import Cacher
 from .output_panel import SharedOutputPanelListener
