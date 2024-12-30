@@ -38,7 +38,7 @@ class NetworkClient:
 
         parsed_url = urlparse(url_string)
         host = parsed_url.netloc
-        self.path = parsed_url.path if parsed_url.path else '/v1/chat/completions'
+        self.path = parsed_url.path if parsed_url.path.strip('/') else '/v1/chat/completions'
         connection = HTTPSConnection if parsed_url.scheme == 'https' else HTTPConnection
 
         proxy_settings = self.settings.get('proxy')

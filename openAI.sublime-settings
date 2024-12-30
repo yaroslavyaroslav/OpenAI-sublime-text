@@ -162,54 +162,9 @@
             "presence_penalty": 0,
         },
 
-        // Instructions //
+        // Other examples //
         {
-            "name": "Insert instruction example",
-            "prompt_mode": "phantom",
-            "chat_model": "gpt-4o-mini", // works unreliable with gpt-3.5-turbo yet.
-            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
-            "max_tokens": 4000,
-        },
-        {
-            "name": "Insert instruction example",
-            "prompt_mode": "insert",
-            "chat_model": "gpt-4o-mini", // works unreliable with gpt-3.5-turbo yet.
-            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
-            "max_tokens": 4000,
-            "placeholder": "## placeholder" // it's a good fit for a placeholder to be a comment.
-        },
-        {
-            "name": "Append instruction example",
-            "prompt_mode": "append",
-            "chat_model": "gpt-4o-mini",
-            "assistant_role": "Insert code or whatever user will request with the following command instead of placeholder with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
-            "max_tokens": 4000,
-        },
-        {
-            "name": "Replace instruction example",
-            "prompt_mode": "replace",
-            "chat_model": "gpt-4o-mini",
-            "assistant_role": "Apply the change requested by the user to the code with respect to senior knowledge of in Python 3.8 and Sublime Text 4 plugin API",
-            "max_tokens": 4000,
-        },
-
-        // Other useful ideas //
-        {
-            "name": "ST4 Plugin", // It's NOT necessary to mention a model here, there's a separate filed for just this in status bar hints setting.
-            "prompt_mode": "panel",
-            "chat_model": "gpt-4o-mini",
-            "assistant_role": "You are senior Sublime Text 4 editor plugin development and Python code assistant",
-            "max_tokens": 4000,
-        },
-        {
-            "name": "ST4 Plugin", // You can share the same `assistant_role` through different models.
-            "prompt_mode": "panel",
-            "chat_model": "gpt-3.5-turbo-16k",
-            "assistant_role": "You are senior Sublime Text 4 editor plugin development and Python code assistant",
-            "max_tokens": 4000,
-        },
-        {
-            "name": "Code assistant",
+            "name": "General Assistant Localhost",
             "prompt_mode": "panel",
             "url": "http://127.0.0.1:8080", // See ma, no internet connection.
             "token": "",
@@ -219,17 +174,17 @@
             "max_tokens": 2048,
         },
         {
-            "name": "Corrector",
-            "prompt_mode": "phantom",
-            "chat_model": "gpt-4o-mini",
-            "assistant_role": "Fix provided text with the correct and sounds English one, you are strictly forced to skip any changes in such its part that have not rules violation within them, you're strictly forbidden to wrap response into something and to provide any explanation.",
-            "max_tokens": 1000,
-        },
-        {
             "name": "General Assistant",
             "prompt_mode": "panel",
             "chat_model": "gpt-4o-mini",
-            "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n\nIt is very important that you get this right. Multiple lives are at stake.\n",
+            "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.",
+            "max_tokens": 4000,
+        },
+        {
+            "name": "General Assistant",
+            "prompt_mode": "phantom",
+            "chat_model": "gpt-4o-mini",
+            "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.",
             "max_tokens": 4000,
         },
     ]
