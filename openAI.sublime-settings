@@ -72,9 +72,6 @@
 
             // Mode of how plugin should prompts its output, available options:
             //  - panel: prompt would be output in output panel, selected text wouldn't be affected in any way.
-            //  - append: [DEPRECATED] prompt would be added next to the selected text.
-            //  - insert: [DEPRECATED] prompt would be inserted instead of a placeholder within a selected text.
-            //  - replace: [DEPRECATED] prompt would overwrite selected text.
             //  - phantom: llm prompts in phantom view in a non-dstruptive way to the buffer content, each such phantom provides way to copy to clipboard, append, replace or paste in new created tab all the content with a single click.
             //
             // All cases but `panel` required to some text be selected beforehand.

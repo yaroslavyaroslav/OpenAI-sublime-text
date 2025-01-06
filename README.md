@@ -47,6 +47,11 @@ https://github.com/yaroslavyaroslav/OpenAI-sublime-text/assets/16612247/69f609f3
 2. Open the command palette and type `Package Control: Install Package`.
 3. Type `OpenAI` and press `Enter`.
 
+> [!NOTE]
+> Highly recommended complimentary packages:
+> - https://github.com/SublimeText-Markdown/MarkdownCodeExporter
+> - https://sublimetext-markdown.github.io/MarkdownEditing
+
 ## Usage
 
 ### AI Assistance use case
@@ -147,14 +152,11 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 
 The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the most of providers to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste your API key in the token property, as follows:
 
-```JSON
+```json
 {
     "token": "sk-your-token",
 }
 ```
-
-> [!WARNING]
-> Due to a known issue, a token value of 10 or more characters is currently required even for unsecured servers. [More details here.](#workaround-for-64)
 
 ### Advertisement disabling
 
@@ -164,7 +166,7 @@ To disable advertisement you have to add `"advertisement": false` line into an a
 
 You can bind keys for a given plugin command in `Preferences` -> `Package Settings` -> `OpenAI` -> `Key Bindings`. For example you can bind "New Message" including active tabs as context command like this:
 
-```javascript
+```js
 {
     "keys": [ "super+k", "super+'" ],
     "command": "openai", // or "openai_panel"
@@ -172,18 +174,11 @@ You can bind keys for a given plugin command in `Preferences` -> `Package Settin
 },
 ```
 
-### [Multi]Markdown syntax with syntax highlight support
-
-It just works.
-
-> [!IMPORTANT]
-> It's highly recommended to install the [`MultimarkdownEditing`](https://sublimetext-markdown.github.io/MarkdownEditing/) package to apply broader set of languages with syntax highlighting.
-
 ### Proxy support
 
 You can setup it up by overriding the proxy property in the `OpenAI completion` settings like follow:
 
-```javascript
+```js
 "proxy": {
     "address": "127.0.0.1", // required
     "port": 9898, // required
@@ -191,17 +186,6 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
     "password": "sOmEpAsSwOrD"
 }
 ```
-
-## Known bugs
-
-### Workaround for [#64](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/issues/64)
-
-> [!IMPORTANT]
-> If any of your assistants are configured with a `"token"` of less than 10 characters, they will always fail to establish a connection, even if the server does not require authentication at all. Instead, the plugin will produce the following error message:
->
-> **"No API token provided, you have to set the OpenAI token into the settings to make things work."**
-
-[Luckily you'll find a quick and easy workaround here until a fix can be released!](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/issues/64#issuecomment-2410170986)
 
 ## Disclaimers
 
