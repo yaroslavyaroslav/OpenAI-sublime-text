@@ -7,7 +7,6 @@ for module_name in [module_name for module_name in sys.modules if module_name.st
 del prefix
 
 from .plugins.active_view_event import ActiveViewEventListener  # noqa: E402, F401
-from .plugins.ai_chat_event import AIChatViewEventListener  # noqa: E402, F401
 from .plugins.buffer import (  # noqa: E402, F401
     EraseRegionCommand,
     ReplaceRegionCommand,
@@ -21,7 +20,6 @@ from .plugins.settings_reloader import ReloadSettingsListener  # noqa: E402, F40
 from .plugins.stop_worker_execution import (  # noqa: E402
     StopOpenaiExecutionCommand,  # noqa: F401
 )
-
 from .plugins.worker_running_context import (  # noqa: E402,
     OpenaiWorkerRunningContext,  # noqa: F401
 )

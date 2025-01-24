@@ -21,7 +21,7 @@ class OpenaiWorkerRunningContext(EventListener):
             logger.debug('key == openai_worker_running')
             logger.debug(
                 'CommonMethods.worker_thread is alive: %s',
-                CommonMethods.worker_thread.is_alive() if CommonMethods.worker_thread else False,
+                CommonMethods.worker.is_alive() if CommonMethods.worker else False,
             )
-            return CommonMethods.worker_thread and CommonMethods.worker_thread.is_alive()
+            return CommonMethods.worker and CommonMethods.worker.is_alive()
         return None

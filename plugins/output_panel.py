@@ -1,18 +1,22 @@
 from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, Any
 
-from sublime import Settings, View, Window, load_settings
+import sublime
+from rust_helper import Roles, read_all_cache  # type: ignore
+from sublime import Settings, View, Window, cache_path, load_settings
 from sublime_plugin import EventListener
-from .cacher import Cacher
 
 
 class SharedOutputPanelListener(EventListener):
     OUTPUT_PANEL_NAME = 'AI Chat'
 
-    def __init__(self, markdown: bool = True, cacher: Cacher = Cacher()) -> None:
+    def __init__(
+        self,
+        markdown: bool = True,
+    ) -> None:
         self.markdown: bool = markdown
-        self.cacher = cacher
+        # self.cacher = cacher
         self.settings: Settings = load_settings('openAI.sublime-settings')
         self.panel_settings: Dict[str, bool] | None = self.settings.get('chat_presentation')  # type: ignore
 
@@ -71,33 +75,46 @@ class SharedOutputPanelListener(EventListener):
         output_panel = self.get_output_view_(window=window)
         self.clear_output_panel(window)
 
-        for line in self.cacher.read_all():
-            ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
-            ## (it's not that easy, since question and answer are the different lines)
-            ## FIXME: This logic conflicts with multifile/multimessage request behaviour
-            ## it presents ## Question above each message, while has to do it once for a pack.
-            if line['role'] == 'user':
-                output_panel.run_command('append', {'characters': '\n\n## Question\n\n', 'force': True})
-            elif line['role'] == 'assistant' and 'tool_calls' in line:
-                output_panel.run_command('append', {'characters': '\n\n## Tool Call\n\n', 'force': True})
-                function_name = line['tool_calls'][0]['function']['name']
-                function_name = f'`{function_name}`'
-                output_panel.run_command('append', {'characters': function_name, 'force': True})
-                continue
-            elif line['role'] == 'tool':
-                output_panel.run_command('append', {'characters': '\n\n## Tool Result\n\n', 'force': True})
-                if len(line['content']) > 50:
-                    output_panel.run_command(
-                        'append', {'characters': 'Function response is too long', 'force': True}
-                    )
-                else:
-                    output_panel.run_command('append', {'characters': line['content'], 'force': True})
+        path = sublime.cache_path()
 
-                continue
-            elif line['role'] == 'assistant':
+        ai_assistant: Dict[str, Any] = (
+            window.active_view()
+            .settings()
+            .get(  # type: ignore
+                'ai_assistant',
+                sublime.cache_path(),
+            )
+        )
+        if isinstance(ai_assistant, Dict):
+            path = ai_assistant.get(
+                'cache_prefix',
+                sublime.cache_path(),
+            )
+
+        for item in read_all_cache(path):
+            ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
+            if item.role == Roles.User:
+                output_panel.run_command('append', {'characters': '\n\n## Question\n\n', 'force': True})
+            # elif item.role == Roles.Assistant and 'tool_calls' in item:
+            #     output_panel.run_command('append', {'characters': '\n\n## Tool Call\n\n', 'force': True})
+            #     function_name = item['tool_calls'][0]['function']['name']
+            #     function_name = f'`{function_name}`'
+            #     output_panel.run_command('append', {'characters': function_name, 'force': True})
+            #     continue
+            # elif item['role'] == 'tool':
+            #     output_panel.run_command('append', {'characters': '\n\n## Tool Result\n\n', 'force': True})
+            #     if len(item['content']) > 50:
+            #         output_panel.run_command(
+            #             'append', {'characters': 'Function response is too long', 'force': True}
+            #         )
+            #     else:
+            #         output_panel.run_command('append', {'characters': item['content'], 'force': True})
+
+            #     continue
+            elif item.role == Roles.Assistant:
                 output_panel.run_command('append', {'characters': '\n\n## Answer\n\n', 'force': True})
 
-            output_panel.run_command('append', {'characters': line['content'], 'force': True})
+            output_panel.run_command('append', {'characters': item.content, 'force': True})
 
         self.scroll_to_botton(window=window)
 

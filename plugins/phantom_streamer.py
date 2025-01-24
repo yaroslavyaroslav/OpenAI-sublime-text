@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
-from typing import Any, Dict, List
+from typing import List
 
 import mdpopups
+from rust_helper import InputKind, SublimeInputContent, write_to_cache  # type: ignore
 from sublime import (
     NewFileFlags,
     Phantom,
@@ -12,13 +13,14 @@ from sublime import (
     PhantomSet,
     View,
     active_window,
+    cache_path,
     load_settings,
     set_clipboard,
     set_timeout,
 )
 
-from .cacher import Cacher
 from .output_panel import SharedOutputPanelListener
+from .response_manager import ResponseManager
 
 VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
@@ -40,16 +42,19 @@ logger = logging.getLogger(__name__)
 
 
 class PhantomStreamer:
-    user_input: List[Dict[str, Any]] | List[Dict[str, str]]
+    user_input: List[SublimeInputContent]
 
-    def __init__(self, view: View, cacher: Cacher) -> None:
+    def __init__(
+        self,
+        view: View,
+        user_input: List[SublimeInputContent],
+    ) -> None:
         self.view = view
-        self.cacher = cacher
         self.phantom_set = PhantomSet(self.view, OPENAI_COMPLETION_KEY)
         self.completion: str = ''
         self.phantom: Phantom | None = None
         self.phantom_id: int | None = None
-        self.listner = SharedOutputPanelListener(markdown=True, cacher=self.cacher)
+        self.user_input = user_input
         self.is_discardable: bool = (
             load_settings('openAI.sublime-settings')
             .get('chat_presentation', {})
@@ -59,10 +64,9 @@ class PhantomStreamer:
             logger.debug(f'view selection: {view.sel()[0]}')
             self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
 
-    def update_completion(self, user_input: List[Dict[str, Any]] | List[Dict[str, str]], completion: str):
+    def update_completion(self, completion: str):
         line_beginning = self.view.line(self.view.sel()[0])
         self.completion += completion
-        self.user_input = user_input
 
         content = PHANTOM_TEMPLATE.format(streaming_content=self.completion)
         html = mdpopups._create_html(self.view, content, wrapper_class=CLASS_NAME)
@@ -105,22 +109,25 @@ class PhantomStreamer:
                 new_tab.set_scratch(self.is_discardable)
                 new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion})
             elif attribute == PhantomActions.history.value:
-                new_message = {
-                    'role': 'assistant',
-                    'content': self.completion,
-                    'name': 'OpenAI_completion',
-                }
-                self.cacher.append_to_cache(self.user_input)
-                self.cacher.append_to_cache([new_message])
-                self.listner.update_output_view('\n\n## Question\n\n', self.view.window())  # type: ignore
-                # MARK: \n\n for splitting command from selected text
-                # FIXME: This logic adds redundant line breaks on a single message.
-                [
-                    self.listner.update_output_view(question['content'] + '\n\n', self.view.window())  # type: ignore
-                    for question in self.user_input
-                ]
-                self.listner.update_output_view('\n\n## Answer\n\n', self.view.window())  # type: ignore
-                self.listner.update_output_view(self.completion, self.view.window())  # type: ignore
+                assitant_content = SublimeInputContent(InputKind.AssistantResponse, self.completion)
+
+                window = self.view.window() or active_window()
+
+                path: str = (
+                    self.view.settings().get('ai_assistant', cache_path()).get('cache_prefix', cache_path())
+                )
+
+                ResponseManager.print_requests(SharedOutputPanelListener(), window, self.user_input)
+
+                ResponseManager.prepare_to_response(SharedOutputPanelListener(), window)
+                ResponseManager.update_output_panel_(
+                    SharedOutputPanelListener(), window, assitant_content.content
+                )
+
+                self.user_input.append(assitant_content)
+
+                [write_to_cache(path, item) for item in self.user_input]
+
             elif attribute == PhantomActions.close.value:
                 pass
 
