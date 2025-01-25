@@ -21,7 +21,7 @@ class ResponseManager:
                 if item.input_kind == InputKind.ViewSelection:
                     ResponseManager.update_output_panel_(listner, window, item.content)
                 else:
-                    ResponseManager.update_output_panel_(listner, window, item.path)
+                    ResponseManager.update_output_panel_(listner, window, f'`{item.path}`')
 
             else:
                 ResponseManager.update_output_panel_(listner, window, item.content)

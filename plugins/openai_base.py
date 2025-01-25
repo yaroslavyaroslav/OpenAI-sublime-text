@@ -11,7 +11,7 @@ from rust_helper import (
     SublimeInputContent,  # type: ignore
     Worker,  # type: ignore
 )
-from sublime import Region, Settings, Sheet, View, Window, active_window
+from sublime import Region, Settings, View, Window, active_window
 
 from .sheet_toggle import VIEW_TOGGLE_KEY
 
@@ -62,7 +62,8 @@ class CommonMethods:
             if not region.empty():
                 some_text += view.substr(region) + '\n'
 
-        items.append(InputCompositor.compose_input(InputKind.ViewSelection, some_text, view))
+        if some_text:
+            items.append(InputCompositor.compose_input(InputKind.ViewSelection, some_text, view))
 
         try:
             minimum_selection_length: int | None = settings.get('minimum_selection_length')  # type: ignore
@@ -233,6 +234,11 @@ class CommonMethods:
     def stop_worker(cls):
         logger.debug('Stopping worker...')
         cls.worker.cancel()
+
+    @classmethod
+    def is_worker_alive(cls) -> bool:
+        logger.debug('Stopping worker...')
+        return cls.worker.is_alive()
 
 
 settings: Settings | None = None
