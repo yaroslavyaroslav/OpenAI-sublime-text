@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 from sublime import Edit, Region, Sheet, View
 from sublime_plugin import TextCommand
 from sublime_types import Point
+from rust_helper import SublimeInputContent, InputKind  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -37,8 +38,8 @@ class BufferContentManager:
         return wrapped_content
 
     @staticmethod
-    def wrap_sheet_contents_with_scope(sheets: List[Sheet] | None) -> List[Tuple[str, str | None, str]]:
-        wrapped_selection: List[Tuple[str, str | None, str]] = []
+    def wrap_sheet_contents_with_scope(sheets: List[Sheet]) -> List[SublimeInputContent]:
+        items = []
 
         if sheets:
             for sheet in sheets:
@@ -54,9 +55,9 @@ class BufferContentManager:
                 content = BufferContentManager.wrap_content_with_scope(scope_name, content)
 
                 wrapped_content = f'Path: `{file_path}`\n\n' + content
-                wrapped_selection.append((scope_name, file_path, wrapped_content))
+                items.append(SublimeInputContent(InputKind.Sheet, wrapped_content, file_path, scope_name))
 
-        return wrapped_selection
+        return items
 
 
 class TextStreamAtCommand(TextCommand):

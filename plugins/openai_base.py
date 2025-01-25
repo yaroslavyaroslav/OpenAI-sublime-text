@@ -13,6 +13,8 @@ from rust_helper import (
 )
 from sublime import Region, Settings, Sheet, View, Window, active_window
 
+from .sheet_toggle import VIEW_TOGGLE_KEY
+
 from .assistant_settings import (
     CommandMode,
 )
@@ -35,11 +37,10 @@ class CommonMethods:
         logger.debug('Openai started')
         plugin_loaded()
         mode = kwargs.pop('mode', 'chat_completion')
-        files_included = kwargs.get('files_included', False)
 
         region: Region | None = None
 
-        items = []
+        items = get_sheets_context(window=view.window() or active_window())
 
         logger.debug('mode: %s', mode)
         logger.debug('Region: %s', region)
@@ -235,6 +236,14 @@ class CommonMethods:
 
 
 settings: Settings | None = None
+
+
+def get_sheets_context(window: Window) -> List[SublimeInputContent]:
+    sheets = []
+    for view in window.views():
+        if view and view.settings().get(VIEW_TOGGLE_KEY, False):
+            sheets.append(view.sheet())
+    return BufferContentManager.wrap_sheet_contents_with_scope(sheets)
 
 
 class InputCompositor:

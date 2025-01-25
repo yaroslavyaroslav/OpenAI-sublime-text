@@ -12,6 +12,7 @@ from .plugins.buffer import (  # noqa: E402, F401
     ReplaceRegionCommand,
     TextStreamAtCommand,
 )
+from .plugins.sheet_toggle import ToggleViewAiContextIncludedCommand, SelectSheetsWithAiContextIncludedCommand  # noqa: E402, F401
 from .plugins.openai import Openai  # noqa: E402, F401
 from .plugins.openai_panel import OpenaiPanelCommand  # noqa: E402, F401
 from .plugins.output_panel import SharedOutputPanelListener  # noqa: E402, F401

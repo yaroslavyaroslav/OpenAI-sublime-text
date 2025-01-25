@@ -79,5 +79,13 @@
 		"args": {
 			"mode": "create_new_tab"
 		}
+	},
+	{
+		"caption": "OpenAI: Add Sheets to Context",
+		"command": "toggle_view_ai_context_included",
+	},
+	{
+		"caption": "OpenAI: Show All Selected Sheets",
+		"command": "select_sheets_with_ai_context_included",
 	}
 ]
