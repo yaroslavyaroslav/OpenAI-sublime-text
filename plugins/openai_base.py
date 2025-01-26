@@ -13,18 +13,18 @@ from rust_helper import (
 )
 from sublime import Region, Settings, View, Window, active_window
 
-from .sheet_toggle import VIEW_TOGGLE_KEY
+from .load_model import get_model_or_default, get_cache_path
 
 from .assistant_settings import (
     CommandMode,
 )
-
 from .buffer import BufferContentManager
 from .errors.OpenAIException import WrongUserInputException, present_error
 from .image_handler import ImageValidator
 from .output_panel import SharedOutputPanelListener
 from .phantom_streamer import PhantomStreamer
 from .response_manager import ResponseManager
+from .sheet_toggle import VIEW_TOGGLE_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -79,24 +79,23 @@ class CommonMethods:
         logger.debug('view: %s', view)
         logger.debug('view.window(): %s', view.window())
 
-        first_assistant: Dict[str, Any] = settings.get('assistants', None)[0]
+        combined_assistant = assistant or get_model_or_default(view)
 
-        default_assistant = AssistantSettings(first_assistant)
-        if default_assistant.url is None:
-            default_assistant.url = settings.get('url', None)
-        if default_assistant.token is None:
-            default_assistant.token = settings.get('token', None)
+        if combined_assistant.url is None:
+            combined_assistant.url = settings.get('url', None)
+        if combined_assistant.token is None:
+            combined_assistant.token = settings.get('token', None)
 
         if mode == CommandMode.handle_image_input.value:
             cls.handle_image_input(
                 view,
-                assistant or default_assistant,
+                combined_assistant,
                 items,
             )
         else:
             cls.handle_chat_completion(
                 view,
-                assistant or default_assistant,
+                combined_assistant,
                 items,
             )
 
@@ -178,17 +177,7 @@ class CommonMethods:
         assistant: AssistantSettings,
         inputs: List[SublimeInputContent],
     ):
-        path = sublime.cache_path()
-
-        ai_assistant = view.settings().get(
-            'ai_assistant',
-            None,
-        )
-        if ai_assistant:
-            path = ai_assistant.get(  # type: ignore
-                'cache_prefix',
-                sublime.cache_path(),
-            )
+        path = get_cache_path(view)
 
         proxy = ''
 

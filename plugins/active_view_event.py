@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Dict, Any
+from typing import List
 
 import sublime
-from rust_helper import AssistantSettings, read_model  # type: ignore
+from rust_helper import AssistantSettings  # type: ignore
 from sublime import View
 from sublime_plugin import EventListener
 
+from .load_model import get_model_or_default
 from .status_bar import StatusBarMode
 
 logger = logging.getLogger(__name__)
@@ -17,27 +18,7 @@ class ActiveViewEventListener(EventListener):
     def on_activated(self, view: View):
         settings = sublime.load_settings('openAI.sublime-settings')
 
-        # logger.debug('view: %s', view)
-        # logger.debug('settigns: %s', view.settings())
-
-        path = sublime.cache_path()
-
-        ai_assistant = view.settings().get(
-            'ai_assistant',
-            None,
-        )
-        if ai_assistant:
-            path = ai_assistant.get(  # type: ignore
-                'cache_prefix',
-                sublime.cache_path(),
-            )
-
-        try:
-            assistant = read_model(path)
-        except RuntimeError as error:
-            first_assistant = settings.get('assistants', None)[0]  # type: ignore
-            print(f'Error reading: model {error}')
-            assistant = AssistantSettings(first_assistant)
+        assistant = get_model_or_default(view)
 
         # logger.debug("assistant: %s", assistant)
 

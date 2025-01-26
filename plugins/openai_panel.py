@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List
 
+from .load_model import get_cache_path
 import sublime
 from rust_helper import AssistantSettings, write_model  # type: ignore
 from sublime import Settings, Window
@@ -49,21 +50,7 @@ class OpenaiPanelCommand(WindowCommand):
 
         assistant.token = assistant.token if assistant.token else self.settings.get('token', None)
 
-        path = sublime.cache_path()
-
-        ai_assistant: Dict[str, Any] = (
-            self.window.active_view()
-            .settings()
-            .get(  # type: ignore
-                'ai_assistant',
-                sublime.cache_path(),
-            )
-        )
-        if isinstance(ai_assistant, Dict):
-            path = ai_assistant.get(
-                'cache_prefix',
-                sublime.cache_path(),
-            )
+        path = get_cache_path(self.window.active_view())
 
         logger.debug('path: %s', path)
 
