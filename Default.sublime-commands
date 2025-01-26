@@ -2,9 +2,6 @@
 	{
 		"caption": "OpenAI: Chat Model Select",
 		"command": "openai_panel",
-		"args": {
-			"files_included": false
-		}
 	},
 	{
 		"caption": "OpenAI: Handle image",
@@ -14,22 +11,8 @@
 		}
 	},
 	{
-		"caption": "OpenAI: Chat Model Select With Sheets",
-		"command": "openai_panel",
-		"args": {
-			"files_included": true
-		}
-	},
-	{
 		"caption": "OpenAI: New Message",
 		"command": "openai",
-	},
-	{
-		"caption": "OpenAI: New Message With Sheets",
-		"command": "openai",
-		"args": {
-			"files_included": true
-		}
 	},
 	{
 		"caption": "OpenAI: New Message With Build Output",
