@@ -16,15 +16,18 @@ logger = logging.getLogger(__name__)
 
 class ActiveViewEventListener(EventListener):
     def on_activated(self, view: View):
+        if view.sheet().id() == 0:
+            return
+
         settings = sublime.load_settings('openAI.sublime-settings')
 
+        logger.debug('view: %s', view)
+        logger.debug('sheet: %s', view.sheet())
         assistant = get_model_or_default(view)
-
-        # logger.debug("assistant: %s", assistant)
 
         status_hint_options: List[str] = settings.get('status_hint', []) if settings else []  # type: ignore
 
-        # logger.debug("status_hint_options: %s", status_hint_options)
+        logger.debug('status_hint_options: %s', status_hint_options)
 
         self.update_status_bar(view, assistant, status_hint_options)
 

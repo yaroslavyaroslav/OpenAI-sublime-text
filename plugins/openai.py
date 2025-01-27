@@ -30,6 +30,7 @@ class Openai(TextCommand):
         elif mode == CommandMode.refresh_output_panel.value:
             Openai.refresh_output_panel(listener)
         else:
+            logger.debug('Openai view: %s', self.view)
             CommonMethods.process_openai_command(self.view, None, kwargs)
 
     @classmethod

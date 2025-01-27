@@ -3,12 +3,12 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, List
 
-from .load_model import get_cache_path
 import sublime
 from rust_helper import AssistantSettings, write_model  # type: ignore
 from sublime import Settings, Window
 from sublime_plugin import WindowCommand
 
+from .load_model import get_cache_path
 from .openai_base import CommonMethods
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,8 @@ class OpenaiPanelCommand(WindowCommand):
     def run(self, **kwargs):
         self.kwargs = kwargs
         logger.debug('Running')
+        logger.debug('active_view: %s', self.window.active_view())
+        logger.debug('active_sheet: %s', self.window.active_sheet().view())
         self.window.show_quick_panel(
             [
                 f'{assistant.name} | {assistant.output_mode} | {assistant.chat_model}'
@@ -49,15 +51,19 @@ class OpenaiPanelCommand(WindowCommand):
         assistant = self.assistants[index]
 
         assistant.token = assistant.token if assistant.token else self.settings.get('token', None)
+        logger.debug('Openai window: %s', self.window)
 
-        path = get_cache_path(self.window.active_view())
+        view = self.window.active_view()
+
+        logger.debug('Openai window.active_view(): %s', view)
+        path = get_cache_path(view)
 
         logger.debug('path: %s', path)
 
         write_model(path, assistant)
 
         CommonMethods.process_openai_command(
-            self.window.active_view(),  # type: ignore
+            view,  # type: ignore
             assistant,
             self.kwargs,
         )

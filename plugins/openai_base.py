@@ -13,14 +13,13 @@ from rust_helper import (
 )
 from sublime import Region, Settings, View, Window, active_window
 
-from .load_model import get_model_or_default, get_cache_path
-
 from .assistant_settings import (
     CommandMode,
 )
 from .buffer import BufferContentManager
 from .errors.OpenAIException import WrongUserInputException, present_error
 from .image_handler import ImageValidator
+from .load_model import get_cache_path, get_model_or_default
 from .output_panel import SharedOutputPanelListener
 from .phantom_streamer import PhantomStreamer
 from .response_manager import ResponseManager
@@ -75,11 +74,12 @@ class CommonMethods:
             present_error(title='OpenAI error', error=error)
             return
 
-        logger.debug('AssistantSettings: %s', assistant)
+        logger.debug('assistant: %s', assistant)
         logger.debug('view: %s', view)
         logger.debug('view.window(): %s', view.window())
 
         combined_assistant = assistant or get_model_or_default(view)
+        logger.debug('combined_assistant: %s', combined_assistant)
 
         if combined_assistant.url is None:
             combined_assistant.url = settings.get('url', None)
@@ -195,7 +195,7 @@ class CommonMethods:
         handler = (
             PhantomCapture(view, inputs).phantom_handler
             if assistant.output_mode == PromptMode.Phantom
-            else tab_handler
+            else ViewCapture(view).tab_handler
         )
 
         cls.worker.run(
@@ -262,14 +262,18 @@ def plugin_loaded():
     settings = sublime.load_settings('openAI.sublime-settings')
 
 
-def tab_handler(content: str) -> None:
-    window = sublime.active_window()
+class ViewCapture:
+    def __init__(self, view: View) -> None:
+        self.view = view
 
-    listner = SharedOutputPanelListener()
+    def tab_handler(self, content: str) -> None:
+        window: Window = self.view.window()  # type: ignore
 
-    ResponseManager.update_output_panel_(listner, window, content)
+        listner = SharedOutputPanelListener()
 
-    print(f'Received data: {content}')
+        ResponseManager.update_output_panel_(listner, window, content)
+
+        logger.debug('Received data: %s', content)
 
 
 class PhantomCapture:
@@ -279,4 +283,4 @@ class PhantomCapture:
     def phantom_handler(self, content: str) -> None:
         self.phantom.update_completion(content)
 
-        print(f'Received data: {content}')
+        logger.debug('Received data: %s', content)
