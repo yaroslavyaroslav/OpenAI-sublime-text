@@ -18,9 +18,8 @@ from sublime_plugin import ViewEventListener
 #         self.update_status_message(self.view.window())  # type: ignore
 
 #     def update_status_message(self, window: Window) -> None:
-#         project_settings: Dict[str, str] | None = window.active_view().settings().get('ai_assistant')  # type: ignore
 
-#         # cache_prefix = project_settings.get('cache_prefix') if project_settings else None
+#         # cache_prefix = get_cache_path(window.active_view())
 
 #         # cacher = Cacher(name=cache_prefix)
 #         # if self.is_ai_chat_tab_active(window):

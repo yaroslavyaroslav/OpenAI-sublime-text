@@ -13,12 +13,12 @@ from sublime import (
     PhantomSet,
     View,
     active_window,
-    cache_path,
     load_settings,
     set_clipboard,
     set_timeout,
 )
 
+from .load_model import get_cache_path
 from .output_panel import SharedOutputPanelListener
 from .response_manager import ResponseManager
 
@@ -113,9 +113,7 @@ class PhantomStreamer:
 
                 window = self.view.window() or active_window()
 
-                path: str = (
-                    self.view.settings().get('ai_assistant', cache_path()).get('cache_prefix', cache_path())
-                )
+                path = get_cache_path(self.view)
 
                 ResponseManager.print_requests(SharedOutputPanelListener(), window, self.user_input)
 

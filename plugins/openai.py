@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 
 from rust_helper import drop_all  # type: ignore
-from sublime import Edit, Region, View, active_window, cache_path, load_settings
+from sublime import Edit, Region, View, active_window, load_settings
 from sublime_plugin import TextCommand
 
 from .assistant_settings import CommandMode
+from .load_model import get_cache_path
 from .openai_base import CommonMethods
 from .output_panel import SharedOutputPanelListener
 
@@ -37,7 +38,7 @@ class Openai(TextCommand):
     def reset_chat_history(cls, view: View, listener: SharedOutputPanelListener, edit: Edit):
         window = active_window()
 
-        path = view.settings().get('ai_assistant', cache_path()).get('cache_prefix', cache_path())
+        path = get_cache_path(view)
 
         drop_all(path)
         view = listener.get_output_view_(window=window)

@@ -18,9 +18,6 @@ class OpenaiPanelCommand(WindowCommand):
     def __init__(self, window: Window):
         super().__init__(window)
         self.settings: Settings = sublime.load_settings('openAI.sublime-settings')
-        self.project_settings: Dict[str, str] | None = (
-            sublime.active_window().active_view().settings().get('ai_assistant')
-        )  # type: ignore
 
         self.load_assistants()
         self.window = window

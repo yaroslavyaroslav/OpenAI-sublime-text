@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Dict, Any
+from typing import Dict
 
-import sublime
 from rust_helper import Roles, read_all_cache  # type: ignore
-from sublime import Settings, View, Window, cache_path, load_settings
+from sublime import Settings, View, Window, load_settings
 from sublime_plugin import EventListener
+
+from .load_model import get_cache_path
 
 
 class SharedOutputPanelListener(EventListener):
@@ -75,21 +76,7 @@ class SharedOutputPanelListener(EventListener):
         output_panel = self.get_output_view_(window=window)
         self.clear_output_panel(window)
 
-        path = sublime.cache_path()
-
-        ai_assistant: Dict[str, Any] = (
-            window.active_view()
-            .settings()
-            .get(  # type: ignore
-                'ai_assistant',
-                sublime.cache_path(),
-            )
-        )
-        if isinstance(ai_assistant, Dict):
-            path = ai_assistant.get(
-                'cache_prefix',
-                sublime.cache_path(),
-            )
+        path = get_cache_path(window.active_view())  # type: ignore
 
         for item in read_all_cache(path):
             ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
@@ -120,8 +107,8 @@ class SharedOutputPanelListener(EventListener):
 
     def clear_output_panel(self, window: Window):
         output_panel = self.get_output_view_(window=window)
-        output_panel.run_command('select_all')
         output_panel.set_read_only(False)
+        output_panel.run_command('select_all')
         output_panel.run_command('right_delete')
         output_panel.set_read_only(True)
 
