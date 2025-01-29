@@ -124,7 +124,7 @@ class PhantomStreamer:
 
                 self.user_input.append(assitant_content)
 
-                [write_to_cache(path, item) for item in self.user_input]
+                [write_to_cache(path, item) for item in self.user_input if item.inpu_kind != InputKind.Sheet]
 
             elif attribute == PhantomActions.close.value:
                 pass
