@@ -17,7 +17,7 @@ from .assistant_settings import (
     CommandMode,
 )
 from .buffer import BufferContentManager
-from .errors.OpenAIException import WrongUserInputException, present_error
+from .errors.OpenAIException import WrongUserInputException, present_error, present_error_str
 from .image_handler import ImageValidator
 from .load_model import get_cache_path, get_model_or_default
 from .output_panel import SharedOutputPanelListener
@@ -204,6 +204,7 @@ class CommonMethods:
             inputs,
             assistant,
             handler,
+            ErrorCapture.error_handler,
         )
 
         if assistant.output_mode == PromptMode.View:
@@ -260,6 +261,12 @@ class InputCompositor:
 def plugin_loaded():
     global settings
     settings = sublime.load_settings('openAI.sublime-settings')
+
+
+class ErrorCapture:
+    @staticmethod
+    def error_handler(content: str) -> None:
+        present_error_str('OpenAI Error', content)
 
 
 class ViewCapture:

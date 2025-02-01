@@ -32,6 +32,11 @@ def present_error(title: str, error: OpenAIException):
     error_message(f'{title}\n{error.message}')
 
 
+def present_error_str(title: str, error: str):
+    exception(f'{title}: {error}')
+    error_message(f'{title}\n{error}')
+
+
 def present_unknown_error(title: str, error: Exception):
     exception(f'{title}: {error}')
     error_message(f'{title}\n{error}')
