@@ -5,7 +5,7 @@ from enum import Enum
 from typing import List
 
 import mdpopups
-from rust_helper import InputKind, SublimeInputContent, write_to_cache  # type: ignore
+from llm_runner import InputKind, SublimeInputContent, write_to_cache  # type: ignore
 from sublime import (
     NewFileFlags,
     Phantom,
@@ -22,7 +22,6 @@ from .load_model import get_cache_path
 from .output_panel import SharedOutputPanelListener
 from .response_manager import ResponseManager
 
-VIEW_SETTINGS_KEY_OPENAI_TEXT = 'VIEW_SETTINGS_KEY_OPENAI_TEXT'
 OPENAI_COMPLETION_KEY = 'openai_completion'
 PHANTOM_TEMPLATE = (
     '---'
@@ -115,22 +114,21 @@ class PhantomStreamer:
 
                 path = get_cache_path(self.view)
 
-                ResponseManager.print_requests(SharedOutputPanelListener(), window, self.user_input)
+                listner = SharedOutputPanelListener()
 
-                ResponseManager.prepare_to_response(SharedOutputPanelListener(), window)
-                ResponseManager.update_output_panel_(
-                    SharedOutputPanelListener(), window, assitant_content.content
-                )
+                ResponseManager.print_requests(listner, window, self.user_input)
+
+                ResponseManager.prepare_to_response(listner, window)
+                ResponseManager.update_output_panel_(listner, window, assitant_content.content)
 
                 self.user_input.append(assitant_content)
 
-                [write_to_cache(path, item) for item in self.user_input if item.inpu_kind != InputKind.Sheet]
+                [write_to_cache(path, item) for item in self.user_input if item.input_kind != InputKind.Sheet]
 
             elif attribute == PhantomActions.close.value:
                 pass
 
             self.phantom_set.update([])
-            self.view.settings().set(VIEW_SETTINGS_KEY_OPENAI_TEXT, False)
         else:  # for handling all the rest URLs
             (self.view.window() or active_window()).run_command('open_url', {'url': attribute})
 

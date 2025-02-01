@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List
 
-from rust_helper import InputKind, SublimeInputContent  # type: ignore
+from llm_runner import InputKind, SublimeInputContent  # type: ignore
 from sublime import Window
 
 from .output_panel import SharedOutputPanelListener

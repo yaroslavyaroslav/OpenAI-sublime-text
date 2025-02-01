@@ -4,7 +4,7 @@ import logging
 from typing import List
 
 import sublime
-from rust_helper import AssistantSettings  # type: ignore
+from llm_runner import AssistantSettings  # type: ignore
 from sublime import View
 from sublime_plugin import EventListener
 

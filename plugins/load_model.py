@@ -1,6 +1,6 @@
 import logging
 
-from rust_helper import AssistantSettings, read_model  # type: ignore
+from llm_runner import AssistantSettings, read_model  # type: ignore
 from sublime import View, cache_path, load_settings
 
 logger = logging.getLogger(__name__)

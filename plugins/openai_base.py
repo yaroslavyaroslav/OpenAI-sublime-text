@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, List
 
 import sublime
-from rust_helper import (
+from llm_runner import (
     AssistantSettings,  # type: ignore
     InputKind,  # type: ignore
     PromptMode,  # type: ignore

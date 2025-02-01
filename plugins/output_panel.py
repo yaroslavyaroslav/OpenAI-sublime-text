@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict
 
-from rust_helper import Roles, read_all_cache  # type: ignore
+from llm_runner import Roles, read_all_cache  # type: ignore
 from sublime import Settings, View, Window, load_settings
 from sublime_plugin import EventListener
 

@@ -4,7 +4,7 @@ import logging
 from typing import Any, Dict, List
 
 import sublime
-from rust_helper import AssistantSettings, write_model  # type: ignore
+from llm_runner import AssistantSettings, write_model  # type: ignore
 from sublime import Settings, Window
 from sublime_plugin import WindowCommand
 

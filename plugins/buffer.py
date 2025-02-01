@@ -6,7 +6,7 @@ from typing import Dict, List, Tuple
 from sublime import Edit, Region, Sheet, View
 from sublime_plugin import TextCommand
 from sublime_types import Point
-from rust_helper import SublimeInputContent, InputKind  # type: ignore
+from llm_runner import SublimeInputContent, InputKind  # type: ignore
 
 logger = logging.getLogger(__name__)
 

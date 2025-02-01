@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from rust_helper import drop_all  # type: ignore
+from llm_runner import drop_all  # type: ignore
 from sublime import Edit, Region, View, active_window, load_settings
 from sublime_plugin import TextCommand
 
