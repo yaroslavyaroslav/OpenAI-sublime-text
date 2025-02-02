@@ -3,7 +3,8 @@
         "*": [
             "requests",
             "mdpopups",
-            "typing_extensions"
+            "typing_extensions",
+            "llm_runner"
         ]
     }
 }
