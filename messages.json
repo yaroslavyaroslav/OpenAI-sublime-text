@@ -27,5 +27,7 @@
     "4.2.0": "messages/4.2.0.md",
     "4.2.1": "messages/4.2.1.md",
     "4.2.2": "messages/4.2.2.md",
-    "4.2.10": "messages/4.2.10.md"
+    "4.2.10": "messages/4.2.10.md",
+    "4.2.12": "messages/5.0.0.md",
+    "5.0.0-RC1": "messages/5.0.0.md",
 }
