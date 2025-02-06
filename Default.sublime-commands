@@ -1,7 +1,18 @@
 [
 	{
-		"caption": "OpenAI: Chat Model Select",
-		"command": "openai_panel",
+		"caption": "OpenAI: Chat Select Mode",
+	    "command": "show_overlay",
+	    "args": {
+	        "overlay": "command_palette",
+	        "command": "openai_panel",
+	        "args": {
+	        	"model": "current",
+	        }
+	    },
+	},
+	{
+	 	"caption": "OpenAI: Chat Model Select",
+		"command": "openai_panel"
 	},
 	{
 		"caption": "OpenAI: Handle image",

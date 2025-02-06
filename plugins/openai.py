@@ -7,7 +7,7 @@ from sublime import Edit, Region, View, active_window, load_settings
 from sublime_plugin import TextCommand
 
 from .assistant_settings import CommandMode
-from .load_model import get_cache_path
+from .load_model import get_cache_path, get_model_or_default
 from .openai_base import CommonMethods
 from .output_panel import SharedOutputPanelListener
 
@@ -32,7 +32,8 @@ class Openai(TextCommand):
             Openai.refresh_output_panel(listener)
         else:
             logger.debug('Openai view: %s', self.view)
-            CommonMethods.process_openai_command(self.view, None, kwargs)
+            assistant = get_model_or_default(self.view)
+            CommonMethods.process_openai_command(self.view, assistant, kwargs)
 
     @classmethod
     def reset_chat_history(cls, view: View, listener: SharedOutputPanelListener, edit: Edit):

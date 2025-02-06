@@ -4,12 +4,12 @@ import logging
 from typing import Any, Dict, List, Tuple
 
 import sublime
-from llm_runner import AssistantSettings, write_model  # type: ignore
+from llm_runner import AssistantSettings, write_model, PromptMode  # type: ignore
 from sublime import Settings, Window
 from sublime_plugin import WindowCommand, ListInputHandler
 from sublime_types import Value
 
-from .load_model import get_cache_path
+from .load_model import get_cache_path, get_model_or_default
 from .openai_base import CommonMethods, get_marked_sheets
 
 logger = logging.getLogger(__name__)
@@ -35,9 +35,18 @@ class OpenaiPanelCommand(WindowCommand):
         logger.debug('active_view: %s', self.window.active_view())
         logger.debug('active_sheet: %s', self.window.active_sheet().view())
         if model and output_mode:
+            assistant = (
+                get_model_or_default(self.window.active_view())
+                if model == 'current'
+                else AssistantSettings(model)
+            )
+
+            if output_mode != 'current':
+                assistant.output_mode = (
+                    PromptMode.Phantom if output_mode.lower() == 'phantom' else PromptMode.View
+                )
+
             view = self.window.active_view()
-            model['output_mode'] = output_mode
-            assistant = AssistantSettings(model)
             path = get_cache_path(self.window.active_view())
             write_model(path, assistant)
 
@@ -56,7 +65,9 @@ class OpenaiPanelCommand(WindowCommand):
             )
 
     def input(self, args):
-        return AIWholeInputHandler(self.window, ['model', 'output_mode'])
+        if args:
+            return AIWholeInputHandler(self.window, ['model', 'output_mode'], args)
+        return AIWholeInputHandler(self.window, ['model', 'output_mode'], None)
 
     def on_done(self, index: int):
         if index == -1:
@@ -89,8 +100,9 @@ class OpenaiPanelCommand(WindowCommand):
 
 
 class AIWholeInputHandler(ListInputHandler):
-    def __init__(self, window: Window, names: List[str]) -> None:
+    def __init__(self, window: Window, names: List[str], args) -> None:
         self._name, *self.next_names = names
+        self._args = args
         self.window = window
         self.settings: Settings = sublime.load_settings('openAI.sublime-settings')
         self.assistants: List[Dict[str, Any]] = self.settings.get('assistants', [])  # type: ignore
@@ -104,6 +116,17 @@ class AIWholeInputHandler(ListInputHandler):
 
     def description(self, v, text: str) -> str:
         return text
+
+    def initial_text(self) -> str:
+        if self._name == 'model':
+            if self._args and 'model' in self._args and self._args['model'] == 'current':
+                assistant = get_model_or_default(self.window.active_view())
+                return assistant.name
+        if self._name == 'output_mode':
+            if self._args and 'output_mode' in self._args and self._args['output_mode'] == 'current':
+                assistant = get_model_or_default(self.window.active_view())
+                return str(assistant.output_mode).split('.')[1].lower()
+        return ''
 
     def preview(self, text: str) -> str | sublime.Html:
         sheets = get_marked_sheets(self.window)
@@ -121,4 +144,4 @@ class AIWholeInputHandler(ListInputHandler):
 
     def next_input(self, args):
         if self.next_names:
-            return AIWholeInputHandler(self.window, self.next_names)
+            return AIWholeInputHandler(self.window, self.next_names, args)

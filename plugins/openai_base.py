@@ -32,7 +32,7 @@ class CommonMethods:
     worker: Worker | None = None
 
     @classmethod
-    def process_openai_command(cls, view: View, assistant: AssistantSettings | None, kwargs: Dict[str, Any]):
+    def process_openai_command(cls, view: View, assistant: AssistantSettings, kwargs: Dict[str, Any]):
         logger.debug('Openai started')
         plugin_loaded()
         mode = kwargs.pop('mode', 'chat_completion')
@@ -78,24 +78,23 @@ class CommonMethods:
         logger.debug('view: %s', view)
         logger.debug('view.window(): %s', view.window())
 
-        combined_assistant = assistant or get_model_or_default(view)
-        logger.debug('combined_assistant: %s', combined_assistant)
+        logger.debug('combined_assistant: %s', assistant)
 
-        if combined_assistant.url is None:
-            combined_assistant.url = settings.get('url', None)
-        if combined_assistant.token is None:
-            combined_assistant.token = settings.get('token', None)
+        if assistant.url is None:
+            assistant.url = settings.get('url', None)
+        if assistant.token is None:
+            assistant.token = settings.get('token', None)
 
         if mode == CommandMode.handle_image_input.value:
             cls.handle_image_input(
                 view,
-                combined_assistant,
+                assistant,
                 items,
             )
         else:
             cls.handle_chat_completion(
                 view,
-                combined_assistant,
+                assistant,
                 items,
             )
 
