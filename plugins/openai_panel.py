@@ -55,14 +55,6 @@ class OpenaiPanelCommand(WindowCommand):
                 assistant,
                 self.kwargs,
             )
-        else:
-            self.window.show_quick_panel(
-                [
-                    f'{assistant.name} | {assistant.output_mode} | {assistant.chat_model}'
-                    for assistant in self.assistants
-                ],
-                self.on_done,
-            )
 
     def input(self, args):
         if args:
@@ -130,7 +122,12 @@ class AIWholeInputHandler(ListInputHandler):
 
     def preview(self, text: str) -> str | sublime.Html:
         sheets = get_marked_sheets(self.window)
-        return f'{len(sheets)} file(s) added: {str([sheet.view().file_name() for sheet in sheets])}'
+        views = [sheet.view() for sheet in sheets]
+        names = [view.name() or view.file_name().split('/')[-1] for view in views]
+
+        # Create a vertical list in HTML format
+        list_items = ''.join(f'<li>{name}</li>' for name in names)
+        return sublime.Html(f'<p>{len(sheets)} file(s) added:</p><ul>{list_items}</ul>')
 
     def list_items(self) -> List[Tuple[str, Value]]:
         logger.debug('list_items _name: %s', self._name)
