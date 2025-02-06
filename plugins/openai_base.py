@@ -11,7 +11,7 @@ from llm_runner import (
     SublimeInputContent,  # type: ignore
     Worker,  # type: ignore
 )
-from sublime import Region, Settings, View, Window, active_window
+from sublime import Region, Settings, Sheet, View, Window, active_window
 
 from .assistant_settings import (
     CommandMode,
@@ -234,11 +234,16 @@ class CommonMethods:
 settings: Settings | None = None
 
 
-def get_sheets_context(window: Window) -> List[SublimeInputContent]:
+def get_marked_sheets(window: Window) -> List[Sheet]:
     sheets = []
     for view in window.views():
         if view and view.settings().get(VIEW_TOGGLE_KEY, False):
             sheets.append(view.sheet())
+    return sheets
+
+
+def get_sheets_context(window: Window) -> List[SublimeInputContent]:
+    sheets = get_marked_sheets(window)
     return BufferContentManager.wrap_sheet_contents_with_scope(sheets)
 
 
