@@ -130,7 +130,6 @@ class AIWholeInputHandler(ListInputHandler):
 
     def preview(self, text: str) -> str | sublime.Html:
         sheets = get_marked_sheets(self.window)
-
         return f'{len(sheets)} file(s) added: {str([sheet.view().file_name() for sheet in sheets])}'
 
     def list_items(self) -> List[Tuple[str, Value]]:

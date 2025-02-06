@@ -51,7 +51,8 @@
     "status_hint": [
         // "name",
         // "output_mode",
-        // "chat_model"
+        // "chat_model",
+        // "sheets"
      ],
 
     // Proxy setting

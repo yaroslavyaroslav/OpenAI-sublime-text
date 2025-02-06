@@ -9,6 +9,7 @@ from sublime import View
 from sublime_plugin import EventListener
 
 from .load_model import get_model_or_default
+from .openai_base import get_marked_sheets
 from .status_bar import StatusBarMode
 
 logger = logging.getLogger(__name__)
@@ -44,16 +45,18 @@ class ActiveViewEventListener(EventListener):
             return
 
         statuses: List[str] = []
-        for key in ['name', 'prompt_mode', 'chat_model']:
+        for key in ['name', 'output_mode', 'chat_model', 'sheets']:
             lookup_key = key if key != 'name' else 'name_'
             if StatusBarMode[lookup_key].value in status_hint_options:
                 if key == 'chat_model':
-                    statuses.append(assistant.chat_model.upper())
-                # FIXME: Prompt_mode is not a string, so it's failing to print.
-                # if key == 'prompt_mode':
-                #     statuses.append(assistant.output_mode.title())
+                    statuses.append(assistant.chat_model.title())
+                if key == 'output_mode':
+                    statuses.append(str(assistant.output_mode).title().split('.')[1])
                 if key == 'name':
                     statuses.append(assistant.name.title())
+                if key == 'sheets':
+                    sheets = get_marked_sheets(view.window() or sublime.active_window())
+                    statuses.append(f'{len(sheets)}')
 
         if statuses:
             status = f'[{" | ".join(statuses)}]'
