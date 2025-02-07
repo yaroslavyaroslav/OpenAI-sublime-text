@@ -1,9 +1,9 @@
 {
     // URL for OpenAI compatiable APIs.
-    // It must start with http:// or https://, which selects protocol for connection. Use http:// when using localhost.
     // Selected parts of code and prompt will be sent to that URL, so make sure, you have all necessary permission to do so.
-    // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
-    "url": "https://api.openai.com",
+    // Example: "http://localhost:11434/v1/chat/completions" (assuming Ollama is running on localhost)
+    // Full url has to be provided
+    "url": "https://api.openai.com/v1/chat/completions",
 
     // Your openAI token
     // Token can be anything so long as it is at least 10 characters long.
@@ -52,7 +52,7 @@
         // "name",
         // "output_mode",
         // "chat_model",
-        // "sheets"
+        // "sheets" // number of sheets selected as context
      ],
 
     // Proxy setting
@@ -75,11 +75,6 @@
             // A string that will presented in command palette.
             "name": "Example", // **REQUIRED**
 
-            // Mode of how plugin should prompts its output, available options:
-            //  - `view`: model response will be output in either separate view or output panel, if chat view doesn't exist in the given window.
-            //  - `phantom`: llm prompts in phantom in a last active view in a non-dstruptive to the buffer content way, each such phantom provides useful commands to handle output further.
-            "output_mode": "view", // **REQUIRED**
-
             // The model that generates the chat completion.
             // Generally here should be either "gpt-4o-latest|gpt-4o-mini" or their specified versions.
             // If using custom API, refer to their documentation for supported models.
@@ -101,7 +96,7 @@
 
             // Your whaterver service token
             // OpenAI and any other alike API token to put.
-            "token": "",
+            "token": "dummy_token",
 
             // Toggle for function calls llm capability
             // Check if your llm supports this feature before toggling this on
@@ -127,7 +122,7 @@
             "max_completion_tokens": 4096,
 
             // `"api_type": "open_ai"` only
-            // The matter of efforts reasoning models to put into the answer
+            // The matter of efforts reasoning models to put in an answer
             // - "low"
             // - "medium"
             // - "high"
@@ -170,7 +165,6 @@
         // Examples
         {
             "name": "General Assistant Localhost",
-            "output_mode": "panel",
             "url": "http://127.0.0.1:8080", // See ma, no internet connection.
             "token": "",
             "chat_model": "Llama-3-8b-Q4-chat-hf",
@@ -180,14 +174,6 @@
         },
         {
             "name": "General Assistant",
-            "output_mode": "panel",
-            "chat_model": "gpt-4o-mini",
-            "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.",
-            "max_tokens": 4000,
-        },
-        {
-            "name": "General Assistant",
-            "output_mode": "phantom",
             "chat_model": "gpt-4o-mini",
             "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.",
             "max_tokens": 4000,
