@@ -5,41 +5,32 @@
 
 Cursor level of AI assistance for Sublime Text. I mean it.
 
-Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cpp) server, [ollama](https://ollama.com) or whatever third party LLM hosting.
+Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cpp) server, [ollama](https://ollama.com) or whatever third party LLM hosting. Claude API support coming soon.
 
-![](static/media/ai_chat_right_phantom.png)
+> ![NOTE]
+> 5.0.0 release is around the corner! Check out these [release notes](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/blob/develop/messages/5.0.0.md) for details.
+
+![](static/media/ai_chat_left_full.png)
 
 ## Features
 
-- Code manipulation (append, insert and edit) selected code with OpenAI models.
-- **Phantoms** Get non-disruptive inline right in view answers from the model.
 - **Chat mode** powered by whatever model you'd like.
-- **gpt-o1 support**.
-- **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[Ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
+- **gpt-o3-mini** and **gpt-o1** support.
+- **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
 - **Dedicated chats histories** and assistant settings for a projects.
 - **Ability to send whole files** or their parts as a context expanding.
+- **Phantoms** Get non-disruptive inline right in view answers from the model.
 - Markdown syntax with code languages syntax highlight (Chat mode only).
-- Server Side Streaming (SSE) (i.e. you don't have to wait for ages till GPT-4 print out something).
+- Server Side Streaming (SSE) streaming support.
 - Status bar various info: model name, mode, sent/received tokens.
 - Proxy support.
-
-### ChatGPT completion demo
-
-https://github.com/yaroslavyaroslav/OpenAI-sublime-text/assets/16612247/37b98cc2-e9cd-46a6-ac5d-03845313096b
-
-> video sped up to 1.7x
-
----
-
-https://github.com/yaroslavyaroslav/OpenAI-sublime-text/assets/16612247/69f609f3-336d-48e8-a574-3cb7fda5822c
-
-> video sped up to 1.7x
 
 ## Requirements
 
 - Sublime Text 4
 - **llama.cpp**, **ollama** installed _OR_
 - Remote llm service provider API key, e.g. [OpenAI](https://platform.openai.com)
+- Atropic API key [coming soon].
 
 ## Installation
 
@@ -76,7 +67,7 @@ You can separate a chat history and assistant settings for a given project by ap
 {
     "settings": {
         "ai_assistant": {
-            "cache_prefix": "your_project_name"
+            "cache_prefix": "/absolute/path/to/project/"
         }
     }
 }
@@ -90,12 +81,12 @@ You can add a few things to your request:
 
 To perform the former just select something within an active view and initiate the request this way without switching to another tab, selection would be added to a request as a preceding message (each selection chunk would be split by a new line).
 
-To send the whole file(s) in advance to request you should `super+button1` on them to make all tabs of them to become visible in a **single view group** and then run `[New Message|Chat Model] with Sheets` command as shown on the screen below. Pay attention, that in given example only `README.md` and `4.0.0.md` will be sent to a server, but not a content of the `AI chat`.
+To append the whole file(s) to request you should `super+button1` on them to make whole tabs of them to become visible in a **single view group** and then run `OpenAI: Add Sheets to Context` command. Sheets can be deselected with the same command.
 
-![](static/media/file_selection_example.png)
+You can check the numbers of added sheets in the status bar and on `"OpenAI: Chat Model Select"` command call in the preview section. 
 
-> [!NOTE]
-> It's also doesn't matter whether the file persists on a disc or it's just a virtual buffer with a text in it, if they're selected, their content will be send either way.
+![](static/media/ai_selector_preview.png)
+
 
 ### Image handling
 
@@ -112,38 +103,20 @@ It expects an absolute path to image to be selected in a buffer or stored in cli
 
 Phantom is the overlay UI placed inline in the editor view (see the picture below). It doesn't affects content of the view.
 
-1. You can set `"prompt_mode": "phantom"` for AI assistant in its settings.
-2. [optional] Select some text to pass in context in to manipulate with.
-3. Hit `OpenAI: New Message` or `OpenAI: Chat Model Select` and ask whatever you'd like in popup input pane.
-4. Phantom will appear below the cursor position or the beginning of the selection while the streaming LLM answer occurs.
-5. You can apply actions to the llm prompt, they're quite self descriptive and follows behavior deprecated in buffer commands.
-6. You can hit `ctrl+c` to stop prompting same as with in `panel` mode.
+1. [optional] Select some text to pass in context in to manipulate with.
+2. Pick `Phantom` as an output mode in quick panel `OpenAI: Chat Model Select`.
+3. You can apply actions to the llm prompt, they're quite self descriptive and follows behavior deprecated in buffer commands.
+4. You can hit `ctrl+c` to stop prompting same as with in `panel` mode.
 
-![](static/media/phantom_example.png)
-
-
-> [!IMPORTANT]
->  Yet this is a standalone mode, i.e. an existing chat history won't be sent to a server on a run.
-
-> [!NOTE]
-> A more detailed manual, including various assistant configuration examples, can be found within the plugin settings.
-
-> [!WARNING]
-> The following in buffer commands are deprecated and will be removed in 5.0 release.
-> 1. [DEPRECATED] You can pick one of the following modes: `append`, `replace`, `insert`. They're quite self-descriptive. They should be set up in assistant settings to take effect.
-> 2. [DEPRECATED] Select some text (they're useless otherwise) to manipulate with and hit `OpenAI: New Message`.
-> 4. [DEPRECATED] The plugin will response accordingly with **appending**, **replacing** or **inserting** some text.
+![](static/media/phantom_actions.png)
 
 ### Other features
 
 ### Open Source models support (llama.cpp, ollama)
 
-1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`"http://localhost:8080"`).
-2. ~~[Optional] Provide a `"token"` if your provider required one.~~ **Temporarily mandatory, see warning below.**
+1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`http://localhost:8080/v1/chat/completions`).
+2. Provide a `"token"` if your provider required one.
 3. Tweak `"chat_model"` to a model of your choice and you're set.
-
-> [!WARNING]
-> Due to a known issue, a token value of 10 or more characters is currently required even for unsecured servers. [More details here.](#workaround-for-64)
 
 > [!NOTE]
 > You can set both `url` and `token` either global or on per assistant instance basis, thus being capable to freely switching between closed source and open sourced models within a single session.
@@ -193,7 +166,7 @@ You can setup it up by overriding the proxy property in the `OpenAI completion` 
 > All selected code will be sent to the OpenAI servers (if not using custom API provider) for processing, so make sure you have all necessary permissions to do so.
 
 > [!NOTE]
-> This one was initially written at 80% by a GPT3.5 back then. I was there mostly for debugging purposes, rather than digging in into ST API. This is a pure magic, I swear!
+> Dedicated to GPT3.5 that one the one who initially written at 80% of this back then. This was felt like a pure magic!
 
 [stars]: https://github.com/yaroslavyaroslav/OpenAI-sublime-text/stargazers
 [img-stars]: static/media/star-on-github.svg
