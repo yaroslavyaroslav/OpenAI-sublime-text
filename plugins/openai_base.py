@@ -11,15 +11,16 @@ from llm_runner import (
     SublimeInputContent,  # type: ignore
     Worker,  # type: ignore
 )
-from sublime import Region, Settings, Sheet, View, Window, active_window
+from sublime import Region, Settings, Sheet, View, Window, active_window, windows
 
 from .assistant_settings import (
     CommandMode,
 )
 from .buffer import BufferContentManager
 from .errors.OpenAIException import WrongUserInputException, present_error, present_error_str
+from .function_handler import FunctionHandler
 from .image_handler import ImageValidator
-from .load_model import get_cache_path, get_model_or_default
+from .load_model import get_cache_path
 from .output_panel import SharedOutputPanelListener
 from .phantom_streamer import PhantomStreamer
 from .response_manager import ResponseManager
@@ -197,6 +198,8 @@ class CommonMethods:
             else ViewCapture(view).tab_handler
         )
 
+        fn_handler = FunctionCapture(window).fn_handler
+
         cls.worker.run(
             view.id(),
             assistant.output_mode,
@@ -204,6 +207,7 @@ class CommonMethods:
             assistant,
             handler,
             ErrorCapture.error_handler,
+            fn_handler,
         )
 
         if assistant.output_mode == PromptMode.View:
@@ -271,6 +275,14 @@ class ErrorCapture:
     @staticmethod
     def error_handler(content: str) -> None:
         present_error_str('OpenAI Error', content)
+
+
+class FunctionCapture:
+    def __init__(self, window: Window) -> None:
+        self.window = window
+
+    def fn_handler(self, name: str, args: str) -> str:
+        return FunctionHandler.perform_function(name, args, self.window)
 
 
 class ViewCapture:
