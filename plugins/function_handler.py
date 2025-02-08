@@ -112,6 +112,11 @@ class FunctionHandler:
 
         elif func_name == Function.get_working_directory_content.value:
             path = args_json.get('directory_path')
+            logger.debug('path: %s', path)
+            if path == './':
+                folders = window.folders()
+                if folders:
+                    path = folders[0]
             if path and isinstance(path, str):
                 folder_structure = build_folder_structure(path)
 

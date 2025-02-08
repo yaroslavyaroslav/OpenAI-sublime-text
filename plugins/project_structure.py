@@ -1,73 +1,84 @@
-import os
 import json
-import fnmatch
-import sublime
+import os
+import subprocess
+from typing import List, Set
 
 
-def parse_gitignore(path):
-    """Parse the .gitignore file to create a list of ignore patterns."""
-    gitignore_paths = [os.path.join(path, '.gitignore'), os.path.join('~', '.gitignore_global')]
-    ignore_patterns = []
+def get_ignored_files(relative_paths: List[str], base_path: str) -> Set[str]:
+    """
+    Runs git check-ignore in batch for the given relative paths.
+    Returns a set of relative paths that are ignored.
+    """
+    if not relative_paths:
+        return set()
 
-    for gitignore_path in gitignore_paths:
-        if os.path.isfile(gitignore_path):
-            with open(gitignore_path, 'r') as file:
-                ignore_patterns = [
-                    line.strip() for line in file.readlines() if line.strip() and not line.startswith('#')
-                ]
-
-    ignore_patterns.append('.git')
-    return ignore_patterns
-
-
-def is_ignored(item, ignore_patterns):
-    """Check if an item matches any pattern in the ignore list."""
-    for pattern in ignore_patterns:
-        if fnmatch.fnmatch(item, pattern):
-            return True
-    return False
-
-
-def build_folder_structure_(path, ignore_patterns):
-    """Recursively build a folder structure, ignoring files in .gitignore."""
-    folder_structure = {'name': os.path.basename(path), 'children': []}
-
+    # Run git check-ignore on all files in one call.
+    cmd = ['git', 'check-ignore'] + relative_paths
     try:
-        for item in os.listdir(path):
-            item_path = os.path.join(path, item)
-            if is_ignored(item, ignore_patterns):
-                continue  # Skip ignored items
+        result = subprocess.run(
+            cmd,
+            cwd=base_path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except Exception:
+        return set()
 
+    ignored = set()
+    if result.stdout:
+        # Each line corresponds to a file that is ignored.
+        for line in result.stdout.splitlines():
+            ignored.add(line.strip())
+    return ignored
+
+
+def build_folder_structure_(path: str, base_path: str) -> dict:
+    """
+    Recursively builds a folder structure starting at 'path',
+    skipping files or folders that Git ignores and excluding the .git folder.
+    base_path: the root folder of the git repository.
+    """
+    folder_structure = {'name': os.path.basename(path), 'children': []}
+    try:
+        items = os.listdir(path)
+        if not items:
+            return folder_structure
+
+        # Explicitly exclude the '.git' folder.
+        if '.git' in items:
+            items.remove('.git')
+
+        # Create a mapping from item to its relative path from base_path.
+        rel_paths = {item: os.path.relpath(os.path.join(path, item), base_path) for item in items}
+
+        # Get the set of ignored relative paths for the current directory.
+        ignored = get_ignored_files(list(rel_paths.values()), base_path)
+
+        for item in items:
+            if rel_paths[item] in ignored:
+                continue
+
+            item_path = os.path.join(path, item)
             if os.path.isdir(item_path):
-                # If the item is a directory, call the function recursively
-                folder_structure['children'].append(build_folder_structure_(item_path, ignore_patterns))
+                folder_structure['children'].append(build_folder_structure_(item_path, base_path))
             else:
-                # If the item is a file, append it to children as well
                 folder_structure['children'].append({'name': item, 'children': []})
     except PermissionError:
-        # Handle situation where we do not have permission to access a folder
         folder_structure['children'].append({'name': 'Access Denied', 'children': []})
-
     return folder_structure
 
 
 def build_folder_structure(path: str) -> str:
-    """Convert a folder structure to JSON format."""
-    ignore_patterns = parse_gitignore(path)
-    if path == '.':
-        window = sublime.active_window()
-
-        project_data = window.project_data()
-
-        if project_data:
-            path = window.folders()[0]
-
-    folder_structure = build_folder_structure_(path, ignore_patterns)
+    """
+    Build and return a JSON representation of the folder structure.
+    'path' should be the root of a Git repository.
+    """
+    folder_structure = build_folder_structure_(path, path)
     return json.dumps(folder_structure, indent=4)
 
 
-# Example usage
+# Example usage:
 if __name__ == '__main__':
     root_path = input('Enter the path to the root folder: ')
-    folder_json = build_folder_structure(root_path)
-    print(folder_json)
+    print(build_folder_structure(root_path))
