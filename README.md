@@ -7,8 +7,8 @@ Cursor level of AI assistance for Sublime Text. I mean it.
 
 Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cpp) server, [ollama](https://ollama.com) or whatever third party LLM hosting. Claude API support coming soon.
 
-> ![NOTE]
-> 5.0.0 release is around the corner! Check out these [release notes](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/blob/develop/messages/5.0.0.md) for details.
+> [!NOTE]
+> 5.0.0 release is around the corner! Check out [release notes](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/blob/develop/messages/5.0.0.md) for details.
 
 ![](static/media/ai_chat_left_full.png)
 
