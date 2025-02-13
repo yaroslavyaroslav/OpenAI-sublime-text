@@ -83,8 +83,6 @@ class CommonMethods:
 
         if assistant.url is None:
             assistant.url = settings.get('url', None)
-        if assistant.token is None:
-            assistant.token = settings.get('token', None)
 
         if mode == CommandMode.handle_image_input.value:
             cls.handle_image_input(
