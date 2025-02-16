@@ -147,6 +147,12 @@
             // By default this is true.
             "stream": true,
 
+            // Timeout to terminate the connection in seconds
+            //
+            // Sometimes some servers are just get stuck, so to not await forever till response will be accomplished set this setting to some value.
+            // Default value is 10.
+            "timeout": 10,
+
             // Number between -2.0 and 2.0.
             // Positive values penalize new tokens based on whether they appear in the text so far,
             // increasing the model's likelihood to talk about new topics.
