@@ -18,7 +18,7 @@ class SharedOutputPanelListener(EventListener):
     ) -> None:
         self.markdown: bool = markdown
         # self.cacher = cacher
-        self.settings: Settings = load_settings('openAI.sublime-settings')
+        self.settings: Settings = load_settings('ass.sublime-settings')
         self.panel_settings: Dict[str, bool] | None = self.settings.get('chat_presentation')  # type: ignore
 
         self.gutter_enabled: bool = self.panel_settings.get('gutter_enabled', True)

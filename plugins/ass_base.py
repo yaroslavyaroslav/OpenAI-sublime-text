@@ -17,7 +17,7 @@ from .assistant_settings import (
     CommandMode,
 )
 from .buffer import BufferContentManager
-from .errors.OpenAIException import WrongUserInputException, present_error, present_error_str
+from .errors.AssException import WrongUserInputException, present_error, present_error_str
 from .image_handler import ImageValidator
 from .load_model import get_cache_path, get_model_or_default
 from .output_panel import SharedOutputPanelListener
@@ -32,8 +32,8 @@ class CommonMethods:
     worker: Worker | None = None
 
     @classmethod
-    def process_openai_command(cls, view: View, assistant: AssistantSettings, kwargs: Dict[str, Any]):
-        logger.debug('Openai started')
+    def process_ass_command(cls, view: View, assistant: AssistantSettings, kwargs: Dict[str, Any]):
+        logger.debug('Ass started')
         plugin_loaded()
         mode = kwargs.pop('mode', 'chat_completion')
 
@@ -71,7 +71,7 @@ class CommonMethods:
                     'Not enough text selected to complete the request, please expand the selection.'
                 )
         except WrongUserInputException as error:
-            present_error(title='OpenAI error', error=error)
+            present_error(title='Ass error', error=error)
             return
 
         logger.debug('assistant: %s', assistant)
@@ -122,7 +122,7 @@ class CommonMethods:
         logger.debug('handle_image_input hit')
         sublime.active_window().show_input_panel(
             'Command for Image: ',
-            window.settings().get('OPENAI_INPUT_TMP_STORAGE') or '',  # type: ignore
+            window.settings().get('ASS_INPUT_TMP_STORAGE') or '',  # type: ignore
             lambda user_input: cls.handle_input(
                 user_input,
                 view,
@@ -144,7 +144,7 @@ class CommonMethods:
         logger.debug('handle_chat_completion hit')
         sublime.active_window().show_input_panel(
             'Question:',
-            window.settings().get('OPENAI_INPUT_TMP_STORAGE') or '',  # type: ignore
+            window.settings().get('ASS_INPUT_TMP_STORAGE') or '',  # type: ignore
             lambda user_input: cls.handle_input(
                 user_input,
                 view,
@@ -158,7 +158,7 @@ class CommonMethods:
     @classmethod
     def save_input(cls, user_input: str, window: Window):
         logger.debug(f'user_input: {user_input}')
-        window.settings().set('OPENAI_INPUT_TMP_STORAGE', user_input)
+        window.settings().set('ASS_INPUT_TMP_STORAGE', user_input)
 
     @classmethod
     def handle_input(
@@ -264,13 +264,13 @@ class InputCompositor:
 
 def plugin_loaded():
     global settings
-    settings = sublime.load_settings('openAI.sublime-settings')
+    settings = sublime.load_settings('ass.sublime-settings')
 
 
 class ErrorCapture:
     @staticmethod
     def error_handler(content: str) -> None:
-        present_error_str('OpenAI Error', content)
+        present_error_str('Ass Error', content)
 
 
 class ViewCapture:

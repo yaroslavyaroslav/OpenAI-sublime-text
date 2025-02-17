@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 def _settings():
-    return sublime.load_settings("openAI.sublime-settings")
+    return sublime.load_settings("ass.sublime-settings")
 
 
 def plugin_loaded():

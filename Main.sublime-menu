@@ -10,21 +10,21 @@
                 "id": "package-settings",
                 "children": [
                     {
-                        "caption": "OpenAI completion",
+                        "caption": "Ass",
                         "children": [
                             {
                                 "caption": "Settings",
                                 "command": "edit_settings",
                                 "args": {
-                                    "base_file": "${packages}/OpenAI completion/openAI.sublime-settings",
-                                    "default": "// Settings in here override those in \"OpenAI completion/openAI.sublime-settings\"\n{\n\t\"token\": \"$0\"\n}\n"
+                                    "base_file": "${packages}/ass/ass.sublime-settings",
+                                    "default": "// Settings in here override those in \"ass/ass.sublime-settings\"\n{\n\t\"token\": \"$0\"\n}\n"
                                 }
                             },
                             {
                                 "caption": "Key Bindings",
                                 "command": "edit_settings",
                                 "args": {
-                                    "base_file": "${packages}/OpenAI completion/Default.sublime-keymap",
+                                    "base_file": "${packages}/ass/Default.sublime-keymap",
                                     "user_file": "${packages}/User/Default (${platform}).sublime-keymap",
                                     "default": "[\n\t$0\n]\n",
                                 }

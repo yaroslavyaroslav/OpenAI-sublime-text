@@ -10,15 +10,15 @@ from sublime_plugin import WindowCommand, ListInputHandler
 from sublime_types import Value
 
 from .load_model import get_cache_path, get_model_or_default
-from .openai_base import CommonMethods, get_marked_sheets
+from .ass_base import CommonMethods, get_marked_sheets
 
 logger = logging.getLogger(__name__)
 
 
-class OpenaiPanelCommand(WindowCommand):
+class AssPanelCommand(WindowCommand):
     def __init__(self, window: Window):
         super().__init__(window)
-        self.settings: Settings = sublime.load_settings('openAI.sublime-settings')
+        self.settings: Settings = sublime.load_settings('ass.sublime-settings')
 
         self.load_assistants()
         self.window = window
@@ -50,7 +50,7 @@ class OpenaiPanelCommand(WindowCommand):
             path = get_cache_path(self.window.active_view())
             write_model(path, assistant)
 
-            CommonMethods.process_openai_command(
+            CommonMethods.process_ass_command(
                 view,
                 assistant,
                 self.kwargs,
@@ -68,18 +68,18 @@ class OpenaiPanelCommand(WindowCommand):
         assistant = self.assistants[index]
 
         assistant.token = assistant.token if assistant.token else self.settings.get('token', None)
-        logger.debug('Openai window: %s', self.window)
+        logger.debug('Ass window: %s', self.window)
 
         view = self.window.active_view()
 
-        logger.debug('Openai window.active_view(): %s', view)
+        logger.debug('Ass window.active_view(): %s', view)
         path = get_cache_path(view)
 
         logger.debug('path: %s', path)
 
         write_model(path, assistant)
 
-        CommonMethods.process_openai_command(
+        CommonMethods.process_ass_command(
             view,  # type: ignore
             assistant,
             self.kwargs,
@@ -96,7 +96,7 @@ class AIWholeInputHandler(ListInputHandler):
         self._name, *self.next_names = names
         self._args = args
         self.window = window
-        self.settings: Settings = sublime.load_settings('openAI.sublime-settings')
+        self.settings: Settings = sublime.load_settings('ass.sublime-settings')
         self.assistants: List[Dict[str, Any]] = self.settings.get('assistants', [])  # type: ignore
         self.output_modes = ['view', 'phantom']
 

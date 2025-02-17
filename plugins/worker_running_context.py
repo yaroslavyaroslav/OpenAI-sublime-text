@@ -3,12 +3,12 @@ import logging
 from sublime import QueryOperator, View
 from sublime_plugin import EventListener
 
-from .openai_base import CommonMethods
+from .ass_base import CommonMethods
 
 logger = logging.getLogger(__name__)
 
 
-class OpenaiWorkerRunningContext(EventListener):
+class AssWorkerRunningContext(EventListener):
     def on_query_context(
         self,
         view: View,
@@ -17,8 +17,8 @@ class OpenaiWorkerRunningContext(EventListener):
         operand: str,
         match_all: bool,
     ):
-        if key == 'openai_worker_running':
-            logger.debug('key == openai_worker_running')
+        if key == 'ass_worker_running':
+            logger.debug('key == ass_worker_running')
             logger.debug(
                 'CommonMethods.worker_thread is alive: %s',
                 CommonMethods.is_worker_alive() if CommonMethods.worker else False,

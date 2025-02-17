@@ -11,9 +11,9 @@ class ReloadSettingsListener(sublime_plugin.EventListener):
         logger.debug('Settings relodaer triggered')
         # This method is triggered whenever any file is saved. Check if the saved file is our settings.
         filepath = view.file_name()
-        if filepath and 'openAI.sublime-settings' in filepath:
-            logger.debug('openAI.sublime-settings relodaer triggered')
+        if filepath and 'ass.sublime-settings' in filepath:
+            logger.debug('ass.sublime-settings relodaer triggered')
             # Reload the plugin settings by calling the plugin_loaded function directly.
-            from .openai_base import plugin_loaded
+            from .ass_base import plugin_loaded
 
             plugin_loaded()

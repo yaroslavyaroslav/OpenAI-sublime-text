@@ -13,14 +13,14 @@ from .plugins.buffer import (  # noqa: E402, F401
     TextStreamAtCommand,
 )
 from .plugins.sheet_toggle import ToggleViewAiContextIncludedCommand, SelectSheetsWithAiContextIncludedCommand  # noqa: E402, F401
-from .plugins.openai import Openai  # noqa: E402, F401
-from .plugins.openai_panel import OpenaiPanelCommand  # noqa: E402, F401
+from .plugins.ass import Ass  # noqa: E402, F401
+from .plugins.ass_panel import AssPanelCommand  # noqa: E402, F401
 from .plugins.output_panel import SharedOutputPanelListener  # noqa: E402, F401
 from .plugins.phantom_streamer import PhantomStreamer  # noqa: E402, F401
 from .plugins.settings_reloader import ReloadSettingsListener  # noqa: E402, F401
 from .plugins.stop_worker_execution import (  # noqa: E402
-    StopOpenaiExecutionCommand,  # noqa: F401
+    StopAssExecutionCommand,  # noqa: F401
 )
 from .plugins.worker_running_context import (  # noqa: E402,
-    OpenaiWorkerRunningContext,  # noqa: F401
+    AssWorkerRunningContext,  # noqa: F401
 )

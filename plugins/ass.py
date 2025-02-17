@@ -8,32 +8,32 @@ from sublime_plugin import TextCommand
 
 from .assistant_settings import CommandMode
 from .load_model import get_cache_path, get_model_or_default
-from .openai_base import CommonMethods
+from .ass_base import CommonMethods
 from .output_panel import SharedOutputPanelListener
 
 logger = logging.getLogger(__name__)
 
 
-class Openai(TextCommand):
+class Ass(TextCommand):
     def run(self, edit: Edit, **kwargs):
         mode = kwargs.get('mode', 'chat_completion')
 
-        settings = load_settings('openAI.sublime-settings')
+        settings = load_settings('ass.sublime-settings')
 
         listener = SharedOutputPanelListener(
             markdown=settings.get('markdown', False),  # type: ignore
         )
 
         if mode == CommandMode.reset_chat_history.value:
-            Openai.reset_chat_history(self.view, listener, edit)
+            Ass.reset_chat_history(self.view, listener, edit)
         elif mode == CommandMode.create_new_tab.value:
-            Openai.create_new_tab(listener)
+            Ass.create_new_tab(listener)
         elif mode == CommandMode.refresh_output_panel.value:
-            Openai.refresh_output_panel(listener)
+            Ass.refresh_output_panel(listener)
         else:
-            logger.debug('Openai view: %s', self.view)
+            logger.debug('Ass view: %s', self.view)
             assistant = get_model_or_default(self.view)
-            CommonMethods.process_openai_command(self.view, assistant, kwargs)
+            CommonMethods.process_ass_command(self.view, assistant, kwargs)
 
     @classmethod
     def reset_chat_history(cls, view: View, listener: SharedOutputPanelListener, edit: Edit):

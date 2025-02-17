@@ -1,9 +1,9 @@
 [
     {
         "keys": ["ctrl+c"],
-        "command": "stop_openai_execution",
+        "command": "stop_ass_execution",
         "context": [
-            { "key": "openai_worker_running", "operator": "equal", "operand": true },
+            { "key": "ass_worker_running", "operator": "equal", "operand": true },
         ]
     }
     // {
@@ -13,8 +13,8 @@
     //     ],
             // This command sends new message and selected text within the active tab
             // to the server.
-            // Equal to `OpenAI completion: Chat Model Select`
-    //     "command": "openai",
+            // Equal to `Ass: Chat Model Select`
+    //     "command": "ass",
     // },
     // {
     //     "keys": [
@@ -23,8 +23,8 @@
     //     ],
             // This command sends new message and all the active Sheets within the active Views Group
             // to the server.
-            // Equal to `OpenAI completion: Chat Model Select`
-    //     "command": "openai",
+            // Equal to `Ass: Chat Model Select`
+    //     "command": "ass",
     //     "args": {
     //          "files_included": true
     //     }
@@ -36,8 +36,8 @@
     //     ],
             // This command pops up assistants settings palette and then sends new message
             // and all the active Sheets within the active Views Group to the server.
-            // Equal to `OpenAI completion: New Message`
-    //     "command": "openai_panel",
+            // Equal to `Ass: New Message`
+    //     "command": "ass_panel",
     //     "args": {
     //          "files_included": true
     //     }
@@ -46,8 +46,8 @@
     //     "keys": [],
             // This command sends image on path to the server
             // It read history but never stores image in it, it writes the response in history thought.
-            // Equal to `OpenAI completion: Handle Image`
-    //     "command": "openai",
+            // Equal to `Ass: Handle Image`
+    //     "command": "ass",
     //     "args": {
     //         "mode": "handle_image_input"
     //     }
@@ -55,8 +55,8 @@
     // {
     //     "keys": [],
             // This command creates a new output tab for itself in the window
-            // Equal to `OpenAI completion: Open in Tab`
-    //     "command": "openai",
+            // Equal to `Ass: Open in Tab`
+    //     "command": "ass",
     //     "args": {
     //         "mode": "create_new_tab"
     //     }
@@ -64,8 +64,8 @@
     // {
     //     "keys": [],
             // This command refreshes (reloads) chat log from the history storage
-            // Equal to `OpenAI completion: Refresh Chat`
-    //     "command": "openai",
+            // Equal to `Ass: Refresh Chat`
+    //     "command": "ass",
     //     "args": {
     //         "mode": "refresh_output_panel"
     //     }
@@ -73,8 +73,8 @@
     // {
     //     "keys": [],
             // This command deletes current history
-            // Equal to `OpenAI completion: Reset Chat History`
-    //     "command": "openai",
+            // Equal to `Ass: Reset Chat History`
+    //     "command": "ass",
     //     "args": {
     //         "mode": "reset_chat_history"
     //     }

@@ -3,12 +3,12 @@ import logging
 from sublime import Edit
 from sublime_plugin import TextCommand
 
-from .openai_base import CommonMethods
+from .ass_base import CommonMethods
 
 logger = logging.getLogger(__name__)
 
 
-class StopOpenaiExecutionCommand(TextCommand):
+class StopAssExecutionCommand(TextCommand):
     def run(self, edit: Edit):
         logger.debug('Stop execution call')
         if CommonMethods.worker and CommonMethods.is_worker_alive():

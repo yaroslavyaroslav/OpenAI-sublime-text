@@ -1,85 +1,85 @@
 [
 	{
-		"caption": "OpenAI: Chat Select Mode",
+		"caption": "Ass: Chat Select Mode",
 	    "command": "show_overlay",
 	    "args": {
 	        "overlay": "command_palette",
-	        "command": "openai_panel",
+	        "command": "ass_panel",
 	        "args": {
 	        	"model": "current",
 	        }
 	    },
 	},
 	{
-	 	"caption": "OpenAI: Chat Model Select",
-		"command": "openai_panel"
+	 	"caption": "Ass: Chat Model Select",
+		"command": "ass_panel"
 	},
 	{
-		"caption": "OpenAI: Handle image",
-		"command": "openai",
+		"caption": "Ass: Handle image",
+		"command": "ass",
 		"args": {
 			"mode": "handle_image_input",
 		}
 	},
 	{
-		"caption": "OpenAI: New Message",
-		"command": "openai",
+		"caption": "Ass: New Message",
+		"command": "ass",
 	},
 	{
-		"caption": "OpenAI: New Message With Build Output",
-		"command": "openai",
+		"caption": "Ass: New Message With Build Output",
+		"command": "ass",
 		"args": {
 			"build_output": true
 		}
 	},
 	{
-		"caption": "OpenAI: Chat Model Select With Build Output",
-		"command": "openai_panel",
+		"caption": "Ass: Chat Model Select With Build Output",
+		"command": "ass_panel",
 		"args": {
 			"build_output": true
 		}
 	},
 	{
-		"caption": "OpenAI: New Message With LSP Output",
-		"command": "openai",
+		"caption": "Ass: New Message With LSP Output",
+		"command": "ass",
 		"args": {
 			"lsp_diagnostics": true
 		}
 	},
 	{
-		"caption": "OpenAI: Chat Model Select With LSP Output",
-		"command": "openai_panel",
+		"caption": "Ass: Chat Model Select With LSP Output",
+		"command": "ass_panel",
 		"args": {
 			"lsp_diagnostics": true
 		}
 	},
 	{
-		"caption": "OpenAI: Reset Chat History",
-		"command": "openai",
+		"caption": "Ass: Reset Chat History",
+		"command": "ass",
 		"args": {
 			"mode": "reset_chat_history"
 		}
 	},
 	{
-		"caption": "OpenAI: Refresh Chat",
-		"command": "openai",
+		"caption": "Ass: Refresh Chat",
+		"command": "ass",
 		"args": {
 			"mode": "refresh_output_panel"
 		}
 	},
 	{
-		"caption": "OpenAI: Open in Tab",
-		"command": "openai",
+		"caption": "Ass: Open in Tab",
+		"command": "ass",
 		"args": {
 			"mode": "create_new_tab"
 		}
 	},
 	{
-		"caption": "OpenAI: Add Sheets to Context",
+		"caption": "Ass: Add Sheets to Context",
 		"command": "toggle_view_ai_context_included",
 	},
 	{
-		"caption": "OpenAI: Show All Selected Sheets",
+		"caption": "Ass: Show All Selected Sheets",
 		"command": "select_sheets_with_ai_context_included",
 	}
 ]

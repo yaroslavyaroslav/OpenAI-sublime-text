@@ -3,7 +3,7 @@ from logging import exception
 from sublime import error_message
 
 
-class OpenAIException(Exception):
+class AssException(Exception):
     """Exception raised for errors in the input.
 
     Attributes:
@@ -15,19 +15,19 @@ class OpenAIException(Exception):
         super().__init__(self.message)
 
 
-class ContextLengthExceededException(OpenAIException): ...
+class ContextLengthExceededException(AssException): ...
 
 
-class UnknownException(OpenAIException): ...
+class UnknownException(AssException): ...
 
 
-class WrongUserInputException(OpenAIException): ...
+class WrongUserInputException(AssException): ...
 
 
-class FunctionCallFailedException(OpenAIException): ...
+class FunctionCallFailedException(AssException): ...
 
 
-def present_error(title: str, error: OpenAIException):
+def present_error(title: str, error: AssException):
     exception(f'{title}: {error.message}')
     error_message(f'{title}\n{error.message}')
 

@@ -55,7 +55,7 @@ class PhantomStreamer:
         self.phantom_id: int | None = None
         self.user_input = user_input
         self.is_discardable: bool = (
-            load_settings('openAI.sublime-settings')
+            load_settings('ass.sublime-settings')
             .get('chat_presentation', {})
             .get('is_tabs_discardable', False)
         )

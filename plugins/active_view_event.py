@@ -9,7 +9,7 @@ from sublime import View
 from sublime_plugin import EventListener
 
 from .load_model import get_model_or_default
-from .openai_base import get_marked_sheets
+from .ass_base import get_marked_sheets
 from .status_bar import StatusBarMode
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ class ActiveViewEventListener(EventListener):
         if view.sheet().id() == 0:
             return
 
-        settings = sublime.load_settings('openAI.sublime-settings')
+        settings = sublime.load_settings('ass.sublime-settings')
 
         logger.debug('view: %s', view)
         logger.debug('sheet: %s', view.sheet())
@@ -60,4 +60,4 @@ class ActiveViewEventListener(EventListener):
 
         if statuses:
             status = f'[{" | ".join(statuses)}]'
-            view.set_status('openai_assistant_settings', status)
+            view.set_status('ass_assistant_settings', status)

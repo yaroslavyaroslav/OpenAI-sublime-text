@@ -1,4 +1,0 @@
-=> 2.0.4
-
-## Fixed
-- Updated `Default.sublime-keymap` to matches latest internal plugin API update. (#18)
