@@ -35,6 +35,9 @@ class OpenaiPanelCommand(WindowCommand):
         logger.debug('active_view: %s', self.window.active_view())
         logger.debug('active_sheet: %s', self.window.active_sheet().view())
         if model and output_mode:
+            logger.debug('model dict: %s', model)
+            logger.debug('assistant.api_type %s', AssistantSettings(model).api_type)
+
             assistant = (
                 get_model_or_default(self.window.active_view())
                 if model == 'current'
@@ -45,6 +48,8 @@ class OpenaiPanelCommand(WindowCommand):
                 assistant.output_mode = (
                     PromptMode.Phantom if output_mode.lower() == 'phantom' else PromptMode.View
                 )
+
+            logger.debug('assistant.api_type:  %s', assistant.api_type)
 
             view = self.window.active_view()
             path = get_cache_path(self.window.active_view())
@@ -76,6 +81,7 @@ class OpenaiPanelCommand(WindowCommand):
         path = get_cache_path(view)
 
         logger.debug('path: %s', path)
+        logger.debug('assistant.api_type:  %s', assistant.api_type)
 
         write_model(path, assistant)
 

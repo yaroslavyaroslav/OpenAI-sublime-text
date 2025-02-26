@@ -2,12 +2,13 @@ import logging
 
 from llm_runner import AssistantSettings, read_model  # type: ignore
 from sublime import View, cache_path, load_settings
+import os
 
 logger = logging.getLogger(__name__)
 
 
 def get_cache_path(view: View) -> str:
-    path = cache_path() + '/OpenAI completion/'
+    path = os.path.join(cache_path(), 'OpenAI completion')
 
     logger.debug('view %s', view)
     ai_assistant = view.settings().get(

@@ -100,8 +100,10 @@ class SharedOutputPanelListener(EventListener):
             #     continue
             elif item.role == Roles.Assistant:
                 output_panel.run_command('append', {'characters': '\n\n## Answer\n\n', 'force': True})
-
-            output_panel.run_command('append', {'characters': item.content, 'force': True})
+            if item.role == Roles.Tool:
+                output_panel.run_command('append', {'characters': 'item.tool_call_id', 'force': True})
+            else:
+                output_panel.run_command('append', {'characters': item.content, 'force': True})
 
         self.scroll_to_botton(window=window)
 

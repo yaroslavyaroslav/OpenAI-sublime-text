@@ -11,7 +11,7 @@ from llm_runner import (
     SublimeInputContent,  # type: ignore
     Worker,  # type: ignore
 )
-from sublime import Region, Settings, Sheet, View, Window, active_window, windows
+from sublime import Region, Settings, Sheet, View, Window, active_window
 
 from .assistant_settings import (
     CommandMode,
@@ -228,7 +228,7 @@ class CommonMethods:
 
     @classmethod
     def is_worker_alive(cls) -> bool:
-        logger.debug('Stopping worker...')
+        logger.debug('Checking if worker is alive...')
         return cls.worker.is_alive()
 
 
