@@ -15,7 +15,8 @@ Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cp
 ## Features
 
 - **Chat mode** powered by whatever model you'd like.
-- **gpt-o3-mini** and **gpt-o1** support.
+- **o3-mini** and **o1** support.
+- **gpt-4.5-preview** support
 - **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
 - **Dedicated chats histories** and assistant settings for a projects.
 - **Ability to send whole files** or their parts as a context expanding.
