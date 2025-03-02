@@ -21,10 +21,12 @@ class ResponseManager:
                     ResponseManager.update_output_panel_(listner, window, '\n\n## Selection\n\n')
                     ResponseManager.update_output_panel_(listner, window, f'Path: `{item.path}`')
                     ResponseManager.update_output_panel_(listner, window, '\n')
-                    ResponseManager.update_output_panel_(listner, window, item.content)
+                elif item.input_kind == InputKind.Sheet:
+                    continue
             else:
                 ResponseManager.update_output_panel_(listner, window, '\n\n## Question\n\n')
-                ResponseManager.update_output_panel_(listner, window, item.content)
+
+            ResponseManager.update_output_panel_(listner, window, item.content)
 
     @staticmethod
     def prepare_to_response(

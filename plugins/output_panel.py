@@ -73,7 +73,6 @@ class SharedOutputPanelListener(EventListener):
         return view
 
     def refresh_output_panel(self, window: Window):
-        output_panel = self.get_output_view_(window=window)
         self.clear_output_panel(window)
 
         path = get_cache_path(window.active_view())  # type: ignore
@@ -81,29 +80,19 @@ class SharedOutputPanelListener(EventListener):
         for item in read_all_cache(path):
             ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
             if item.role == Roles.User:
-                output_panel.run_command('append', {'characters': '\n\n## Question\n\n', 'force': True})
-            # elif item.role == Roles.Assistant and 'tool_calls' in item:
-            #     output_panel.run_command('append', {'characters': '\n\n## Tool Call\n\n', 'force': True})
-            #     function_name = item['tool_calls'][0]['function']['name']
-            #     function_name = f'`{function_name}`'
-            #     output_panel.run_command('append', {'characters': function_name, 'force': True})
-            #     continue
-            # elif item['role'] == 'tool':
-            #     output_panel.run_command('append', {'characters': '\n\n## Tool Result\n\n', 'force': True})
-            #     if len(item['content']) > 50:
-            #         output_panel.run_command(
-            #             'append', {'characters': 'Function response is too long', 'force': True}
-            #         )
-            #     else:
-            #         output_panel.run_command('append', {'characters': item['content'], 'force': True})
+                if item.path:
+                    self.update_output_view('\n\n## Selection\n\n', window)
+                    self.update_output_view(f'Path: `{item.path}`', window)
+                    self.update_output_view('\n', window)
+                else:
+                    self.update_output_view('\n\n## Question\n\n', window)
 
-            #     continue
             elif item.role == Roles.Assistant:
-                output_panel.run_command('append', {'characters': '\n\n## Answer\n\n', 'force': True})
+                self.update_output_view('\n\n## Answer\n\n', window)
             if item.role == Roles.Tool:
-                output_panel.run_command('append', {'characters': 'item.tool_call_id', 'force': True})
+                self.update_output_view('item.tool_call_id', window)
             else:
-                output_panel.run_command('append', {'characters': item.content, 'force': True})
+                self.update_output_view(item.content, window)
 
         self.scroll_to_botton(window=window)
 
