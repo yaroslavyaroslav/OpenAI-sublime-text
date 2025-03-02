@@ -16,14 +16,14 @@ class ResponseManager:
         content: List[SublimeInputContent],
     ):
         for item in content:
-            ResponseManager.update_output_panel_(listner, window, '\n\n## Question\n\n')
             if item.path:
                 if item.input_kind == InputKind.ViewSelection:
+                    ResponseManager.update_output_panel_(listner, window, '\n\n## Selection\n\n')
+                    ResponseManager.update_output_panel_(listner, window, f'Path: `{item.path}`')
+                    ResponseManager.update_output_panel_(listner, window, '\n')
                     ResponseManager.update_output_panel_(listner, window, item.content)
-                else:
-                    ResponseManager.update_output_panel_(listner, window, f'`{item.path}`')
-
             else:
+                ResponseManager.update_output_panel_(listner, window, '\n\n## Question\n\n')
                 ResponseManager.update_output_panel_(listner, window, item.content)
 
     @staticmethod
