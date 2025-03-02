@@ -56,19 +56,19 @@
      ],
 
     // Proxy setting
-    "proxy": {
-        // Proxy address
-        "address": "",
+    // "proxy": {
+    //     // Proxy address
+    //     "address": "",
 
-        // Proxy port
-        "port": 8080,
+    //     // Proxy port
+    //     "port": 8080,
 
-        // Proxy username
-        "username": "",
+    //     // Proxy username
+    //     "username": "",
 
-        // Proxy password
-        "password": ""
-    },
+    //     // Proxy password
+    //     "password": ""
+    // },
 
     "assistants": [
         {
