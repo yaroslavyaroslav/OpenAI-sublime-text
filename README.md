@@ -1,5 +1,8 @@
 [![Star on GitHub][img-stars]][stars] ![Package Control][img-downloads]
 
+> [!WARNING]
+> Package Control do not fetches any updates for a two weeks for now and there's nothing I can do with that, so if you want to use the latest version of this package you have to clone it and install it manually.
+
 # OpenAI Sublime Text Plugin
 ## tldr;
 
