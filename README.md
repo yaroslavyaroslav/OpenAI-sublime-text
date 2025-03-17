@@ -34,7 +34,7 @@ Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cp
 - Sublime Text 4
 - **llama.cpp**, **ollama** installed _OR_
 - Remote llm service provider API key, e.g. [OpenAI](https://platform.openai.com)
-- Atropic API key [coming soon].
+- Anthropic API key [coming soon].
 
 ## Installation
 
