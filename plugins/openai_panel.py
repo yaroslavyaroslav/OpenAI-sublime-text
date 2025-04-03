@@ -4,9 +4,9 @@ import logging
 from typing import Any, Dict, List, Tuple
 
 import sublime
-from llm_runner import AssistantSettings, write_model, PromptMode  # type: ignore
+from llm_runner import AssistantSettings, PromptMode, write_model  # type: ignore
 from sublime import Settings, Window
-from sublime_plugin import WindowCommand, ListInputHandler
+from sublime_plugin import ListInputHandler, WindowCommand
 from sublime_types import Value
 
 from .load_model import get_cache_path, get_model_or_default
@@ -104,7 +104,7 @@ class AIWholeInputHandler(ListInputHandler):
         self.window = window
         self.settings: Settings = sublime.load_settings('openAI.sublime-settings')
         self.assistants: List[Dict[str, Any]] = self.settings.get('assistants', [])  # type: ignore
-        self.output_modes = ['view', 'phantom']
+        self.output_modes = ['phantom', 'view']
 
     def name(self):
         return self._name
