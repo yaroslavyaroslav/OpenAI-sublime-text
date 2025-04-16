@@ -1,0 +1,18 @@
+[
+    {
+        "caption": "OpenAI: Add File to Context",
+        "command": "toggle_view_ai_context_included",
+        "args": {
+            "paths": []
+        } // You can use "paths" if you want, or leave empty for your current code
+    },
+    // {
+    //     "caption": "OpenAI: File Included",
+    //     "command": "dummy_ai_context_status_sidebar",
+    //     "args": { "paths": [] },
+    //     "context": [
+    //         { "key": "num_selected", "operator": "equal", "operand": 1 },
+    //         { "key": "side_bar_file", "operator": "equal", "operand": true }
+    //     ]
+    // },
+]

@@ -83,8 +83,6 @@ class OpenaiPanelCommand(WindowCommand):
         logger.debug('path: %s', path)
         logger.debug('assistant.api_type:  %s', assistant.api_type)
 
-        write_model(path, assistant)
-
         CommonMethods.process_openai_command(
             view,  # type: ignore
             assistant,
