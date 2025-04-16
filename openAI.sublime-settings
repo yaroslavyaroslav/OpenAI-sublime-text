@@ -1,20 +1,14 @@
 {
-    // URL for OpenAI compatiable APIs.
-    // Selected parts of code and prompt will be sent to that URL, so make sure, you have all necessary permission to do so.
-    // Example: "http://localhost:11434/v1/chat/completions" (assuming Ollama is running on localhost)
-    // Full url has to be provided
-    "url": "https://api.openai.com/v1/chat/completions",
-
     // Your openAI token
     // Token can be anything so long as it is at least 10 characters long.
     "token": "",
 
-    // Apply Sublime Text markdown syntax highlight to OpenAI completion output panel text.
-    // Affects only `"output_mode": "panel"`.
+    // Apply Sublime Text markdown syntax highlight to OpenAI completion output view text.
+    // Affects only `"output_mode": "view"`.
     // `MultimarkdownEditing` package highly recommended to install to apply syntax highlight for a wider range of languages.
     "markdown": true,
 
-    // Settings that configures presentation of a chat view for both output panel and chat tap
+    // Settings that configures presentation of a chat view for both output view and chat tap
     "chat_presentation": {
         // Toggles whether to present gutter itself
         "gutter_enabled": true,
@@ -26,13 +20,12 @@
         // Toggles whether to allow the chat view to be overscrolled
         "scroll_past_end": false,
 
-        // Toggles whether or not to use reverse settings for a tab comparing to output panel
+        // Toggles whether or not to use reverse settings for a tab comparing to output view
         // i.e. in case of the default settings neither gutter or a line numbers will be presented and the overscroll is enabled
         "reverse_for_tab": true,
 
         // For phantom mode, for "In New Tab" option you can set this to true to avoid save file on close dialog for each view opened by plugin
         "is_tabs_discardable": false,
-
 
         // For phantom mode, extract the code from the AI response when integrating the answer inside a code file (copy, append, replace, new file)
         "phantom_integrate_code_only": false,
@@ -48,15 +41,16 @@
     // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistant objects above)
     // Possible options:
     //  - name: User defined assistant setup name
-    //  - output_mode: Model output prompt mode (panel|append|insert|replace)
-    //  - chat_model: Which OpenAI model are used within this setup (i.e. gpt-4o-mini, gpt-3.5-turbo-16k).
+    //  - output_mode: Model output prompt mode (view|phantom)
+    //  - chat_model: Which OpenAI model are used within this setup (i.e. gpt-4o-mini, gpt-4.1).
+    //  - sheets: Number of sheets selected as context.
     //
     // You're capable to mix these whatever you want and the text in status bar will follow.
     "status_hint": [
         // "name",
         // "output_mode",
         // "chat_model",
-        // "sheets" // number of sheets selected as context
+        // "sheets"
      ],
 
     // Proxy setting
@@ -93,10 +87,8 @@
             "assistant_role": "You are a senior code assistant",
 
             // URL for OpenAI alike API.
-            // It must start with `http://` or `https://`, which selects protocol for connection. Use `http://` when using localhost.
-            // it **COULD**, but not necessary has to be a full path of an endpoint. Yet it's necessary to make some third party providers to work.
             // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
-            "url": "https://api.openai.com/v1/chat/completions",
+            "url": "https://api.openai.com/v1/responses",
 
             // Your whaterver service token
             // OpenAI and any other alike API token to put.
@@ -176,7 +168,6 @@
         {
             "name": "General Assistant Localhost",
             "url": "http://127.0.0.1:8080", // See ma, no internet connection.
-            "token": "",
             "chat_model": "Llama-3-8b-Q4-chat-hf",
             "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.\n",
             "temperature": 1,
@@ -184,7 +175,8 @@
         },
         {
             "name": "General Assistant",
-            "chat_model": "gpt-4o-mini",
+            "token": "sk-dummy-token",
+            "chat_model": "gpt-4.1-mini",
             "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.",
             "max_tokens": 4000,
         },

@@ -53,7 +53,19 @@ class OpenaiPanelCommand(WindowCommand):
 
             view = self.window.active_view()
             path = get_cache_path(self.window.active_view())
-            write_model(path, assistant)
+
+            if assistant.output_mode == PromptMode.Phantom:
+                logger.debug('assistant: %s', assistant.output_mode)
+                updated_assistant = assistant.deep_copy()
+                updated_assistant.output_mode = PromptMode.View
+
+                logger.debug('assistant: %s', updated_assistant.output_mode)
+
+                write_model(path, updated_assistant)
+            else:
+                write_model(path, assistant)
+
+            logger.debug('assistant: %s', assistant.output_mode)
 
             CommonMethods.process_openai_command(
                 view,
