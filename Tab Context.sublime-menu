@@ -3,22 +3,4 @@
         "caption": "OpenAI: Add File to Context",
         "command": "toggle_view_ai_context_included"
     },
-    // {
-    //     "caption": "AI Context: INCLUDED",
-    //     "command": "dummy_ai_context_status",
-    //     "args": {},
-    //     "context": [
-    //         { "key": "num_selected_tabs", "operator": "equal", "operand": 1 },
-    //         { "key": "ai_context_included", "operator": "equal", "operand": true }
-    //     ]
-    // },
-    // {
-    //     "caption": "AI Context: NOT INCLUDED",
-    //     "command": "dummy_ai_context_status",
-    //     "args": {},
-    //     "context": [
-    //         { "key": "num_selected_tabs", "operator": "equal", "operand": 1 },
-    //         { "key": "ai_context_included", "operator": "equal", "operand": false }
-    //     ]
-    // }
 ]
