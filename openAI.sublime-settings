@@ -32,6 +32,10 @@
 
         // For phantom mode, for "In New Tab" option you can set this to true to avoid save file on close dialog for each view opened by plugin
         "is_tabs_discardable": false,
+
+
+        // For phantom mode, extract the code from the AI response when integrating the answer inside a code file (copy, append, replace, new file)
+        "phantom_integrate_code_only": false,
     },
 
     // Minimum amount of characters selected to perform completion.
