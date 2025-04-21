@@ -23,7 +23,7 @@ from .output_panel import SharedOutputPanelListener
 from .response_manager import ResponseManager
 from .utils import extract_code_blocks
 
-OPENAI_COMPLETION_KEY = "openai_completion"
+OPENAI_COMPLETION_KEY = 'openai_completion'
 PHANTOM_TEMPLATE = (
     '---'
     + '\nallow_code_wrap: true'
@@ -106,22 +106,22 @@ class PhantomStreamer:
             if attribute == PhantomActions.append.value:
                 self.view.run_command(
                     'text_stream_at',
-                    {
-                        'position': self.selected_region.end(),
-                        'text': self.completion_code,
-                    },
+                    {'position': self.selected_region.end(),'text': self.completion_code},
                 )
             elif attribute == PhantomActions.replace.value:
                 region_object = {
                     'a': self.selected_region.begin(),
                     'b': self.selected_region.end(),
                 }
-                self.view.run_command('replace_region',{'region': region_object, 'text': self.completion_code})
+                self.view.run_command('replace_region', {'region': region_object, 'text': self.completion_code})
             elif attribute == PhantomActions.new_file.value:
                 new_tab = (self.view.window() or active_window()).new_file(flags=NewFileFlags.ADD_TO_SELECTION | NewFileFlags.CLEAR_TO_RIGHT,syntax='Packages/Markdown/MultiMarkdown.sublime-syntax')
                 logger.debug(f'self.is_discardable: {self.is_discardable}')
                 new_tab.set_scratch(self.is_discardable)
-                new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion_code})
+                new_tab = (self.view.window() or active_window()).new_file(
+                    flags=NewFileFlags.ADD_TO_SELECTION | NewFileFlags.CLEAR_TO_RIGHT,
+                    syntax='Packages/Markdown/MultiMarkdown.sublime-syntax',
+                )
             elif attribute == PhantomActions.history.value:
                 assitant_content = SublimeInputContent(InputKind.AssistantResponse, self.completion)
 
