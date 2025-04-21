@@ -115,13 +115,13 @@ class PhantomStreamer:
                 }
                 self.view.run_command('replace_region', {'region': region_object, 'text': self.completion_code})
             elif attribute == PhantomActions.new_file.value:
-                new_tab = (self.view.window() or active_window()).new_file(flags=NewFileFlags.ADD_TO_SELECTION | NewFileFlags.CLEAR_TO_RIGHT,syntax='Packages/Markdown/MultiMarkdown.sublime-syntax')
-                logger.debug(f'self.is_discardable: {self.is_discardable}')
-                new_tab.set_scratch(self.is_discardable)
                 new_tab = (self.view.window() or active_window()).new_file(
                     flags=NewFileFlags.ADD_TO_SELECTION | NewFileFlags.CLEAR_TO_RIGHT,
                     syntax='Packages/Markdown/MultiMarkdown.sublime-syntax',
                 )
+                logger.debug(f'self.is_discardable: {self.is_discardable}')
+                new_tab.set_scratch(self.is_discardable)
+                new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion_code})
             elif attribute == PhantomActions.history.value:
                 assitant_content = SublimeInputContent(InputKind.AssistantResponse, self.completion)
 
