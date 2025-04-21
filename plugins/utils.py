@@ -1,7 +1,7 @@
 import re
 
 
-def extract_code_blocks(md_text: str):
+def extract_code_blocks(md_text: str) -> str:
     """
     Return a list of the contents of each ```…``` code block in the given markdown. The code blocks must extend over multiple lines to be selected
     """
