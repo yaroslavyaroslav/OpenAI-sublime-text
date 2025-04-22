@@ -70,6 +70,8 @@ class PhantomStreamer:
             logger.debug(f'view selection: {view.sel()[0]}')
             self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
 
+        self.init_phantom()
+
     @property
     def completion_code(self) -> str:
         """Returns the completion text according to the settings (either only the generated code or all the completion)"""
@@ -78,11 +80,20 @@ class PhantomStreamer:
         else:
             return self.completion
 
-    def update_completion(self, completion: str):
-        line_beginning = self.view.line(self.view.sel()[0])
-        self.completion += completion
+    def init_phantom(self):
+        """Show a loading element to indicate that the model is processing the prompt"""
+        self.update_phantom('Loading...')
 
-        content = PHANTOM_TEMPLATE.format(streaming_content=self.completion)
+    def update_completion(self, completion: str):
+        """Update the completion and the phantom"""
+        self.completion += completion
+        self.update_phantom(self.completion)
+
+    def update_phantom(self, content):
+        """Update and show the phantom"""
+        line_beginning = self.view.line(self.view.sel()[0].end() if self.selected_region is None else self.selected_region.end())
+
+        content = PHANTOM_TEMPLATE.format(streaming_content=content)
         html = mdpopups._create_html(self.view, content, wrapper_class=CLASS_NAME)
 
         phantom = (
