@@ -21,6 +21,7 @@ from sublime import (
 from .load_model import get_cache_path
 from .output_panel import SharedOutputPanelListener
 from .response_manager import ResponseManager
+from .utils import extract_code_blocks
 
 OPENAI_COMPLETION_KEY = 'openai_completion'
 PHANTOM_TEMPLATE = (
@@ -59,9 +60,23 @@ class PhantomStreamer:
             .get('chat_presentation', {})
             .get('is_tabs_discardable', False)
         )
+        self.should_extract_code: bool = (
+            load_settings('openAI.sublime-settings')
+            .get('chat_presentation', {})
+            .get('phantom_integrate_code_only', False)
+        )
+
         if len(view.sel()) > 0:
             logger.debug(f'view selection: {view.sel()[0]}')
             self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
+
+    @property
+    def completion_code(self) -> str:
+        """Returns the completion text according to the settings (either only the generated code or all the completion)"""
+        if self.should_extract_code:
+            return extract_code_blocks(self.completion)
+        else:
+            return self.completion
 
     def update_completion(self, completion: str):
         line_beginning = self.view.line(self.view.sel()[0])
@@ -87,18 +102,18 @@ class PhantomStreamer:
         logger.debug(f'attribure: `{attribute}`')
         if attribute in [action.value for action in PhantomActions]:
             if attribute == PhantomActions.copy.value:
-                set_clipboard(self.completion)
+                set_clipboard(self.completion_code)
             if attribute == PhantomActions.append.value:
                 self.view.run_command(
                     'text_stream_at',
-                    {'position': self.selected_region.end(), 'text': self.completion},
+                    {'position': self.selected_region.end(),'text': self.completion_code},
                 )
             elif attribute == PhantomActions.replace.value:
                 region_object = {
                     'a': self.selected_region.begin(),
                     'b': self.selected_region.end(),
                 }
-                self.view.run_command('replace_region', {'region': region_object, 'text': self.completion})
+                self.view.run_command('replace_region', {'region': region_object, 'text': self.completion_code})
             elif attribute == PhantomActions.new_file.value:
                 new_tab = (self.view.window() or active_window()).new_file(
                     flags=NewFileFlags.ADD_TO_SELECTION | NewFileFlags.CLEAR_TO_RIGHT,
@@ -106,7 +121,7 @@ class PhantomStreamer:
                 )
                 logger.debug(f'self.is_discardable: {self.is_discardable}')
                 new_tab.set_scratch(self.is_discardable)
-                new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion})
+                new_tab.run_command('text_stream_at', {'position': 0, 'text': self.completion_code})
             elif attribute == PhantomActions.history.value:
                 assitant_content = SublimeInputContent(InputKind.AssistantResponse, self.completion)
 
