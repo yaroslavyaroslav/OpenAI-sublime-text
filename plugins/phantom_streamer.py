@@ -69,6 +69,8 @@ class PhantomStreamer:
         if len(view.sel()) > 0:
             logger.debug(f'view selection: {view.sel()[0]}')
             self.selected_region = view.sel()[0]  # saving only first selection to ease buffer logic
+        else:
+            self.selected_region = None
 
         self.init_phantom()
 
