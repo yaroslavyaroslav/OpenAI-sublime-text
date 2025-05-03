@@ -38,9 +38,19 @@ Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cp
 
 ## Installation
 
+**Via Package Control**
+
 1. Install the Sublime Text [Package Control](https://packagecontrol.io/installation) plugin if you haven't done this before.
 2. Open the command palette and type `Package Control: Install Package`.
 3. Type `OpenAI` and press `Enter`.
+
+**Via Git Clone**
+
+1. Go to your packages folder: `Preferences: Browse Packages`.
+2. Run `git clone https://github.com/yaroslavyaroslav/OpenAI-sublime-text.git OpenAI\ completion` in that folder that Sublime opened.
+3. Open Sublime Text and let it installed the dependencies.
+4. It may ask you to restart Sublime, do that if it does.
+5. Open Sublime again and type `OpenAI` and press `Enter`.
 
 > [!NOTE]
 > Highly recommended complimentary packages:
