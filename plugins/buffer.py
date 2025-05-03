@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from typing import Dict
+import logging
+from typing import Dict, List, Tuple
 
-from sublime import Edit, Region, View
-from sublime_types import Point
+from sublime import Edit, Region, Sheet, View
 from sublime_plugin import TextCommand
+from sublime_types import Point
+from llm_runner import SublimeInputContent, InputKind  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
-class TextStreamer:
+class BufferContentManager:
     def __init__(self, view: View) -> None:
         self.view = view
 
@@ -22,6 +26,38 @@ class TextStreamer:
     def delete_selected_region(self, region: Region):
         json_reg = {'a': region.begin(), 'b': region.end()}
         self.view.run_command('erase_region', {'region': json_reg})
+
+    @classmethod
+    def wrap_content_with_scope(cls, scope_name: str, content: str) -> str:
+        logger.debug(f'scope_name {scope_name}')
+        if scope_name.strip().lower() in ['markdown', 'multimarkdown', 'plain']:
+            wrapped_content = content
+        else:
+            wrapped_content = f'```{scope_name}\n{content}\n```'
+        logger.debug(f'wrapped_content {wrapped_content}')
+        return wrapped_content
+
+    @staticmethod
+    def wrap_sheet_contents_with_scope(sheets: List[Sheet]) -> List[SublimeInputContent]:
+        items = []
+
+        if sheets:
+            for sheet in sheets:
+                view = sheet.view()
+                if not view:
+                    continue  # If for some reason the sheet cannot be converted to a view, skip.
+
+                scope_region = view.scope_name(0)  # Assuming you want the scope at the start of the document
+                scope_name = scope_region.split(' ')[0].split('.')[-1]
+
+                file_path = view.file_name()
+                content = view.substr(Region(0, view.size()))
+                content = BufferContentManager.wrap_content_with_scope(scope_name, content)
+
+                wrapped_content = f'Path: `{file_path}`\n\n' + content
+                items.append(SublimeInputContent(InputKind.Sheet, wrapped_content, file_path, scope_name))
+
+        return items
 
 
 class TextStreamAtCommand(TextCommand):

@@ -1,10 +1,18 @@
 [
 	{
-		"caption": "OpenAI: Chat Model Select",
-		"command": "openai_panel",
-		"args": {
-			"files_included": false
-		}
+		"caption": "OpenAI: Chat Select Mode",
+	    "command": "show_overlay",
+	    "args": {
+	        "overlay": "command_palette",
+	        "command": "openai_panel",
+	        "args": {
+	        	"model": "current",
+	        }
+	    },
+	},
+	{
+	 	"caption": "OpenAI: Chat Model Select",
+		"command": "openai_panel"
 	},
 	{
 		"caption": "OpenAI: Handle image",
@@ -14,21 +22,35 @@
 		}
 	},
 	{
-		"caption": "OpenAI: Chat Model Select With Sheets",
-		"command": "openai_panel",
-		"args": {
-			"files_included": true
-		}
-	},
-	{
 		"caption": "OpenAI: New Message",
 		"command": "openai",
 	},
 	{
-		"caption": "OpenAI: New Message With Sheets",
+		"caption": "OpenAI: New Message With Build Output",
 		"command": "openai",
 		"args": {
-			"files_included": true
+			"build_output": true
+		}
+	},
+	{
+		"caption": "OpenAI: Chat Model Select With Build Output",
+		"command": "openai_panel",
+		"args": {
+			"build_output": true
+		}
+	},
+	{
+		"caption": "OpenAI: New Message With LSP Output",
+		"command": "openai",
+		"args": {
+			"lsp_diagnostics": true
+		}
+	},
+	{
+		"caption": "OpenAI: Chat Model Select With LSP Output",
+		"command": "openai_panel",
+		"args": {
+			"lsp_diagnostics": true
 		}
 	},
 	{
@@ -51,5 +73,13 @@
 		"args": {
 			"mode": "create_new_tab"
 		}
+	},
+	{
+		"caption": "OpenAI: Add Sheets to Context",
+		"command": "toggle_view_ai_context_included",
+	},
+	{
+		"caption": "OpenAI: Show All Selected Sheets",
+		"command": "select_sheets_with_ai_context_included",
 	}
 ]

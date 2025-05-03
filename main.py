@@ -7,12 +7,12 @@ for module_name in [module_name for module_name in sys.modules if module_name.st
 del prefix
 
 from .plugins.active_view_event import ActiveViewEventListener  # noqa: E402, F401
-from .plugins.ai_chat_event import AIChatViewEventListener  # noqa: E402, F401
 from .plugins.buffer import (  # noqa: E402, F401
     EraseRegionCommand,
     ReplaceRegionCommand,
     TextStreamAtCommand,
 )
+from .plugins.sheet_toggle import ToggleViewAiContextIncludedCommand, SelectSheetsWithAiContextIncludedCommand  # noqa: E402, F401
 from .plugins.openai import Openai  # noqa: E402, F401
 from .plugins.openai_panel import OpenaiPanelCommand  # noqa: E402, F401
 from .plugins.output_panel import SharedOutputPanelListener  # noqa: E402, F401

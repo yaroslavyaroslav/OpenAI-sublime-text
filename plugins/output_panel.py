@@ -2,18 +2,22 @@ from __future__ import annotations
 
 from typing import Dict
 
+from llm_runner import Roles, read_all_cache  # type: ignore
 from sublime import Settings, View, Window, load_settings
 from sublime_plugin import EventListener
 
-from .cacher import Cacher
+from .load_model import get_cache_path
 
 
 class SharedOutputPanelListener(EventListener):
     OUTPUT_PANEL_NAME = 'AI Chat'
 
-    def __init__(self, markdown: bool = True, cacher: Cacher = Cacher()) -> None:
+    def __init__(
+        self,
+        markdown: bool = True,
+    ) -> None:
         self.markdown: bool = markdown
-        self.cacher = cacher
+        # self.cacher = cacher
         self.settings: Settings = load_settings('openAI.sublime-settings')
         self.panel_settings: Dict[str, bool] | None = self.settings.get('chat_presentation')  # type: ignore
 
@@ -34,6 +38,7 @@ class SharedOutputPanelListener(EventListener):
         self.setup_common_presentation_style_(new_view, reversed=self.reverse_for_tab)
         ## FIXME: This is temporary, should be moved to plugin settings
         new_view.set_name(self.OUTPUT_PANEL_NAME)
+        new_view.settings().set('sheet_view', self.OUTPUT_PANEL_NAME)
 
     def get_output_panel_(self, window: Window) -> View:
         output_panel = window.find_output_panel(self.OUTPUT_PANEL_NAME) or window.create_output_panel(
@@ -68,27 +73,33 @@ class SharedOutputPanelListener(EventListener):
         return view
 
     def refresh_output_panel(self, window: Window):
-        output_panel = self.get_output_view_(window=window)
         self.clear_output_panel(window)
 
-        for line in self.cacher.read_all():
-            ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
-            ## (it's not that easy, since question and answer are the different lines)
-            ## FIXME: This logic conflicts with multifile/multimessage request behaviour
-            ## it presents ## Question above each message, while has to do it once for a pack.
-            if line['role'] == 'user':
-                output_panel.run_command('append', {'characters': '\n\n## Question\n\n', 'force': True})
-            elif line['role'] == 'assistant':
-                output_panel.run_command('append', {'characters': '\n\n## Answer\n\n', 'force': True})
+        path = get_cache_path(window.active_view())  # type: ignore
 
-            output_panel.run_command('append', {'characters': line['content'], 'force': True})
+        for item in read_all_cache(path):
+            ## TODO: Make me enumerated, e.g. Question 1, Question 2 etc.
+            if item.role == Roles.User:
+                if item.path:
+                    self.update_output_view('\n\n## Selection\n\n', window)
+                    self.update_output_view(f'Path: `{item.path}`', window)
+                    self.update_output_view('\n', window)
+                else:
+                    self.update_output_view('\n\n## Question\n\n', window)
+
+            elif item.role == Roles.Assistant:
+                self.update_output_view('\n\n## Answer\n\n', window)
+            if item.role == Roles.Tool:
+                self.update_output_view('item.tool_call_id', window)
+            else:
+                self.update_output_view(item.content, window)
 
         self.scroll_to_botton(window=window)
 
     def clear_output_panel(self, window: Window):
         output_panel = self.get_output_view_(window=window)
-        output_panel.run_command('select_all')
         output_panel.set_read_only(False)
+        output_panel.run_command('select_all')
         output_panel.run_command('right_delete')
         output_panel.set_read_only(True)
 
@@ -109,7 +120,6 @@ class SharedOutputPanelListener(EventListener):
         view = self.get_active_tab_(window) or None
         if view:
             view.set_name(self.OUTPUT_PANEL_NAME)
-            window.focus_view(self.get_active_tab_(window))  # type: ignore
             return
 
         window.run_command('show_panel', {'panel': f'output.{self.OUTPUT_PANEL_NAME}'})

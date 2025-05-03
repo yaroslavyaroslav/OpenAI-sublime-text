@@ -1,16 +1,16 @@
 {
     // URL for OpenAI compatiable APIs.
-    // It must start with http:// or https://, which selects protocol for connection. Use http:// when using localhost.
     // Selected parts of code and prompt will be sent to that URL, so make sure, you have all necessary permission to do so.
-    // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
-    "url": "https://api.openai.com",
+    // Example: "http://localhost:11434/v1/chat/completions" (assuming Ollama is running on localhost)
+    // Full url has to be provided
+    "url": "https://api.openai.com/v1/chat/completions",
 
     // Your openAI token
     // Token can be anything so long as it is at least 10 characters long.
     "token": "",
 
     // Apply Sublime Text markdown syntax highlight to OpenAI completion output panel text.
-    // Affects only `"prompt_mode": "panel"`.
+    // Affects only `"output_mode": "panel"`.
     // `MultimarkdownEditing` package highly recommended to install to apply syntax highlight for a wider range of languages.
     "markdown": true,
 
@@ -32,56 +32,54 @@
 
         // For phantom mode, for "In New Tab" option you can set this to true to avoid save file on close dialog for each view opened by plugin
         "is_tabs_discardable": false,
+
+
+        // For phantom mode, extract the code from the AI response when integrating the answer inside a code file (copy, append, replace, new file)
+        "phantom_integrate_code_only": false,
     },
 
     // Minimum amount of characters selected to perform completion.
     "minimum_selection_length": 10,
 
+    // The number of lines to read from the end of the standard build output panel (exec)
+    // -1 to read all the output (be carefull with that build output can be reeeeeeeeealy long)
+    "build_output_limit": 100,
+
     // Status bar hint setup that presents major info about currently active assistant setup (from the array of assistant objects above)
     // Possible options:
     //  - name: User defined assistant setup name
-    //  - prompt_mode: Model output prompt mode (panel|append|insert|replace)
+    //  - output_mode: Model output prompt mode (panel|append|insert|replace)
     //  - chat_model: Which OpenAI model are used within this setup (i.e. gpt-4o-mini, gpt-3.5-turbo-16k).
     //
     // You're capable to mix these whatever you want and the text in status bar will follow.
     "status_hint": [
         // "name",
-        // "prompt_mode",
-        // "chat_model"
+        // "output_mode",
+        // "chat_model",
+        // "sheets" // number of sheets selected as context
      ],
 
     // Proxy setting
-    "proxy": {
-        // Proxy address
-        "address": "",
+    // "proxy": {
+    //     // Proxy address
+    //     "address": "",
 
-        // Proxy port
-        "port": 8080,
+    //     // Proxy port
+    //     "port": 8080,
 
-        // Proxy username
-        "username": "",
+    //     // Proxy username
+    //     "username": "",
 
-        // Proxy password
-        "password": ""
-    },
+    //     // Proxy password
+    //     "password": ""
+    // },
 
     "assistants": [
         {
             // A string that will presented in command palette.
             "name": "Example", // **REQUIRED**
 
-            // Mode of how plugin should prompts its output, available options:
-            //  - panel: prompt would be output in output panel, selected text wouldn't be affected in any way.
-            //  - phantom: llm prompts in phantom view in a non-dstruptive way to the buffer content, each such phantom provides way to copy to clipboard, append, replace or paste in new created tab all the content with a single click.
-            //
-            // All cases but `panel` required to some text be selected beforehand.
-            // The same in all cases but `panel` user type within input panel will be treated by a model
-            // as `system` command, e.g. instruction to action.
-            //
-            // NOTE: Please pay attention that append, insert and replace are deprecated and will be removed in 5.0 release in favor to phantom mode.
-            "prompt_mode": "panel", // **REQUIRED**
-
-            // The model which will generate the chat completion.
+            // The model that generates the chat completion.
             // Generally here should be either "gpt-4o-latest|gpt-4o-mini" or their specified versions.
             // If using custom API, refer to their documentation for supported models.
             // Learn more at https://beta.openai.com/docs/models
@@ -91,7 +89,8 @@
             // It can act as a different kind of person. Recently in this plugin it was acting
             // like as a code assistant. With this setting you're able to set it up more precisely.
             // E.g. "You are (rust|python|js|whatever) developer assistant", "You are an english tutor" and so on.
-            "assistant_role": "You are a senior code assistant", // **REQUIRED**
+            // HINT: This is either `system` or `developer` message depending on api_spec set.
+            "assistant_role": "You are a senior code assistant",
 
             // URL for OpenAI alike API.
             // It must start with `http://` or `https://`, which selects protocol for connection. Use `http://` when using localhost.
@@ -101,50 +100,50 @@
 
             // Your whaterver service token
             // OpenAI and any other alike API token to put.
-            "token": "",
+            "token": "dummy_token",
 
-            // Placeholder requires for performing `insert` action.
-            // It got passed to OpenAI as an additional system command for additional context, to let it know
-            // what it should replace within the user's input.
-            //
-            // There's no need to duplicate this placeholder within assistant role property
-            //
-            // NOTE: Works quite unreliable with gpt-3.5-turbo model so far, but OpenAI promised to fix this.
-            // WARNING: This property would be passed to a model if it's provided and it might be a thing that bringing a mess in your dialog and in model answers.
-            "placeholder": "[PLACEHOLDER]",
+            // Toggle for function calls llm capability
+            // Check if your llm supports this feature before toggling this on
+            "tools": false,
 
             // What sampling temperature to use, between 0 and 2.
             // Higher values like 0.8 will make the output more random,
             // while lower values like 0.2 will make it more focused and deterministic.
             //
             // OpenAI generally recommend altering this or `top_p` but not both.
-            "temperature": 1,
+            "temperature": 1.0,
 
             // The maximum number of tokens to generate in the completion.
             // The token count of your prompt plus `max_tokens` cannot exceed the model's context length.
             // (One token is roughly 4 characters for normal English text)
-            // Does not affect editing mode.
             // DEPRECATED for OpenAI endpoint
             // USE EITHER this or `"max_completion_tokens"` setting
-            // "max_tokens": 4096,
+            "max_tokens": 4096,
 
             // Since o1 (September 2024) OpenAI deprecated max_token key,
             // Use this field to set the cap instead. The default value set here is recommended by OpenAI
-            // _minimal_ value for this particular model. https://platform.openai.com/docs/guides/reasoning/allocating-space-for-reasoning
+            // _minimal_ value for o1 model suggested by OpenAI is 250000. https://platform.openai.com/docs/guides/reasoning/allocating-space-for-reasoning
             "max_completion_tokens": 4096,
+
+            // `"api_type": "open_ai"` only
+            // The matter of efforts reasoning models to put in an answer
+            // - "low"
+            // - "medium"
+            // - "high"
+            "reasoning_effort": "low",
 
             // An alternative to sampling with temperature, called nucleus sampling,
             // where the model considers the results of the tokens with `top_p` probability mass.
             // So 0.1 means only the tokens comprising the top 10% probability mass are considered.
             //
             // OpenAI generally recommend altering this or `temperature` but not both.
-            "top_p": 1,
+            "top_p": 1.0,
 
             // Number between -2.0 and 2.0.
             // Positive values penalize new tokens based on their existing frequency in the text so far,
             // decreasing the model's likelihood to repeat the same line verbatim.
             // docs: https://platform.openai.com/docs/api-reference/parameter-details
-            "frequency_penalty": 0,
+            "frequency_penalty": 0.0,
 
             // Toggles whether to stream the response from the server or to get in atomically
             // after llm finishes its prompting.
@@ -152,34 +151,39 @@
             // By default this is true.
             "stream": true,
 
+            // Timeout to terminate the connection in seconds
+            //
+            // Sometimes some servers are just get stuck, so to not await forever till response will be accomplished set this setting to some value.
+            // Default value is 10.
+            "timeout": 10,
+
             // Number between -2.0 and 2.0.
-            /// Positive values penalize new tokens based on whether they appear in the text so far,
+            // Positive values penalize new tokens based on whether they appear in the text so far,
             // increasing the model's likelihood to talk about new topics.
             // docs: https://platform.openai.com/docs/api-reference/parameter-details
-            "presence_penalty": 0,
+            "presence_penalty": 0.0,
+
+            // API's are not quite compatiable with each other
+            // Thus you should specify the api for the given assistant.
+            // `plain_text` — default option.
+            // - `open_ai`, new OpenAI API specs, with reasoning efforts support etc
+            // - `plain_text`, old OpenAI API spec compatiable with most of 3rd parties hosts
+            // - `antropic` (UNIMPLEMENTED), api that forces strict order of user/assistant messages in the request.
+            "api_type": "open_ai"
         },
 
-        // Other examples //
+        // Examples
         {
             "name": "General Assistant Localhost",
-            "prompt_mode": "panel",
             "url": "http://127.0.0.1:8080", // See ma, no internet connection.
             "token": "",
             "chat_model": "Llama-3-8b-Q4-chat-hf",
             "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.\n",
             "temperature": 1,
-            "max_tokens": 2048,
-        },
-        {
-            "name": "General Assistant",
-            "prompt_mode": "panel",
-            "chat_model": "gpt-4o-mini",
-            "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.",
             "max_tokens": 4000,
         },
         {
             "name": "General Assistant",
-            "prompt_mode": "phantom",
             "chat_model": "gpt-4o-mini",
             "assistant_role": "1. You are to provide clear, concise, and direct responses.\n2. Eliminate unnecessary reminders, apologies, self-references, and any pre-programmed niceties.\n3. Maintain a casual tone in your communication.\n4. Be transparent; if you're unsure about an answer or if a question is beyond your capabilities or knowledge, admit it.\n5. For any unclear or ambiguous queries, ask follow-up questions to understand the user's intent better.\n6. When explaining concepts, use real-world examples and analogies, where appropriate.\n7. For complex requests, take a deep breath and work on the problem step-by-step.\n8. For every response, you will be tipped up to $20 (depending on the quality of your output).\n10. Always look closely to **ALL** the data provided by a user. It's very important to look so closely as you can there. Ppl can die otherways.\n11. If user strictly asks you about to write the code, write the code first, without explanation, and add them only by additional user request.",
             "max_tokens": 4000,
