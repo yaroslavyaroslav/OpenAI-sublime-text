@@ -4,9 +4,9 @@ import logging
 from typing import Any, Dict, List, Tuple
 
 import sublime
-from llm_runner import AssistantSettings, write_model, PromptMode  # type: ignore
+from llm_runner import AssistantSettings, PromptMode, write_model  # type: ignore
 from sublime import Settings, Window
-from sublime_plugin import WindowCommand, ListInputHandler
+from sublime_plugin import ListInputHandler, WindowCommand
 from sublime_types import Value
 
 from .load_model import get_cache_path, get_model_or_default
@@ -53,7 +53,19 @@ class OpenaiPanelCommand(WindowCommand):
 
             view = self.window.active_view()
             path = get_cache_path(self.window.active_view())
-            write_model(path, assistant)
+
+            if assistant.output_mode == PromptMode.Phantom:
+                logger.debug('assistant: %s', assistant.output_mode)
+                updated_assistant = assistant.deep_copy()
+                updated_assistant.output_mode = PromptMode.View
+
+                logger.debug('assistant: %s', updated_assistant.output_mode)
+
+                write_model(path, updated_assistant)
+            else:
+                write_model(path, assistant)
+
+            logger.debug('assistant: %s', assistant.output_mode)
 
             CommonMethods.process_openai_command(
                 view,
@@ -83,8 +95,6 @@ class OpenaiPanelCommand(WindowCommand):
         logger.debug('path: %s', path)
         logger.debug('assistant.api_type:  %s', assistant.api_type)
 
-        write_model(path, assistant)
-
         CommonMethods.process_openai_command(
             view,  # type: ignore
             assistant,
@@ -104,7 +114,7 @@ class AIWholeInputHandler(ListInputHandler):
         self.window = window
         self.settings: Settings = sublime.load_settings('openAI.sublime-settings')
         self.assistants: List[Dict[str, Any]] = self.settings.get('assistants', [])  # type: ignore
-        self.output_modes = ['view', 'phantom']
+        self.output_modes = ['phantom', 'view']
 
     def name(self):
         return self._name
@@ -138,7 +148,7 @@ class AIWholeInputHandler(ListInputHandler):
     def list_items(self) -> List[Tuple[str, Value]]:
         logger.debug('list_items _name: %s', self._name)
         if self._name == 'model':
-            return [(assistant['name'], self.check_default_values(assistant)) for assistant in self.assistants]
+            return [(assistant['name'], assistant) for assistant in self.assistants]
         elif self._name == 'output_mode':
             return [(value, value) for value in self.output_modes]
 
@@ -147,9 +157,3 @@ class AIWholeInputHandler(ListInputHandler):
     def next_input(self, args):
         if self.next_names:
             return AIWholeInputHandler(self.window, self.next_names, args)
-
-    def check_default_values(self, assistant: dict[str, Any]):
-        # Makes sure that the default settings are set or taken from the global settings file.
-        assistant.setdefault('url', self.settings.get('url'))
-        assistant.setdefault('token', self.settings.get('token', ''))
-        return assistant

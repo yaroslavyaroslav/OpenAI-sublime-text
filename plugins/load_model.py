@@ -1,8 +1,8 @@
 import logging
+import os
 
 from llm_runner import AssistantSettings, read_model  # type: ignore
-from sublime import View, cache_path, load_settings, ok_cancel_dialog, windows
-import os
+from sublime import View, cache_path, load_settings, ok_cancel_dialog
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ def get_cache_path(view: View) -> str:
             except Exception as e:
                 logger.error('Failed to create folder at %s: %s', path, e)
         else:
-            view.window.set("")
+            view.window().set('')
             logger.debug('User chose not to create folder at %s', path)
 
     return path

@@ -1,0 +1,6 @@
+[
+    {
+        "caption": "OpenAI: Add File to Context",
+        "command": "toggle_view_ai_context_included"
+    },
+]

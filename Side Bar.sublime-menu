@@ -1,0 +1,9 @@
+[
+    {
+        "caption": "OpenAI: Add File to Context",
+        "command": "toggle_view_ai_context_included",
+        "args": {
+            "paths": []
+        } // You can use "paths" if you want, or leave empty for your current code
+    },
+]
