@@ -148,7 +148,7 @@ class AIWholeInputHandler(ListInputHandler):
     def list_items(self) -> List[Tuple[str, Value]]:
         logger.debug('list_items _name: %s', self._name)
         if self._name == 'model':
-            return [(assistant['name'], self.check_default_values(assistant)) for assistant in self.assistants]
+            return [(assistant['name'], assistant) for assistant in self.assistants]
         elif self._name == 'output_mode':
             return [(value, value) for value in self.output_modes]
 
@@ -157,9 +157,3 @@ class AIWholeInputHandler(ListInputHandler):
     def next_input(self, args):
         if self.next_names:
             return AIWholeInputHandler(self.window, self.next_names, args)
-
-    def check_default_values(self, assistant: dict[str, Any]):
-        # Makes sure that the default settings are set or taken from the global settings file.
-        assistant.setdefault('url', self.settings.get('url'))
-        assistant.setdefault('token', self.settings.get('token', ''))
-        return assistant
