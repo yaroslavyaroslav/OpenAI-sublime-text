@@ -127,6 +127,14 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 2. Provide a `"token"` if your provider required one.
 3. Tweak `"chat_model"` to a model of your choice and you're set.
 
+### Google Gemini models
+
+1. Replace `"url"` setting of a given model to point to the [Google Gemini OpenAI compatible API](https://ai.google.dev/gemini-api/docs/openai#rest): `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`.
+2. Provide a `"token"` if your provider required one.
+3. Tweak `"chat_model"` to [a model from the list of supported models](https://ai.google.dev/gemini-api/docs/models#model-variations).
+
+You can read more [about OpenAI compatibility in the Gemini documentation](https://ai.google.dev/gemini-api/docs/openai#rest).
+
 > [!NOTE]
 > You can set both `url` and `token` either global or on per assistant instance basis, thus being capable to freely switching between closed source and open sourced models within a single session.
 
