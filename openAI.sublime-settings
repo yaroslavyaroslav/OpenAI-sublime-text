@@ -183,6 +183,14 @@
             "chat_model": "gemini-2.5-flash-preview-04-17",
             "assistant_role": "You are a senior code assistant",
             "max_tokens": 4000,
+        },
+        {
+            "name": "Claude Assistant",
+            "url": "https://api.anthropic.com/v1/chat/completions",
+            "token": "YOUR_TOKEN_HERE",
+            "chat_model": "claude-3-5-sonnet-latest",
+            "assistant_role": "You are a senior code assistant",
+            "max_tokens": 4000,
         }
     ]
 }
