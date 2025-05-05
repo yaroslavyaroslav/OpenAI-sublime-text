@@ -141,7 +141,7 @@ You can read more [about OpenAI compatibility in the Gemini documentation](https
 2. Provide a `"token"` if your provider required one.
 3. Tweak `"chat_model"` to [a model from the list of supported models](https://docs.anthropic.com/en/docs/about-claude/models/all-models).
 
-You can read more [about OpenAI compatibility in the Anthropic Claude documentation](https://docs.anthropic.com/en/docs/about-claude/models/all-models).
+You can read more [about OpenAI compatibility in the Anthropic Claude documentation](https://docs.anthropic.com/en/api/openai-sdk).
 
 > [!NOTE]
 > You can set both `url` and `token` either global or on per assistant instance basis, thus being capable to freely switching between closed source and open sourced models within a single session.
