@@ -1,8 +1,5 @@
 [![Star on GitHub][img-stars]][stars] ![Package Control][img-downloads]
 
-> [!WARNING]
-> Package Control do not fetches any updates for a two weeks for now and there's nothing I can do with that, so if you want to use the latest version of this package you have to clone it and install it manually.
-
 # OpenAI Sublime Text Plugin
 ## tldr;
 
@@ -10,16 +7,14 @@ Cursor level of AI assistance for Sublime Text. I mean it.
 
 Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cpp) server, [ollama](https://ollama.com) or whatever third party LLM hosting. Claude API support coming soon.
 
-> [!NOTE]
-> 5.0.0 release is around the corner! Check out [release notes](https://github.com/yaroslavyaroslav/OpenAI-sublime-text/blob/develop/messages/5.0.0.md) for details.
 
 ![](static/media/ai_chat_left_full.png)
 
 ## Features
 
 - **Chat mode** powered by whatever model you'd like.
-- **o3-mini** and **o1** support.
-- **gpt-4.5-preview** support
+- **o4-mini** and **o3** support.
+- **gpt-4.1** support
 - **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
 - **Dedicated chats histories** and assistant settings for a projects.
 - **Ability to send whole files** or their parts as a context expanding.
@@ -38,9 +33,19 @@ Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cp
 
 ## Installation
 
+**Via Package Control**
+
 1. Install the Sublime Text [Package Control](https://packagecontrol.io/installation) plugin if you haven't done this before.
 2. Open the command palette and type `Package Control: Install Package`.
 3. Type `OpenAI` and press `Enter`.
+
+**Via Git Clone**
+
+1. Go to your packages folder: `Preferences: Browse Packages`.
+2. Run `git clone https://github.com/yaroslavyaroslav/OpenAI-sublime-text.git OpenAI\ completion` in that folder that Sublime opened.
+3. Open Sublime Text and let it installed the dependencies.
+4. It may ask you to restart Sublime, do that if it does.
+5. Open Sublime again and type `OpenAI` and press `Enter`.
 
 > [!NOTE]
 > Highly recommended complimentary packages:
@@ -121,6 +126,14 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`http://localhost:8080/v1/chat/completions`).
 2. Provide a `"token"` if your provider required one.
 3. Tweak `"chat_model"` to a model of your choice and you're set.
+
+### Google Gemini models
+
+1. Replace `"url"` setting of a given model to point to the [Google Gemini OpenAI compatible API](https://ai.google.dev/gemini-api/docs/openai#rest): `https://generativelanguage.googleapis.com/v1beta/openai/chat/completions`.
+2. Provide a `"token"` if your provider required one.
+3. Tweak `"chat_model"` to [a model from the list of supported models](https://ai.google.dev/gemini-api/docs/models#model-variations).
+
+You can read more [about OpenAI compatibility in the Gemini documentation](https://ai.google.dev/gemini-api/docs/openai#rest).
 
 > [!NOTE]
 > You can set both `url` and `token` either global or on per assistant instance basis, thus being capable to freely switching between closed source and open sourced models within a single session.
