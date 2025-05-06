@@ -1,24 +1,86 @@
 from __future__ import annotations
-
 import logging
+import subprocess
 from enum import Enum
 from json import dumps, loads
-from typing import Dict
+from typing import Dict, List, Tuple
 
 from sublime import Region, Window
-
 from .project_structure import build_folder_structure
 
-# FIXME: logger prints nothing from within rust context
 logger = logging.getLogger(__name__)
 
 
-# TODO: This should be deleted in favor to rust type
 class Function(str, Enum):
-    replace_text_with_another_text = 'replace_text_with_another_text'
+    apply_patch = 'apply_patch'
     replace_text_for_whole_file = 'replace_text_for_whole_file'
     read_region_content = 'read_region_content'
     get_working_directory_content = 'get_working_directory_content'
+
+
+def _normalize_patch(patch_text: str) -> Tuple[str, str]:
+    """
+    Strip the Begin/End markers, rewrite Update File into ---/+++ headers,
+    return (normalized_diff, file_path).
+    """
+    in_patch = False
+    diff_lines: List[str] = []
+    file_path: str | None = None
+
+    for line in patch_text.splitlines():
+        if line.startswith('*** Begin Patch'):
+            in_patch = True
+            continue
+        if line.startswith('*** End Patch'):
+            break
+        if not in_patch:
+            continue
+
+        if line.startswith('*** Update File:'):
+            file_path = line[len('*** Update File:') :].strip()
+            diff_lines.append(f'--- a/{file_path}')
+            diff_lines.append(f'+++ b/{file_path}')
+        else:
+            diff_lines.append(line)
+
+    if not file_path:
+        raise ValueError('No "*** Update File:" line found in patch.')
+    return '\n'.join(diff_lines) + '\n', file_path
+
+
+def _parse_simple_patch(diff: str) -> List[Tuple[str, str]]:
+    """
+    Extract contiguous - / + blocks as (old_block, new_block) pairs.
+    This version preserves indentation by removing only the first character.
+    """
+    lines = diff.splitlines()
+    i = 0
+    hunks: List[Tuple[str, str]] = []
+
+    while i < len(lines):
+        # old-hunk lines start with '-' but not '---' (the file-header)
+        if lines[i].startswith('-') and not lines[i].startswith('---'):
+            old_block_lines: List[str] = []
+            # collect all consecutive '-' lines
+            while i < len(lines) and lines[i].startswith('-') and not lines[i].startswith('---'):
+                old_block_lines.append(lines[i][1:])  # strip only the '-' marker
+                i += 1
+
+            new_block_lines: List[str] = []
+            # collect all consecutive '+' lines
+            while i < len(lines) and lines[i].startswith('+') and not lines[i].startswith('+++'):
+                new_block_lines.append(lines[i][1:])  # strip only the '+' marker
+                i += 1
+
+            old_text = '\n'.join(old_block_lines)
+            new_text = '\n'.join(new_block_lines)
+            old_hunk = old_text + '\n'
+            new_hunk = (new_text + '\n') if new_block_lines else ''
+            hunks.append((old_hunk, new_hunk))
+        else:
+            i += 1
+
+    return hunks
 
 
 class FunctionHandler:
@@ -26,53 +88,45 @@ class FunctionHandler:
     def perform_function(func_name: str, args: str, window: Window) -> str:
         args_json = loads(args)
         logger.debug(f'executing: {func_name}')
-        if func_name == Function.replace_text_with_another_text.value:
-            path = args_json.get('file_path')
-            old_content = args_json.get('old_content')
-            new_content = args_json.get('new_content')
 
-            if (
-                path
-                and isinstance(path, str)
-                and old_content
-                and isinstance(old_content, str)
-                and new_content
-                and isinstance(new_content, str)
-            ):
-                view = window.find_open_file(path)
-                if view:
-                    escaped_string = (
-                        old_content.replace('(', r'\(')
-                        .replace(')', r'\)')
-                        .replace('[', r'\[')
-                        .replace(']', r'\]')
-                        .replace('{', r'\{')
-                        .replace('}', r'\}')
-                        .replace('|', r'\|')
-                        .replace('"', r'\"')
-                        .replace('\\', r'\\\\')
-                    )
-                    region = view.find(pattern=escaped_string, start_pt=0)
-                    logger.debug(f'region {region}')
-                    serializable_region = {
-                        'a': region.begin(),
-                        'b': region.end(),
-                    }
-                    if (
-                        region.begin() == region.end() == -1 or region.begin() == region.end() == 0
-                    ):  # means search found nothing
-                        return f'Text not found: {old_content}'
-                    else:
-                        view.run_command(
-                            'replace_region',
-                            {'region': serializable_region, 'text': new_content},
-                        )
-                        return dumps(serializable_region)
-                else:
-                    return f'File under path not found: {path}'
-            else:
-                return f'Wrong attributes passed: {path}, {old_content}, {new_content}'
+        # -------------------------------------------------------------------
+        # apply_patch
+        if func_name == Function.apply_patch.value:
+            patch_text = args_json.get('patch')
+            if not isinstance(patch_text, str):
+                return 'Wrong attributes passed: patch must be a string'
 
+            # normalize + extract path
+            try:
+                normalized_diff, path = _normalize_patch(patch_text)
+            except Exception as e:
+                return str(e)
+
+            # simple find/replace fallback (always use this)
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    original = f.read()
+                new_content = original
+
+                hunks = _parse_simple_patch(normalized_diff)
+                if not hunks:
+                    return 'No patch hunks found'
+
+                for old_hunk, new_hunk in hunks:
+                    new_content = new_content.replace(old_hunk, new_hunk)
+
+                if new_content == original:
+                    return 'Patch did not match any content'
+
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
+            except Exception as e:
+                return f'Patch failed: {e}'
+
+            return 'Done!'
+
+        # -------------------------------------------------------------------
+        # replace_text_for_whole_file
         elif func_name == Function.replace_text_for_whole_file.value:
             path = args_json.get('file_path')
             create = args_json.get('create')
