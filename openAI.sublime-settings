@@ -9,7 +9,6 @@
         // Toggles whether to present gutter itself
         "gutter_enabled": true,
 
-
         // Toggles whether to present line numbers row
         "line_numbers_enabled": true,
 
@@ -25,6 +24,12 @@
 
         // For phantom mode, extract the code from the AI response when integrating the answer inside a code file (copy, append, replace, new file)
         "phantom_integrate_code_only": false,
+
+        // Settings to false will make Phantom always works as a one shot option,
+        // while keeping view mode as a permanent fallback
+        //
+        // Useful is you want to use phantoms for clarification while keepin your session in the chat view.
+        "phantom_permanent": true,
     },
 
     // Minimum amount of characters selected to perform completion.

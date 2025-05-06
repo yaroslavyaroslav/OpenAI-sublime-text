@@ -54,7 +54,10 @@ class OpenaiPanelCommand(WindowCommand):
             view = self.window.active_view()
             path = get_cache_path(self.window.active_view())
 
-            if assistant.output_mode == PromptMode.Phantom:
+            if (
+                not self.settings.get('chat_presentation', {}).get('phantom_permanent', False)
+                and assistant.output_mode == PromptMode.Phantom
+            ):
                 logger.debug('assistant: %s', assistant.output_mode)
                 updated_assistant = assistant.deep_copy()
                 updated_assistant.output_mode = PromptMode.View
