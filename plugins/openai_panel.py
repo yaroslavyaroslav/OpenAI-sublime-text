@@ -4,6 +4,7 @@ import logging
 from typing import Any, Dict, List, Tuple
 
 import sublime
+import os
 from llm_runner import AssistantSettings, PromptMode, write_model  # type: ignore
 from sublime import Settings, Window
 from sublime_plugin import ListInputHandler, WindowCommand
@@ -142,7 +143,15 @@ class AIWholeInputHandler(ListInputHandler):
     def preview(self, text: str) -> str | sublime.Html:
         sheets = get_marked_sheets(self.window)
         views = [sheet.view() for sheet in sheets]
-        names = [view.name() or view.file_name().split('/')[-1] for view in views]
+
+        names = []
+        for view in views:
+            if view:
+                name = view.name()
+                if not name:
+                    fname = view.file_name()
+                    name = os.path.basename(fname) if fname else '<untitled>'
+                names.append(name)
 
         # Create a vertical list in HTML format
         list_items = ''.join(f'<li>{name}</li>' for name in names)
