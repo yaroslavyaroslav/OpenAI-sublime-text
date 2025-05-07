@@ -89,7 +89,7 @@
 
             // URL for OpenAI alike API.
             // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
-            "url": "https://api.openai.com/v1/responses",
+            "url": "https://api.openai.com/v1/chat/completions",
 
             // Your whaterver service token
             // OpenAI and any other alike API token to put.
