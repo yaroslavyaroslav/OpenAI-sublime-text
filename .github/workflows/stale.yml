@@ -18,3 +18,4 @@ jobs:
           days-before-close: 7
           stale-issue-label: "stale"
           stale-pr-label: "stale"
+          exempt-issue-labels: "help-wanded, good first issue"
