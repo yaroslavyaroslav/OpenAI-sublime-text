@@ -100,6 +100,11 @@ class FunctionHandler:
             # normalize + extract path
             try:
                 normalized_diff, path = _normalize_patch(patch_text)
+                # If path is not absolute, treat it as relative to project root
+                if not os.path.isabs(path):
+                    folders = window.folders()
+                    project_root = folders[0] if folders else os.getcwd()
+                    path = os.path.join(project_root, path)
             except Exception as e:
                 return (
                     "Failed to parse patch header. Make sure your patch includes the markers and file path: \n"
@@ -151,38 +156,49 @@ class FunctionHandler:
             path = args_json.get('file_path')
             create = args_json.get('create')
             content = args_json.get('content')
-            if path and isinstance(path, str) and content and isinstance(content, str):
-                if isinstance(create, bool):
-                    window.open_file(path)
-                view = window.find_open_file(path)
-                if view:
-                    region = Region(0, len(view))
-                    view.run_command(
-                        'replace_region',
-                        {'region': {'a': region.begin(), 'b': region.end()}, 'text': content},
-                    )
-                    text = view.substr(region)
-                    return dumps({'result': text})
-                else:
-                    return f'File under path not found: {path}'
+            if not (isinstance(path, str) and isinstance(content, str)):
+                return f'Wrong attributes passed: file_path={path}, content={content}'
+            # resolve non-absolute path against project root
+            if not os.path.isabs(path):
+                folders = window.folders()
+                project_root = folders[0] if folders else os.getcwd()
+                path = os.path.join(project_root, path)
+            # open or find the file view
+            if create:
+                view = window.open_file(path)
             else:
-                return f'Wrong attributes passed: {path}, {content}'
+                view = window.find_open_file(path) or window.open_file(path)
+            if not view:
+                return f'File under path not found: {path}'
+            # replace entire content
+            region = Region(0, view.size())
+            view.run_command(
+                'replace_region',
+                {'region': {'a': region.begin(), 'b': region.end()}, 'text': content},
+            )
+            text = view.substr(region)
+            return dumps({'result': text})
 
         elif func_name == Function.read_region_content.value:
             path = args_json.get('file_path')
             region = args_json.get('region')
-            if path and isinstance(path, str) and region and isinstance(region, Dict):
-                view = window.find_open_file(path)
-                if view:
-                    a_reg: int = region.get('a') if region.get('a') != -1 else 0  # type: ignore
-                    b_reg = region.get('b') if region.get('b') != -1 else len(view)
-                    region_ = Region(a=a_reg, b=b_reg)
-                    text = view.substr(region_)
-                    return dumps({'content': f'{text}'})
-                else:
-                    return f'File under path not found: {path}'
-            else:
-                return f'Wrong attributes passed: {path}, {region}'
+            if not (isinstance(path, str) and isinstance(region, Dict)):
+                return f'Wrong attributes passed: file_path={path}, region={region}'
+            # resolve non-absolute path against project root
+            if not os.path.isabs(path):
+                folders = window.folders()
+                project_root = folders[0] if folders else os.getcwd()
+                path = os.path.join(project_root, path)
+            # open or find view
+            view = window.find_open_file(path) or window.open_file(path)
+            if not view:
+                return f'File under path not found: {path}'
+            # extract region
+            a_reg = region.get('a') if region.get('a') != -1 else 0
+            b_reg = region.get('b') if region.get('b') != -1 else view.size()
+            region_ = Region(a=a_reg, b=b_reg)
+            text = view.substr(region_)
+            return dumps({'content': text})
 
         elif func_name == Function.get_working_directory_content.value:
             path = args_json.get('directory_path')
