@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import subprocess
+import os
 from enum import Enum
 from json import dumps, loads
 from typing import Dict, List, Tuple
@@ -100,7 +101,13 @@ class FunctionHandler:
             try:
                 normalized_diff, path = _normalize_patch(patch_text)
             except Exception as e:
-                return str(e)
+                return (
+                    "Failed to parse patch header. Make sure your patch includes the markers and file path: \n"
+                    "*** Begin Patch\n"
+                    "*** Update File: /path/to/your/file\n"
+                    "*** End Patch\n"
+                    f"Parsing error: {e}"
+                )
 
             # simple find/replace fallback (always use this)
             try:
@@ -110,13 +117,26 @@ class FunctionHandler:
 
                 hunks = _parse_simple_patch(normalized_diff)
                 if not hunks:
-                    return 'No patch hunks found'
+                    return (
+                        'Invalid patch format. Expected patch syntax:\n'
+                        '*** Begin Patch\n'
+                        '*** Update File: /path/to/file\n'
+                        '@@ -start,count +start,count @@\n'
+                        '-old line\n'
+                        '+new line\n'
+                        '*** End Patch'
+                    )
 
                 for old_hunk, new_hunk in hunks:
                     new_content = new_content.replace(old_hunk, new_hunk)
 
                 if new_content == original:
-                    return 'Patch did not match any content'
+                    return (
+                        'Patch format recognized, but no changes were applied. '
+                        "The diff syntax is correct; verify that the '-' lines exactly match "
+                        'current file content (including whitespace/indentation) and '
+                        "'+' lines reflect intended additions."
+                    )
 
                 with open(path, 'w', encoding='utf-8') as f:
                     f.write(new_content)
@@ -166,16 +186,22 @@ class FunctionHandler:
 
         elif func_name == Function.get_working_directory_content.value:
             path = args_json.get('directory_path')
-            logger.debug('path: %s', path)
-            if path == './':
+            logger.debug('initial directory_path: %s', path)
+            # Determine base directory: use provided path, project root, or active view
+            if not path or path in ('.', './'):
                 folders = window.folders()
                 if folders:
                     path = folders[0]
+                else:
+                    view = window.active_view()
+                    filename = view.file_name() if view else None
+                    if filename:
+                        path = os.path.dirname(filename)
+                    else:
+                        path = os.getcwd()
             if path and isinstance(path, str):
                 folder_structure = build_folder_structure(path)
-
                 return dumps({'content': f'{folder_structure}'})
-            else:
-                return f'Wrong attributes passed: {path}'
+            return f'Wrong attributes passed: {path}'
         else:
             return f"Called function doen't exists: {func_name}"
