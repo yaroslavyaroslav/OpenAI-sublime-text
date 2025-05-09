@@ -50,35 +50,117 @@ def _normalize_patch(patch_text: str) -> Tuple[str, str]:
     return '\n'.join(diff_lines) + '\n', file_path
 
 
-def _parse_simple_patch(diff: str) -> List[Tuple[str, str]]:
+# ---------------------------------------------------------------------------
+# New robust (model-style) diff parser & applier
+# ---------------------------------------------------------------------------
+
+
+def _parse_model_patch(diff: str) -> List[Tuple[str, str]]:
+    """Parse a *very* restricted patch produced by the model.
+
+    Rules:
+        • No @@/index/Hunk headers – only raw -/+ lines.
+        • Each hunk starts with ≥1 lines beginning with '-'. These lines form
+          the *context* to locate in the file.
+        • Optional consecutive '+' lines that immediately follow the '-' block
+          make the replacement. If there are no '+', it is pure deletion.
+        • Hunks are separated by at least one non-prefixed line (blank or any
+          other text) **or** by a change of prefix (e.g., previous hunk’s +
+          block ended and we encounter the next '-').
+    Returns
+        List of tuples: [(old_block, new_block), ...]
     """
-    Extract contiguous - / + blocks as (old_block, new_block) pairs.
-    This version preserves indentation by removing only the first character.
-    """
+
     lines = diff.splitlines()
     i = 0
     hunks: List[Tuple[str, str]] = []
 
     while i < len(lines):
-        # old-hunk lines start with '-' but not '---' (the file-header)
+        # Locate the first '-' line which is NOT a file header ('--- a/file')
         if lines[i].startswith('-') and not lines[i].startswith('---'):
             old_block_lines: List[str] = []
-            # collect all consecutive '-' lines
+            new_block_lines: List[str] = []
+
+            # 1. Gather all consecutive '-' lines
             while i < len(lines) and lines[i].startswith('-') and not lines[i].startswith('---'):
-                old_block_lines.append(lines[i][1:])  # strip only the '-' marker
+                old_block_lines.append(lines[i][1:])  # strip prefix, preserve indentation
+                i += 1
+
+            # 2. Gather all consecutive '+' lines right after the '-'-block
+            while i < len(lines) and lines[i].startswith('+') and not lines[i].startswith('+++'):
+                new_block_lines.append(lines[i][1:])
+                i += 1
+
+            old_hunk = '\n'.join(old_block_lines) + '\n'
+            new_hunk = ('\n'.join(new_block_lines) + '\n') if new_block_lines else ''
+
+            if not old_block_lines:
+                raise ValueError('Hunk without context (no "-" lines) encountered')
+
+            hunks.append((old_hunk, new_hunk))
+        else:
+            i += 1
+
+    if not hunks:
+        raise ValueError('No hunks found – patch body is empty or mis-formatted')
+
+    return hunks
+
+
+def _apply_hunks_sequentially(original: str, hunks: List[Tuple[str, str]]) -> str:
+    """Apply hunks **in order**; replace only the *first* occurrence of each old block.
+
+    This deterministic approach reduces the risk of over-replacing repeated
+    patterns. Raises RuntimeError if a hunk cannot be located.
+    """
+
+    updated = original
+    for idx, (old, new) in enumerate(hunks, start=1):
+        if old == '':
+            # Should not happen due to parser rules, but tolerate – treat as append EOF
+            updated += new
+            continue
+
+        pos = updated.find(old)
+        if pos == -1:
+            snippet = old.split('\n')[0][:80]  # first line for context
+            raise RuntimeError(
+                f'Hunk {idx}: context not found – failed to locate "{snippet}..." in target file'
+            )
+
+        updated = updated.replace(old, new, 1)  # replace once
+
+    return updated
+
+
+# ---------------------------------------------------------------------------
+# (Legacy) keep the old simple parser for backward-compatibility, use it as
+# fallback when the strict parser fails.
+# ---------------------------------------------------------------------------
+
+
+def _parse_simple_patch(diff: str) -> List[Tuple[str, str]]:
+    """Very loose parser kept as fallback for older patches."""
+
+    lines = diff.splitlines()
+    i = 0
+    hunks: List[Tuple[str, str]] = []
+
+    while i < len(lines):
+        if lines[i].startswith('-') and not lines[i].startswith('---'):
+            old_block_lines: List[str] = []
+            while i < len(lines) and lines[i].startswith('-') and not lines[i].startswith('---'):
+                old_block_lines.append(lines[i][1:])
                 i += 1
 
             new_block_lines: List[str] = []
-            # collect all consecutive '+' lines
             while i < len(lines) and lines[i].startswith('+') and not lines[i].startswith('+++'):
-                new_block_lines.append(lines[i][1:])  # strip only the '+' marker
+                new_block_lines.append(lines[i][1:])
                 i += 1
 
-            old_text = '\n'.join(old_block_lines)
-            new_text = '\n'.join(new_block_lines)
-            old_hunk = old_text + '\n'
-            new_hunk = (new_text + '\n') if new_block_lines else ''
-            hunks.append((old_hunk, new_hunk))
+            old_text = '\n'.join(old_block_lines) + '\n'
+            new_text = ('\n'.join(new_block_lines) + '\n') if new_block_lines else ''
+            hunks.append((old_text, new_text))
         else:
             i += 1
 
@@ -115,39 +197,62 @@ class FunctionHandler:
                     f'Parsing error: {e}'
                 )
 
-            # simple find/replace fallback (always use this)
+            # -------------------------------------------------------------------
+            # 1) Read original file content (fail early if file absent)
+            # -------------------------------------------------------------------
             try:
                 with open(path, 'r', encoding='utf-8') as f:
                     original = f.read()
-                new_content = original
+            except FileNotFoundError:
+                return f'File not found: {path}'
+            except Exception as e:
+                return f'Unable to read {path}: {e}'
 
-                hunks = _parse_simple_patch(normalized_diff)
-                if not hunks:
-                    return (
-                        'Invalid patch format. Expected patch syntax:\n'
-                        '*** Begin Patch\n'
-                        '*** Update File: /path/to/file\n'
-                        '@@ -start,count +start,count @@\n'
-                        '-old line\n'
-                        '+new line\n'
-                        '*** End Patch'
-                    )
+            # -------------------------------------------------------------------
+            # 2) Parse & apply with strict model-style diff first
+            #    Fallback to legacy simple parser if strict one fails.
+            # -------------------------------------------------------------------
+            new_content: str | None = None
+            strict_err: Exception | None = None
 
-                for old_hunk, new_hunk in hunks:
-                    new_content = new_content.replace(old_hunk, new_hunk)
+            try:
+                hunks = _parse_model_patch(normalized_diff)
+                new_content = _apply_hunks_sequentially(original, hunks)
+            except Exception as e:
+                strict_err = e  # save and attempt the loose parser next
 
-                if new_content == original:
-                    return (
-                        'Patch format recognized, but no changes were applied. '
-                        "The diff syntax is correct; verify that the '-' lines exactly match "
-                        'current file content (including whitespace/indentation) and '
-                        "'+' lines reflect intended additions."
-                    )
+            if new_content is None:
+                try:
+                    hunks = _parse_simple_patch(normalized_diff)
+                    if not hunks:
+                        return (
+                            'Patch parse failed – no hunks detected. \n'
+                            'Ensure each change block starts with one or more "-" lines \n'
+                            'and the patch is wrapped between *** Begin Patch / *** End Patch.'
+                        )
+                    new_content = _apply_hunks_sequentially(original, hunks)
+                except Exception as legacy_err:
+                    return f'Strict parser error: {strict_err}. \nFallback parser also failed: {legacy_err}'
 
+            # -------------------------------------------------------------------
+            # 3) Check if anything actually changed
+            # -------------------------------------------------------------------
+            if new_content == original:
+                return (
+                    'Patch parsed successfully but produced no change. \n'
+                    'Verify that the "-" lines exactly match the current file content.'
+                )
+
+            # -------------------------------------------------------------------
+            # 4) Write back to disk
+            # -------------------------------------------------------------------
+            try:
                 with open(path, 'w', encoding='utf-8') as f:
                     f.write(new_content)
+            except PermissionError as e:
+                return f'Permission denied when writing to {path}: {e}'
             except Exception as e:
-                return f'Patch failed: {e}'
+                return f'Failed to write changes to {path}: {e}'
 
             return 'Done!'
 
@@ -157,28 +262,52 @@ class FunctionHandler:
             path = args_json.get('file_path')
             create = args_json.get('create')
             content = args_json.get('content')
-            if not (isinstance(path, str) and isinstance(content, str)):
-                return f'Wrong attributes passed: file_path={path}, content={content}'
-            # resolve non-absolute path against project root
+
+            if not (isinstance(path, str) and isinstance(content, str) and isinstance(create, bool)):
+                return (
+                    'Wrong attributes passed: expected '
+                    '{file_path: <str>, create: <bool>, content: <str>}'
+                )
+
+            # Resolve non-absolute path against project root
             if not os.path.isabs(path):
-                folders = window.folders()
-                project_root = folders[0] if folders else os.getcwd()
+                project_root = window.folders()[0] if window.folders() else os.getcwd()
                 path = os.path.join(project_root, path)
-            # open or find the file view
-            if create:
-                view = window.open_file(path)
-            else:
-                view = window.find_open_file(path) or window.open_file(path)
+
+            # Obtain (or create) the view
+            try:
+                if create and not os.path.exists(path):
+                    # new unsaved buffer – Sublime will mark it Scratch until user saves
+                    view = window.open_file(path)
+                else:
+                    view = window.find_open_file(path) or window.open_file(path)
+            except Exception as e:
+                return f'Unable to open file view: {e}'
+
             if not view:
                 return f'File under path not found: {path}'
-            # replace entire content
-            region = Region(0, view.size())
-            view.run_command(
-                'replace_region',
-                {'region': {'a': region.begin(), 'b': region.end()}, 'text': content},
-            )
-            text = view.substr(region)
-            return dumps({'result': text})
+
+            # Replace the entire buffer – rely on custom command provided by the plugin
+            try:
+                full_region_before = Region(0, view.size())
+                view.run_command(
+                    'replace_region',
+                    {
+                        'region': {
+                            'a': full_region_before.begin(),
+                            'b': full_region_before.end(),
+                        },
+                        'text': content,
+                    },
+                )
+
+                # Re-calculate region to fetch updated buffer content (in case length changed)
+                full_region_after = Region(0, view.size())
+                updated_text = view.substr(full_region_after)
+            except Exception as e:
+                return f'Failed to replace text: {e}'
+
+            return dumps({'result': updated_text})
 
         elif func_name == Function.read_region_content.value:
             path = args_json.get('file_path')
@@ -211,8 +340,13 @@ class FunctionHandler:
                 b_line = total
             # clamp to valid range
             a_line = max(0, min(a_line, total))
-            b_line = max(0, min(b_line, total))
-            selected = all_lines[a_line:b_line]
+            b_line = max(0, min(b_line, total - 1))  # inclusive upper bound
+
+            if a_line > b_line:
+                return dumps({'content': ''})
+
+            # slice is exclusive, so add 1 to include b_line
+            selected = all_lines[a_line : b_line + 1]
             # join line contents
             text = ''.join(view.substr(r) for r in selected)
             return dumps({'content': text})
@@ -220,21 +354,25 @@ class FunctionHandler:
         elif func_name == Function.get_working_directory_content.value:
             path = args_json.get('directory_path')
             logger.debug('initial directory_path: %s', path)
-            # Determine base directory: use provided path, project root, or active view
+
+            # 1. establish project root (first folder or cwd)
+            folders = window.folders()
+            project_root = folders[0] if folders else os.getcwd()
+
+            # 2. resolve the directory_path argument
             if not path or path in ('.', './'):
-                folders = window.folders()
-                if folders:
-                    path = folders[0]
-                else:
-                    view = window.active_view()
-                    filename = view.file_name() if view else None
-                    if filename:
-                        path = os.path.dirname(filename)
-                    else:
-                        path = os.getcwd()
-            if path and isinstance(path, str):
-                folder_structure = build_folder_structure(path)
-                return dumps({'content': f'{folder_structure}'})
-            return f'Wrong attributes passed: {path}'
+                path = project_root
+            elif not os.path.isabs(path):
+                # treat as relative to project root
+                path = os.path.join(project_root, path)
+
+            if not isinstance(path, str):
+                return f'Wrong attributes passed: directory_path={path}'
+
+            if not os.path.exists(path):
+                return f'Directory not found: {path}'
+
+            folder_structure = build_folder_structure(path)
+            return dumps({'content': f'{folder_structure}'})
         else:
             return f"Called function doen't exists: {func_name}"
