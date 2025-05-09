@@ -1,12 +1,13 @@
 from __future__ import annotations
+
 import logging
-import subprocess
 import os
 from enum import Enum
 from json import dumps, loads
 from typing import Dict, List, Tuple
 
 from sublime import Region, Window
+
 from .project_structure import build_folder_structure
 
 logger = logging.getLogger(__name__)
@@ -107,11 +108,11 @@ class FunctionHandler:
                     path = os.path.join(project_root, path)
             except Exception as e:
                 return (
-                    "Failed to parse patch header. Make sure your patch includes the markers and file path: \n"
-                    "*** Begin Patch\n"
-                    "*** Update File: /path/to/your/file\n"
-                    "*** End Patch\n"
-                    f"Parsing error: {e}"
+                    'Failed to parse patch header. Make sure your patch includes the markers and file path: \n'
+                    '*** Begin Patch\n'
+                    '*** Update File: /path/to/your/file\n'
+                    '*** End Patch\n'
+                    f'Parsing error: {e}'
                 )
 
             # simple find/replace fallback (always use this)
@@ -193,11 +194,27 @@ class FunctionHandler:
             view = window.find_open_file(path) or window.open_file(path)
             if not view:
                 return f'File under path not found: {path}'
-            # extract region
-            a_reg = region.get('a') if region.get('a') != -1 else 0
-            b_reg = region.get('b') if region.get('b') != -1 else view.size()
-            region_ = Region(a=a_reg, b=b_reg)
-            text = view.substr(region_)
+            # extract lines instead of char offsets
+            # region['a'] and region['b'] are line indices (0-based), -1 means start/end
+            a_val = region.get('a')
+            if isinstance(a_val, int) and a_val != -1:
+                a_line = a_val
+            else:
+                a_line = 0
+            # collect all line regions
+            all_lines = view.lines(Region(0, view.size()))
+            total = len(all_lines)
+            b_val = region.get('b')
+            if isinstance(b_val, int) and b_val != -1:
+                b_line = b_val
+            else:
+                b_line = total
+            # clamp to valid range
+            a_line = max(0, min(a_line, total))
+            b_line = max(0, min(b_line, total))
+            selected = all_lines[a_line:b_line]
+            # join line contents
+            text = ''.join(view.substr(r) for r in selected)
             return dumps({'content': text})
 
         elif func_name == Function.get_working_directory_content.value:
