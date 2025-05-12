@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 
 from sublime import Region, Window
 
-from .project_structure import build_folder_structure
+from .project_structure import get_ignored_files
 
 logger = logging.getLogger(__name__)
 
@@ -370,7 +370,50 @@ class FunctionHandler:
             if not os.path.exists(path):
                 return f'Directory not found: {path}'
 
-            folder_structure = build_folder_structure(path)
-            return dumps({'content': f'{folder_structure}'})
+            # Recursively list like `ls -R`, respecting .gitignore
+            output_lines: List[str] = []
+            # Top-level directory: use "." as ls -R does
+            items = os.listdir(path)
+            if '.git' in items:
+                items.remove('.git')
+            ignored = get_ignored_files(items, path)
+            visible = sorted([i for i in items if i not in ignored])
+            output_lines.append('.:')
+            if visible:
+                output_lines.append(' '.join(visible))
+            output_lines.append('')
+
+            # Recurse into subdirectories
+            for root, dirs, files in os.walk(path):
+                # always skip `.git` directory from traversal
+                if '.git' in dirs:
+                    dirs.remove('.git')
+                rel = os.path.relpath(root, path)
+                if rel == '.':
+                    continue
+
+                # filter ignored entries
+                rel_paths = [os.path.relpath(os.path.join(root, name), path) for name in dirs + files]
+                ignored = get_ignored_files(rel_paths, path)
+
+                entries: List[str] = []
+                for name in sorted(dirs):
+                    relp = os.path.relpath(os.path.join(root, name), path)
+                    if relp in ignored:
+                        continue
+                    entries.append(name)
+                for name in sorted(files):
+                    relp = os.path.relpath(os.path.join(root, name), path)
+                    if relp in ignored:
+                        continue
+                    entries.append(name)
+
+                output_lines.append(f'./{rel}:')
+                if entries:
+                    output_lines.append(' '.join(entries))
+                output_lines.append('')
+
+            content_text = '\n'.join(output_lines).rstrip('\n')
+            return dumps({'content': content_text})
         else:
             return f"Called function doen't exists: {func_name}"
