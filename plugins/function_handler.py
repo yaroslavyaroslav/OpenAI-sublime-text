@@ -221,6 +221,26 @@ class FunctionHandler:
             except Exception as e:
                 strict_err = e  # save and attempt the loose parser next
 
+            # If strict parser failed but patch appears already applied, skip without error
+            if strict_err:
+                try:
+                    simple_hunks = _parse_simple_patch(normalized_diff)
+                    applied_all = True
+                    for old_hunk, new_hunk in simple_hunks:
+                        old_str = old_hunk.strip('\n')
+                        new_str = new_hunk.strip('\n')
+                        if not new_str:
+                            continue  # skip pure deletions
+                        # Check if new content exists and old content no longer present
+                        if new_str in original and (not old_str or old_str not in original):
+                            continue
+                        applied_all = False
+                        break
+                    if applied_all:
+                        return 'Done!'
+                except Exception:
+                    pass
+
             if new_content is None:
                 try:
                     hunks = _parse_simple_patch(normalized_diff)
