@@ -264,10 +264,7 @@ class FunctionHandler:
             content = args_json.get('content')
 
             if not (isinstance(path, str) and isinstance(content, str) and isinstance(create, bool)):
-                return (
-                    'Wrong attributes passed: expected '
-                    '{file_path: <str>, create: <bool>, content: <str>}'
-                )
+                return 'Wrong attributes passed: expected {file_path: <str>, create: <bool>, content: <str>}'
 
             # Resolve non-absolute path against project root
             if not os.path.isabs(path):
@@ -314,41 +311,42 @@ class FunctionHandler:
             region = args_json.get('region')
             if not (isinstance(path, str) and isinstance(region, Dict)):
                 return f'Wrong attributes passed: file_path={path}, region={region}'
-            # resolve non-absolute path against project root
+
+            # Resolve non-absolute path against project root
             if not os.path.isabs(path):
                 folders = window.folders()
                 project_root = folders[0] if folders else os.getcwd()
                 path = os.path.join(project_root, path)
-            # open or find view
+
+            # Open or find the view
             view = window.find_open_file(path) or window.open_file(path)
             if not view:
                 return f'File under path not found: {path}'
-            # extract lines instead of char offsets
-            # region['a'] and region['b'] are line indices (0-based), -1 means start/end
+
+            # Determine line indices (0-based; -1 means start/end)
             a_val = region.get('a')
-            if isinstance(a_val, int) and a_val != -1:
-                a_line = a_val
-            else:
-                a_line = 0
-            # collect all line regions
+            a_line = a_val if isinstance(a_val, int) and a_val != -1 else 0
+
             all_lines = view.lines(Region(0, view.size()))
             total = len(all_lines)
+
             b_val = region.get('b')
-            if isinstance(b_val, int) and b_val != -1:
-                b_line = b_val
-            else:
-                b_line = total
-            # clamp to valid range
+            b_line = b_val if isinstance(b_val, int) and b_val != -1 else total
+
+            # Clamp to valid range, inclusive upper bound
             a_line = max(0, min(a_line, total))
-            b_line = max(0, min(b_line, total - 1))  # inclusive upper bound
+            b_line = max(0, min(b_line, total - 1))
 
             if a_line > b_line:
                 return dumps({'content': ''})
 
-            # slice is exclusive, so add 1 to include b_line
+            # Slice is exclusive on end, so include b_line
             selected = all_lines[a_line : b_line + 1]
-            # join line contents
-            text = ''.join(view.substr(r) for r in selected)
+
+            # Join line contents with newline separators
+            lines = [view.substr(r) for r in selected]
+            text = '\n'.join(lines)
+
             return dumps({'content': text})
 
         elif func_name == Function.get_working_directory_content.value:
