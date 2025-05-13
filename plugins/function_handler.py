@@ -20,34 +20,47 @@ class Function(str, Enum):
     get_working_directory_content = 'get_working_directory_content'
 
 
-def _normalize_patch(patch_text: str) -> Tuple[str, str]:
-    """
-    Strip the Begin/End markers, rewrite Update File into ---/+++ headers,
-    return (normalized_diff, file_path).
-    """
-    in_patch = False
-    diff_lines: List[str] = []
-    file_path: str | None = None
+def _extract_patch_blocks(patch_text: str) -> List[Tuple[str, str]]:
+    """Return list of (normalized_diff, file_path) for each *** Begin Patch block"""
+    lines = patch_text.splitlines()
+    i = 0
+    blocks: List[Tuple[str, str]] = []
 
-    for line in patch_text.splitlines():
-        if line.startswith('*** Begin Patch'):
-            in_patch = True
-            continue
-        if line.startswith('*** End Patch'):
-            break
-        if not in_patch:
+    while i < len(lines):
+        # look for a new block
+        if not lines[i].startswith('*** Begin Patch'):
+            i += 1
             continue
 
-        if line.startswith('*** Update File:'):
-            file_path = line[len('*** Update File:') :].strip()
-            diff_lines.append(f'--- a/{file_path}')
-            diff_lines.append(f'+++ b/{file_path}')
-        else:
-            diff_lines.append(line)
+        i += 1  # skip Begin Patch
+        diff_lines: List[str] = []
+        file_path: str | None = None
 
-    if not file_path:
-        raise ValueError('No "*** Update File:" line found in patch.')
-    return '\n'.join(diff_lines) + '\n', file_path
+        while i < len(lines) and not lines[i].startswith('*** End Patch'):
+            line = lines[i]
+            if line.startswith('*** Update File:'):
+                file_path = line[len('*** Update File:') :].strip()
+                diff_lines.append(f'--- a/{file_path}')
+                diff_lines.append(f'+++ b/{file_path}')
+            else:
+                diff_lines.append(line)
+            i += 1
+
+        # skip the End Patch line
+        while i < len(lines) and not lines[i].startswith('*** End Patch'):
+            i += 1
+        if i < len(lines):
+            i += 1  # move past End Patch
+
+        if not file_path:
+            raise ValueError('No "*** Update File:" line found between markers.')
+
+        blocks.append(('\n'.join(diff_lines) + '\n', file_path))
+
+    if not blocks:
+        raise ValueError('No patch blocks found.')
+
+    return blocks
 
 
 # ---------------------------------------------------------------------------
@@ -108,29 +121,47 @@ def _parse_model_patch(diff: str) -> List[Tuple[str, str]]:
 
 
 def _apply_hunks_sequentially(original: str, hunks: List[Tuple[str, str]]) -> str:
-    """Apply hunks **in order**; replace only the *first* occurrence of each old block.
-
-    This deterministic approach reduces the risk of over-replacing repeated
-    patterns. Raises RuntimeError if a hunk cannot be located.
     """
+    Apply hunks **in order**; match each old-block by ignoring leading whitespace.
+    Replace the first matching occurrence of each old block in the file.
+    Raises RuntimeError if a hunk cannot be located.
+    """
+    # Split original text into lines with endings
+    orig_lines = original.splitlines(keepends=True)
 
-    updated = original
     for idx, (old, new) in enumerate(hunks, start=1):
-        if old == '':
-            # Should not happen due to parser rules, but tolerate – treat as append EOF
-            updated += new
+        # Old/new blocks as lists of lines (with endings)
+        old_lines = old.splitlines(keepends=True)
+        new_lines = new.splitlines(keepends=True) if new else []
+
+        # If old block is empty, append new lines at EOF
+        if not old_lines or (len(old_lines) == 1 and old_lines[0] == '\n'):
+            orig_lines.extend(new_lines)
             continue
 
-        pos = updated.find(old)
-        if pos == -1:
-            snippet = old.split('\n')[0][:80]  # first line for context
+        # Search for first position where stripped lines match
+        found = False
+        for i in range(len(orig_lines) - len(old_lines) + 1):
+            match = True
+            for j, old_line in enumerate(old_lines):
+                # Compare ignoring leading whitespace
+                if orig_lines[i + j].lstrip() != old_line.lstrip():
+                    match = False
+                    break
+            if match:
+                # Replace these lines
+                orig_lines = orig_lines[:i] + new_lines + orig_lines[i + len(old_lines) :]
+                found = True
+                break
+
+        if not found:
+            snippet = old_lines[0].lstrip() or '<newline>'
             raise RuntimeError(
-                f'Hunk {idx}: context not found – failed to locate "{snippet}..." in target file'
+                f'Hunk {idx}: context not found – failed to locate "{snippet.strip()}..." in target file'
             )
 
-        updated = updated.replace(old, new, 1)  # replace once
-
-    return updated
+    # Reconstruct updated text
+    return ''.join(orig_lines)
 
 
 # ---------------------------------------------------------------------------
@@ -182,12 +213,7 @@ class FunctionHandler:
 
             # normalize + extract path
             try:
-                normalized_diff, path = _normalize_patch(patch_text)
-                # If path is not absolute, treat it as relative to project root
-                if not os.path.isabs(path):
-                    folders = window.folders()
-                    project_root = folders[0] if folders else os.getcwd()
-                    path = os.path.join(project_root, path)
+                blocks = _extract_patch_blocks(patch_text)
             except Exception as e:
                 return (
                     'Failed to parse patch header. Make sure your patch includes the markers and file path: \n'
@@ -197,82 +223,87 @@ class FunctionHandler:
                     f'Parsing error: {e}'
                 )
 
-            # -------------------------------------------------------------------
-            # 1) Read original file content (fail early if file absent)
-            # -------------------------------------------------------------------
-            try:
-                with open(path, 'r', encoding='utf-8') as f:
-                    original = f.read()
-            except FileNotFoundError:
-                return f'File not found: {path}'
-            except Exception as e:
-                return f'Unable to read {path}: {e}'
+            for normalized_diff, path in blocks:
+                # If path is not absolute, treat it as relative to project root
+                if not os.path.isabs(path):
+                    folders = window.folders()
+                    project_root = folders[0] if folders else os.getcwd()
+                    path = os.path.join(project_root, path)
 
-            # -------------------------------------------------------------------
-            # 2) Parse & apply with strict model-style diff first
-            #    Fallback to legacy simple parser if strict one fails.
-            # -------------------------------------------------------------------
-            new_content: str | None = None
-            strict_err: Exception | None = None
-
-            try:
-                hunks = _parse_model_patch(normalized_diff)
-                new_content = _apply_hunks_sequentially(original, hunks)
-            except Exception as e:
-                strict_err = e  # save and attempt the loose parser next
-
-            # If strict parser failed but patch appears already applied, skip without error
-            if strict_err:
+                # ---------------------------------------------------------------
+                # 1) Read original file content (fail early if file absent)
+                # ---------------------------------------------------------------
                 try:
-                    simple_hunks = _parse_simple_patch(normalized_diff)
-                    applied_all = True
-                    for old_hunk, new_hunk in simple_hunks:
-                        old_str = old_hunk.strip('\n')
-                        new_str = new_hunk.strip('\n')
-                        if not new_str:
-                            continue  # skip pure deletions
-                        # Check if new content exists and old content no longer present
-                        if new_str in original and (not old_str or old_str not in original):
-                            continue
-                        applied_all = False
-                        break
-                    if applied_all:
-                        return 'Done!'
-                except Exception:
-                    pass
+                    with open(path, 'r', encoding='utf-8') as f:
+                        original = f.read()
+                except FileNotFoundError:
+                    return f'File not found: {path}'
+                except Exception as e:
+                    return f'Unable to read {path}: {e}'
 
-            if new_content is None:
+                # ---------------------------------------------------------------
+                # 2) Parse & apply with strict model-style diff first
+                # ---------------------------------------------------------------
+                new_content: str | None = None
+                strict_err: Exception | None = None
+
                 try:
-                    hunks = _parse_simple_patch(normalized_diff)
-                    if not hunks:
-                        return (
-                            'Patch parse failed – no hunks detected. \n'
-                            'Ensure each change block starts with one or more "-" lines \n'
-                            'and the patch is wrapped between *** Begin Patch / *** End Patch.'
-                        )
+                    hunks = _parse_model_patch(normalized_diff)
                     new_content = _apply_hunks_sequentially(original, hunks)
-                except Exception as legacy_err:
-                    return f'Strict parser error: {strict_err}. \nFallback parser also failed: {legacy_err}'
+                except Exception as e:
+                    strict_err = e
 
-            # -------------------------------------------------------------------
-            # 3) Check if anything actually changed
-            # -------------------------------------------------------------------
-            if new_content == original:
-                return (
-                    'Patch parsed successfully but produced no change. \n'
-                    'Verify that the "-" lines exactly match the current file content.'
-                )
+                # Already-applied shortcut
+                if strict_err:
+                    try:
+                        simple_hunks = _parse_simple_patch(normalized_diff)
+                        applied_all = True
+                        for old_hunk, new_hunk in simple_hunks:
+                            old_str = old_hunk.strip('\n')
+                            new_str = new_hunk.strip('\n')
 
-            # -------------------------------------------------------------------
-            # 4) Write back to disk
-            # -------------------------------------------------------------------
-            try:
-                with open(path, 'w', encoding='utf-8') as f:
-                    f.write(new_content)
-            except PermissionError as e:
-                return f'Permission denied when writing to {path}: {e}'
-            except Exception as e:
-                return f'Failed to write changes to {path}: {e}'
+                            if not new_str:
+                                continue  # pure deletion, ignore
+
+                            # New part is present and old part is gone?
+                            if new_str in original and (not old_str or old_str not in original):
+                                continue
+
+                            applied_all = False
+                            break
+
+                        if applied_all:
+                            continue  # block already applied, skip write
+                    except Exception:
+                        pass
+
+                if new_content is None:
+                    try:
+                        hunks = _parse_simple_patch(normalized_diff)
+                        if not hunks:
+                            return (
+                                'Patch parse failed – no hunks detected.\n'
+                                'Ensure each change block starts with one or more "-" lines\n'
+                                'and the patch is wrapped between *** Begin Patch / *** End Patch.'
+                            )
+                        new_content = _apply_hunks_sequentially(original, hunks)
+                    except Exception as legacy_err:
+                        return (
+                            f'Strict parser error: {strict_err}.\nFallback parser also failed: {legacy_err}'
+                        )
+
+                # 3) Check no change
+                if new_content == original:
+                    continue  # nothing changed for this file
+
+                # 4) Write back
+                try:
+                    with open(path, 'w', encoding='utf-8') as f:
+                        f.write(new_content)
+                except PermissionError as e:
+                    return f'Permission denied when writing to {path}: {e}'
+                except Exception as e:
+                    return f'Failed to write changes to {path}: {e}'
 
             return 'Done!'
 
