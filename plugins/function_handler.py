@@ -355,7 +355,7 @@ class FunctionHandler:
             except Exception as e:
                 return f'Failed to replace text: {e}'
 
-            return dumps({'result': updated_text})
+            return 'Done!'
 
         elif func_name == Function.read_region_content.value:
             path = args_json.get('file_path')
@@ -398,7 +398,12 @@ class FunctionHandler:
             lines = [view.substr(r) for r in selected]
             text = '\n'.join(lines)
 
-            return dumps({'content': text})
+            return dumps(
+                {
+                    'content': text[:5000]
+                    + (f'…[truncated] response is too long: {len(text)}' if len(text) > 5000 else '')
+                }
+            )
 
         elif func_name == Function.get_working_directory_content.value:
             path = args_json.get('directory_path')
@@ -465,6 +470,16 @@ class FunctionHandler:
                 output_lines.append('')
 
             content_text = '\n'.join(output_lines).rstrip('\n')
-            return dumps({'content': content_text})
+            # apply same 5k char limit
+            return dumps(
+                {
+                    'content': content_text[:5000]
+                    + (
+                        f'…[truncated] response is too long: {len(content_text)}'
+                        if len(content_text) > 5000
+                        else ''
+                    )
+                }
+            )
         else:
             return f"Called function doen't exists: {func_name}"
