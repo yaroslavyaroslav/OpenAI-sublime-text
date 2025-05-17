@@ -1,29 +1,29 @@
 [
 	{
 		"caption": "OpenAI: Chat Select Mode",
-	    "command": "show_overlay",
-	    "args": {
-	        "overlay": "command_palette",
-	        "command": "openai_panel",
-	        "args": {
-	        	"model": "current",
-	        }
-	    },
+		"command": "show_overlay",
+		"args": {
+			"overlay": "command_palette",
+			"command": "openai_panel",
+			"args": {
+				"model": "current"
+			}
+		}
 	},
 	{
-	 	"caption": "OpenAI: Chat Model Select",
+		"caption": "OpenAI: Chat Model Select",
 		"command": "openai_panel"
 	},
 	{
 		"caption": "OpenAI: Handle image",
 		"command": "openai",
 		"args": {
-			"mode": "handle_image_input",
+			"mode": "handle_image_input"
 		}
 	},
 	{
 		"caption": "OpenAI: New Message",
-		"command": "openai",
+		"command": "openai"
 	},
 	{
 		"caption": "OpenAI: New Message With Build Output",
@@ -76,10 +76,27 @@
 	},
 	{
 		"caption": "OpenAI: Add Sheets to Context",
-		"command": "toggle_view_ai_context_included",
+		"command": "toggle_view_ai_context_included"
 	},
 	{
 		"caption": "OpenAI: Show All Selected Sheets",
-		"command": "select_sheets_with_ai_context_included",
+		"command": "select_sheets_with_ai_context_included"
+	},
+	{
+		"caption": "Preferences: OpenAI Settings",
+		"command": "edit_settings",
+		"args": {
+			"base_file": "${packages}/OpenAI completion/openAI.sublime-settings",
+			"default": "// Settings in here override those in \"OpenAI completion/openAI.sublime-settings\"\n{\n\t$0\n}\n"
+		}
+	},
+	{
+		"caption": "Preferences: OpenAI Key Bindings",
+		"command": "edit_settings",
+		"args": {
+			"base_file": "${packages}/OpenAI completion/Default.sublime-keymap",
+			"user_file": "${packages}/User/Default ($platform).sublime-keymap",
+			"default": "[\n\t$0\n]\n"
+		}
 	}
 ]
