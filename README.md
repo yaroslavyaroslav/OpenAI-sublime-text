@@ -140,7 +140,7 @@ You can read more [about OpenAI compatibility in the Gemini documentation](https
 
 ## Settings
 
-The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the most of providers to work. To set your API key, open the settings within `Preferences` -> `Package Settings` -> `OpenAI` -> `Settings` and paste your API key in the token property, as follows:
+The OpenAI Completion plugin has a settings file where you can set your OpenAI API key. This is required for the most of providers to work. To set your API key, open the settings with the `Preferences: OpenAI Settings` command and paste your API key in the token property, as follows:
 
 ```json
 {
@@ -154,7 +154,7 @@ To disable advertisement you have to add `"advertisement": false` line into an a
 
 ## Key bindings
 
-You can bind keys for a given plugin command in `Preferences` -> `Package Settings` -> `OpenAI` -> `Key Bindings`. For example you can bind "New Message" including active tabs as context command like this:
+You can bind keys for a given plugin command in `Preferences: OpenAI Key Bindings`. For example you can bind "New Message" including active tabs as context command like this:
 
 ```js
 {
