@@ -308,52 +308,35 @@ class FunctionHandler:
             return 'Done!'
 
         # -------------------------------------------------------------------
-        # replace_text_for_whole_file
+        # replace_text_for_whole_file – simple file write
         elif func_name == Function.replace_text_for_whole_file.value:
             path = args_json.get('file_path')
             create = args_json.get('create')
             content = args_json.get('content')
 
             if not (isinstance(path, str) and isinstance(content, str) and isinstance(create, bool)):
-                return 'Wrong attributes passed: expected {file_path: <str>, create: <bool>, content: <str>}'
+                return 'Wrong attributes passed: file_path(str), create(bool), content(str) required'
 
-            # Resolve non-absolute path against project root
+            # Resolve path relative to project root
             if not os.path.isabs(path):
                 project_root = window.folders()[0] if window.folders() else os.getcwd()
                 path = os.path.join(project_root, path)
 
-            # Obtain (or create) the view
+            # Create parent dirs if needed
+            if create:
+                parent = os.path.dirname(path)
+                if parent and not os.path.exists(parent):
+                    try:
+                        os.makedirs(parent, exist_ok=True)
+                    except Exception as e:
+                        return f'Failed to create directory: {e}'
+
+            # Write file to disk
             try:
-                if create and not os.path.exists(path):
-                    # new unsaved buffer – Sublime will mark it Scratch until user saves
-                    view = window.open_file(path)
-                else:
-                    view = window.find_open_file(path) or window.open_file(path)
+                with open(path, 'w', encoding='utf-8') as f:
+                    f.write(content)
             except Exception as e:
-                return f'Unable to open file view: {e}'
-
-            if not view:
-                return f'File under path not found: {path}'
-
-            # Replace the entire buffer – rely on custom command provided by the plugin
-            try:
-                full_region_before = Region(0, view.size())
-                view.run_command(
-                    'replace_region',
-                    {
-                        'region': {
-                            'a': full_region_before.begin(),
-                            'b': full_region_before.end(),
-                        },
-                        'text': content,
-                    },
-                )
-
-                # Re-calculate region to fetch updated buffer content (in case length changed)
-                full_region_after = Region(0, view.size())
-                updated_text = view.substr(full_region_after)
-            except Exception as e:
-                return f'Failed to replace text: {e}'
+                return f'Failed to write file: {e}'
 
             return 'Done!'
 
@@ -483,3 +466,64 @@ class FunctionHandler:
             )
         else:
             return f"Called function doen't exists: {func_name}"
+
+
+# ---------------------------------------------------------------------------
+# Command-line tester
+# ---------------------------------------------------------------------------
+if __name__ == '__main__':
+    """Run any plugin function from the terminal.
+
+    Syntax:
+        python -m plugins.function_handler <function_name> '<json-args>'
+
+    Examples:
+        # apply a two-hunk patch to this file
+        python -m plugins.function_handler apply_patch '{"patch": "*** Begin Patch\\n*** Update File: plugins/function_handler.py\\n@@\\n+# injected hunk 1\\n@@\\n+# injected hunk 2\\n*** End Patch"}'
+
+        # read first 5 lines of this file
+        python -m plugins.function_handler read_region_content '{"file_path": "plugins/function_handler.py", "region": {"a": 0, "b": 4}}'
+
+        # list working directory tree (honours .gitignore)
+        python -m plugins.function_handler get_working_directory_content '{"directory_path": "."}'
+
+        # overwrite /tmp/demo.txt
+        echo hello > /tmp/demo.txt
+        python -m plugins.function_handler replace_text_for_whole_file '{"file_path": "/tmp/demo.txt", "create": false, "content": "new text"}'
+    """
+    import sys
+    import json
+    from pathlib import Path
+
+    if len(sys.argv) < 3:
+        print('Usage: python -m plugins.function_handler <function_name> <json-args>')
+        sys.exit(1)
+
+    func = sys.argv[1]
+    raw = ' '.join(sys.argv[2:])
+    try:
+        json.loads(raw)
+        args_json = raw
+    except json.JSONDecodeError:
+        if func == Function.apply_patch.value:
+            args_json = json.dumps({'patch': raw})
+        else:
+            print('arguments must be JSON')
+            sys.exit(2)
+
+    class _View:
+        def size(self):
+            return 0
+
+    class _Window:
+        def folders(self):
+            return [str(Path.cwd())]
+
+        def open_file(self, _p):
+            return _View()
+
+        def find_open_file(self, _p):
+            return None
+
+    result = FunctionHandler.perform_function(func, args_json, _Window())
+    print(result)
