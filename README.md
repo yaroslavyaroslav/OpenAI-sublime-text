@@ -36,7 +36,7 @@ Works with all OpenAI'ish API: [llama.cpp](https://github.com/ggerganov/llama.cp
 **Via Package Control**
 
 1. Install the Sublime Text [Package Control](https://packagecontrol.io/installation) plugin if you haven't done this before.
-2. Open the command palette and type `Package Control: Install Package`.
+2. Open the command palette with the key combination `Ctrl/Cmd` + `Shift` + `P` and type `Package Control: Install Package`.
 3. Type `OpenAI` and press `Enter`.
 
 **Via Git Clone**
