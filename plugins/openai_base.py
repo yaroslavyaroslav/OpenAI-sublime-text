@@ -26,6 +26,9 @@ from .output_panel import SharedOutputPanelListener
 from .phantom_streamer import PhantomStreamer
 from .response_manager import ResponseManager
 from .sheet_toggle import VIEW_TOGGLE_KEY
+import threading
+from concurrent.futures import ThreadPoolExecutor
+import queue
 
 logger = logging.getLogger(__name__)
 
@@ -279,8 +282,34 @@ class ViewCapture:
 class PhantomCapture:
     def __init__(self, view: View, user_input: List[SublimeInputContent]) -> None:
         self.phantom = PhantomStreamer(view, user_input)
+        self.update_thread = None
+        self.queue = queue.Queue()
 
     def phantom_handler(self, content: str) -> None:
-        self.phantom.update_completion(content)
+        # Add the newly added tokens to a queue. They will be treated in another thread
+        self.queue.put(content)
+
+        # If the thread handling the update of the Phantom is not created, created
+        if self.update_thread is None:
+            self.update_thread = threading.Thread(target=self.phantom_update)
+            self.update_thread.start()
 
         logger.debug('Received data: %s', content)
+
+    def phantom_update(self):
+        """Method executed in another thread to update the content of the Phantom while tokens are being loaded. 
+        """
+        # Update the interface while new tokens are arriving
+        while not self.queue.empty():
+            # Empty the queue
+            content = ''
+            while not self.queue.empty():
+                content += self.queue.get_nowait()
+
+            # Update the interface - new tokens will be added during the update of the interface
+            self.phantom.update_completion(content)
+
+        # Remove the thread
+        self.update_thread = None
+
+        
