@@ -184,6 +184,11 @@ class PhantomStreamer:
         openning_think = '<think>'
         closing_think = '</think>'
 
+        # Auto close code environment when the AI is writting code, but hasn't closed it yet
+        # It basically counts how many times an environment was opened and how many times it was closed and close it if necessary
+        if len(re.findall(r'^```[a-zA-Z].*$', preprocessed_content, re.MULTILINE)) != len(re.findall('^```$', preprocessed_content, re.MULTILINE)):
+            preprocessed_content += '\n```'
+
         # Check if there is a <think> token
         if openning_think in content:
 
