@@ -110,6 +110,7 @@
 
             // URL for OpenAI alike API.
             // Example: "http://localhost:11434" (assuming Ollama is running on localhost)
+            // Example: "http://localhost:17434" (assuming llmman is running on localhost)
             "url": "https://api.openai.com/v1/chat/completions",
 
             // Your whaterver service token
