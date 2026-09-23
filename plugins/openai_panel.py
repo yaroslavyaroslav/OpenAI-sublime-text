@@ -10,7 +10,7 @@ from sublime import Settings, Window
 from sublime_plugin import ListInputHandler, WindowCommand
 from sublime_types import Value
 
-from .load_model import get_cache_path, get_model_or_default
+from .load_model import ensure_cache_path, get_cache_path, get_model_or_default
 from .openai_base import CommonMethods, get_marked_sheets
 
 logger = logging.getLogger(__name__)
@@ -37,13 +37,15 @@ class OpenaiPanelCommand(WindowCommand):
         logger.debug('active_sheet: %s', self.window.active_sheet().view())
         if model and output_mode:
             logger.debug('model dict: %s', model)
-            logger.debug('assistant.api_type %s', AssistantSettings(model).api_type)
 
             assistant = (
                 get_model_or_default(self.window.active_view())
                 if model == 'current'
                 else AssistantSettings(model)
             )
+            if assistant is None:
+                sublime.error_message('No assistants are configured in OpenAI settings.')
+                return
 
             if output_mode != 'current':
                 assistant.output_mode = (
@@ -53,7 +55,9 @@ class OpenaiPanelCommand(WindowCommand):
             logger.debug('assistant.api_type:  %s', assistant.api_type)
 
             view = self.window.active_view()
-            path = get_cache_path(self.window.active_view())
+            path = ensure_cache_path(self.window.active_view())
+            if path is None:
+                return
 
             if (
                 not self.settings.get('chat_presentation', {}).get('phantom_permanent', False)
@@ -133,11 +137,11 @@ class AIWholeInputHandler(ListInputHandler):
         if self._name == 'model':
             if self._args and 'model' in self._args and self._args['model'] == 'current':
                 assistant = get_model_or_default(self.window.active_view())
-                return assistant.name
+                return assistant.name if assistant else ''
         if self._name == 'output_mode':
             if self._args and 'output_mode' in self._args and self._args['output_mode'] == 'current':
                 assistant = get_model_or_default(self.window.active_view())
-                return str(assistant.output_mode).split('.')[1].lower()
+                return str(assistant.output_mode).split('.')[1].lower() if assistant else ''
         return ''
 
     def preview(self, text: str) -> str | sublime.Html:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 
 from llm_runner import drop_all  # type: ignore
-from sublime import Edit, View, active_window, load_settings
+from sublime import Edit, View, active_window, error_message, load_settings
 from sublime_plugin import TextCommand
 
 from .assistant_settings import CommandMode
@@ -33,6 +33,9 @@ class Openai(TextCommand):
         else:
             logger.debug('Openai view: %s', self.view)
             assistant = get_model_or_default(self.view)
+            if assistant is None:
+                error_message('No assistants are configured in OpenAI settings.')
+                return
             CommonMethods.process_openai_command(self.view, assistant, kwargs)
 
     @classmethod
