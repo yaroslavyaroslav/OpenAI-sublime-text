@@ -19,7 +19,7 @@ from sublime import (
     set_timeout,
 )
 
-from .load_model import get_cache_path
+from .load_model import ensure_cache_path
 from .output_panel import SharedOutputPanelListener
 from .vendor.sublime_chat_ui.presentation import syntax_resource
 from .response_manager import ResponseManager
@@ -142,7 +142,9 @@ class PhantomStreamer:
 
                 window = self.view.window() or active_window()
 
-                path = get_cache_path(self.view)
+                path = ensure_cache_path(self.view)
+                if path is None:
+                    return
 
                 listner = SharedOutputPanelListener()
 

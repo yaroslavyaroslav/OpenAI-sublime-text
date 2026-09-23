@@ -21,7 +21,7 @@ from .errors.OpenAIException import WrongUserInputException, present_error, pres
 from .function_handler import FunctionHandler
 from .image_handler import ImageValidator
 from .input_panel import OpenAIInputPanelController
-from .load_model import get_cache_path
+from .load_model import ensure_cache_path
 from .output_panel import SharedOutputPanelListener
 from .phantom_streamer import PhantomStreamer
 from .response_manager import ResponseManager
@@ -149,7 +149,9 @@ class CommonMethods:
         assistant: AssistantSettings,
         inputs: List[SublimeInputContent],
     ):
-        path = get_cache_path(view)
+        path = ensure_cache_path(view)
+        if path is None:
+            return
 
         proxy = ''
 
