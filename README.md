@@ -5,7 +5,7 @@
 
 Cursor level of AI assistance for Sublime Text. I mean it.
 
-Works with OpenAI Responses, Anthropic Claude, Google Gemini and the whole zoo of OpenAI-compatible APIs: [llama.cpp](https://github.com/ggerganov/llama.cpp) server, [ollama](https://ollama.com) or whatever third party LLM hosting you decided to trust today.
+Works with OpenAI Responses, Anthropic Claude, Google Gemini and the whole zoo of OpenAI-compatible APIs: [llama.cpp](https://github.com/ggerganov/llama.cpp) server, [ollama](https://ollama.com), [llmman](https://github.com/llmmanorg/llmman) or whatever third party LLM hosting you decided to trust today.
 
 
 ![](static/media/ai_chat_left_full.png)
@@ -14,7 +14,7 @@ Works with OpenAI Responses, Anthropic Claude, Google Gemini and the whole zoo o
 
 - **Chat mode** powered by whatever model you'd like.
 - **gpt-5** support.
-- **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[ollama](https://ollama.com)** and all the rest OpenAI'ish API compatible.
+- **[llama.cpp](https://github.com/ggerganov/llama.cpp)**'s server, **[ollama](https://ollama.com)**, **[llmman](https://github.com/llmmanorg/llmman)** and all the rest OpenAI'ish API compatible.
 - **Dedicated chats histories** and assistant settings for a projects.
 - **Ability to send whole files** or their parts as a context expanding.
 - **Phantoms** Get non-disruptive inline right in view answers from the model.
@@ -26,7 +26,7 @@ Works with OpenAI Responses, Anthropic Claude, Google Gemini and the whole zoo o
 ## Requirements
 
 - Sublime Text build 4205 or newer (Python 3.14 plugin host)
-- **llama.cpp**, **ollama** installed _OR_
+- **llama.cpp**, **ollama**, **llmman** installed _OR_
 - Remote llm service provider API key, e.g. [OpenAI](https://platform.openai.com)
 - Optional [Anthropic](https://www.anthropic.com/api), [Google Gemini](https://ai.google.dev/) or other provider API key depending on your assistant setup.
 
@@ -168,9 +168,9 @@ Phantom is the overlay UI placed inline in the editor view (see the picture belo
 
 ### Other features
 
-### Open Source models support (llama.cpp, ollama)
+### Open Source models support (llama.cpp, ollama, llmman)
 
-1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`http://localhost:8080/v1/chat/completions`).
+1. Replace `"url"` setting of a given model to point to whatever host you're server running on (e.g.`http://localhost:8080/v1/chat/completions`, or `http://localhost:17434/v1/chat/completions` for [llmman](https://github.com/llmmanorg/llmman)).
 2. Provide a `"token"` if your provider required one.
 3. Set `"api_type": "plain_text"` for older OpenAI-compatible hosts or `"api_type": "open_ai"` for modern chat-completions implementations.
 4. Tweak `"chat_model"` to a model of your choice and you're set.
