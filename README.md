@@ -41,6 +41,9 @@ Python 3.8-compatible release line.
 2. Open the command palette and type `Package Control: Install Package`.
 3. Type `OpenAI` and press `Enter`.
 
+Package Control installs the plugin as an unpacked directory so Sublime can
+import the shared chat libraries under `plugins/vendor`.
+
 **Via Git Clone**
 
 1. Go to your packages folder: `Preferences: Browse Packages`.
