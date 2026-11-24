@@ -41,7 +41,7 @@ class CommonMethods:
 
         region: Region | None = None
 
-        items = get_sheets_context(window=view.window() or active_window())
+        items: List[SublimeInputContent] = []
 
         logger.debug('mode: %s', mode)
         logger.debug('Region: %s', region)
