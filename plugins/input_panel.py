@@ -170,8 +170,21 @@ class OpenaiSubmitInputPanelCommand(WindowCommand):
             sublime.status_message('Assistant settings are unavailable')
             return
 
-        from .openai_base import CommonMethods
+        from .openai_base import CommonMethods, get_sheets_context
+        from .sheet_toggle import ToggleViewAiContextIncludedCommand
 
+        if ToggleViewAiContextIncludedCommand.has_pending_changes(self.window):
+            sublime.status_message('Files are still loading. Submit again when they are ready.')
+            return
+
+        source_view = pending_request.source_view
+        source_window = source_view.window() if source_view.is_valid() else None
+        if source_window is None or source_window.id() != self.window.id():
+            OpenAIInputPanelController.cancel(self.window)
+            sublime.status_message('The original tab left this window. Reopen the prompt to send.')
+            return
+
+        inputs = get_sheets_context(self.window) + pending_request.inputs
         OpenAIInputPanelController.record_history(self.window, prompt)
         OpenAIInputPanelController.clear_draft(self.window)
         OpenAIInputPanelController.reset_history_session(self.window)
@@ -179,9 +192,9 @@ class OpenaiSubmitInputPanelCommand(WindowCommand):
         self.window.run_command('hide_panel')
         CommonMethods.handle_input(
             prompt,
-            pending_request.source_view,
+            source_view,
             pending_request.assistant,
-            pending_request.inputs,
+            inputs,
         )
 
 

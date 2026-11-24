@@ -2,7 +2,10 @@ import importlib
 import sys
 import types
 import unittest
-from unittest.mock import patch
+from enum import Enum
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import Mock, patch
 
 
 class FakeRegion:
@@ -339,6 +342,182 @@ class InputPanelEventListenerTests(unittest.TestCase):
 
         self.assertIsNone(result)
         self.assertEqual(self.window.opened, [])
+
+
+class FileContextTests(unittest.TestCase):
+    def setUp(self):
+        self.addCleanup(input_panel.OpenAIInputPanelController._pending_requests.clear)
+        self.window = FakeWindow()
+        self.first = self.make_view('/workspace/first.txt', 'first-file-marker')
+        self.second = self.make_view('/workspace/second.txt', 'second-file-marker')
+        self.source = self.make_view('/workspace/source.txt', 'unattached')
+        views = [self.first, self.second, self.source]
+        self.window.views = lambda: views
+        self.window.find_open_file = {view.file_name(): view for view in views}.get
+        self.window.selected_sheets = Mock(return_value=[self.source])
+        self.window.promote_sheet = Mock()
+
+        sublime = input_panel.sublime
+        self.enterContext(patch.multiple(
+            sublime, create=True, active_window=lambda: self.window, Edit=object,
+            Settings=object, Sheet=object, load_settings=lambda _: {}, set_timeout=Mock(),
+        ))
+        runner = types.ModuleType('llm_runner')
+        self.kinds = runner.InputKind = Enum('InputKind', 'Sheet ViewSelection Command')
+        runner.PromptMode = Enum('PromptMode', 'View Phantom')
+        runner.AssistantSettings = object
+        runner.SublimeInputContent = lambda kind, content, path=None, scope=None: (
+            types.SimpleNamespace(input_kind=kind, content=content, path=path, scope=scope)
+        )
+        runner.Worker = self.worker = Mock()
+        self.assistant = types.SimpleNamespace(url='http://localhost', output_mode=runner.PromptMode.View)
+
+        modules = {
+            'sublime': sublime,
+            'sublime_plugin': types.SimpleNamespace(TextCommand=object, WindowCommand=object),
+            'sublime_types': types.SimpleNamespace(Point=int),
+            'llm_runner': runner,
+            'plugins.errors.OpenAIException': types.SimpleNamespace(
+                WrongUserInputException=RuntimeError, present_error=Mock(), present_error_str=Mock(),
+            ),
+            'plugins.function_handler': types.SimpleNamespace(FunctionHandler=Mock()),
+            'plugins.image_handler': types.SimpleNamespace(ImageValidator=Mock()),
+            'plugins.load_model': types.SimpleNamespace(ensure_cache_path=lambda _: 'same-chat-cache'),
+            'plugins.output_panel': types.SimpleNamespace(SharedOutputPanelListener=Mock()),
+            'plugins.phantom_streamer': types.SimpleNamespace(PhantomStreamer=Mock()),
+            'plugins.response_manager': types.SimpleNamespace(ResponseManager=Mock()),
+        }
+        self.enterContext(patch.dict(sys.modules, modules))
+        for name in ('plugins.openai_base', 'plugins.buffer', 'plugins.sheet_toggle'):
+            sys.modules.pop(name, None)
+        self.base = importlib.import_module('plugins.openai_base')
+        self.sheet_toggle = importlib.import_module('plugins.sheet_toggle')
+        self.enterContext(patch.object(input_panel, 'prepare_input_panel'))
+
+    def make_view(self, path, text):
+        view = Mock()
+        view.window.return_value = self.window
+        view.id.return_value = 42
+        view.sheet.return_value = view
+        view.view.return_value = view
+        view.settings.return_value = FakeSettings()
+        view.file_name.return_value = path
+        view.sel.return_value = []
+        view.scope_name.return_value = 'text.plain'
+        view.size.return_value = len(text)
+        view.substr.side_effect = lambda region: text[region.begin():region.end()]
+        view.is_valid.return_value = True
+        view.is_loading.return_value = False
+        return view
+
+    def toggle(self, **kwargs):
+        command = self.sheet_toggle.ToggleViewAiContextIncludedCommand()
+        command.window = self.window
+        command.run(**kwargs)
+
+    def compose(self, prompt):
+        self.base.CommonMethods.process_openai_command(self.source, self.assistant, {})
+        FakePanel(self.window, prompt)
+
+    def submit(self):
+        command = input_panel.OpenaiSubmitInputPanelCommand()
+        command.window = self.window
+        command.run()
+        return self.worker.return_value.run.call_args.args[2]
+
+    def attachments(self, inputs):
+        return {item.path: item.content for item in inputs if item.input_kind == self.kinds.Sheet}
+
+    def test_sidebar_adds_file_to_next_turn_with_another_tab_selected(self):
+        self.first.settings().set(self.sheet_toggle.VIEW_TOGGLE_KEY, True)
+        self.compose('First turn')
+        self.assertEqual(set(self.attachments(self.submit())), {self.first.file_name()})
+
+        self.toggle(paths=[self.second.file_name()])
+        self.compose('Second turn')
+        inputs = self.submit()
+
+        files = self.attachments(inputs)
+        self.assertEqual(set(files), {self.first.file_name(), self.second.file_name()})
+        self.assertIn('second-file-marker', files[self.second.file_name()])
+        self.assertEqual(inputs[-1].content, 'Second turn')
+        self.assertEqual(
+            [call.kwargs['path'] for call in self.worker.call_args_list],
+            ['same-chat-cache', 'same-chat-cache'],
+        )
+
+    def test_submit_reads_current_marks_and_current_buffer_contents(self):
+        self.first.settings().set(self.sheet_toggle.VIEW_TOGGLE_KEY, True)
+        self.compose('Draft before attachment changes')
+
+        self.window.selected_sheets.return_value = [self.first]
+        self.toggle()
+        self.window.selected_sheets.return_value = [self.second]
+        self.toggle()
+        self.second.substr.side_effect = None
+        self.second.substr.return_value = 'edited-in-buffer-marker'
+        inputs = self.submit()
+
+        files = self.attachments(inputs)
+        self.assertEqual(set(files), {self.second.file_name()})
+        self.assertIn('edited-in-buffer-marker', files[self.second.file_name()])
+        self.assertEqual(inputs[-1].content, 'Draft before attachment changes')
+
+    def test_submit_saves_draft_if_source_tab_moves_to_another_window(self):
+        self.compose('Draft from the first window')
+        other_window = FakeWindow(window_id=2)
+        other_file = self.make_view('/other-project/private.txt', 'other-window-marker')
+        other_file.settings().set(self.sheet_toggle.VIEW_TOGGLE_KEY, True)
+        other_window.views = lambda: [other_file]
+        self.source.window.return_value = other_window
+
+        submit = input_panel.OpenaiSubmitInputPanelCommand()
+        submit.window = self.window
+        submit.run()
+
+        self.worker.assert_not_called()
+        controller = input_panel.OpenAIInputPanelController
+        self.assertEqual(controller.get_draft(self.window), 'Draft from the first window')
+        self.assertEqual(controller.get_history(self.window), [])
+        self.assertIsNone(controller.get_pending_request(self.window))
+
+    def test_pending_context_toggle_skips_tab_moved_to_another_window(self):
+        self.second.is_loading.return_value = True
+        self.toggle(paths=[self.second.file_name()])
+
+        self.second.window.return_value = FakeWindow(window_id=2)
+        self.second.is_loading.return_value = False
+        input_panel.sublime.set_timeout.call_args.args[0]()
+
+        self.assertFalse(self.second.settings().get(self.sheet_toggle.VIEW_TOGGLE_KEY, False))
+        self.assertFalse(
+            self.sheet_toggle.ToggleViewAiContextIncludedCommand.has_pending_changes(self.window)
+        )
+
+    def test_sidebar_opens_closed_file_and_waits_for_buffer_load(self):
+        with TemporaryDirectory() as directory:
+            path = str(Path(directory) / 'closed.txt')
+            Path(path).write_text('saved-file-marker', encoding='utf-8')
+            closed = self.make_view(path, 'saved-file-marker')
+            closed.is_loading.return_value = True
+            original_views = self.window.views()
+            self.window.open_file = Mock(return_value=closed)
+
+            self.toggle(paths=[path])
+            self.window.open_file.assert_called_once_with(path)
+            self.assertFalse(closed.settings().get(self.sheet_toggle.VIEW_TOGGLE_KEY, False))
+
+            self.compose('Read the file')
+            submit = input_panel.OpenaiSubmitInputPanelCommand()
+            submit.window = self.window
+            submit.run()
+            self.worker.assert_not_called()
+            self.assertIsNotNone(input_panel.OpenAIInputPanelController.get_pending_request(self.window))
+
+            closed.is_loading.return_value = False
+            self.window.views = lambda: [*original_views, closed]
+            input_panel.sublime.set_timeout.call_args.args[0]()
+            self.assertIn('saved-file-marker', self.attachments(self.submit())[path])
 
 
 if __name__ == '__main__':

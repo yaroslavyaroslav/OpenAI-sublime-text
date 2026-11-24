@@ -1,3 +1,6 @@
+from collections import deque
+from os.path import isfile
+
 import sublime
 import sublime_plugin
 
@@ -5,28 +8,53 @@ VIEW_TOGGLE_KEY = 'VIEW_AI_CONTEXT_INCLUDED'
 
 
 class ToggleViewAiContextIncludedCommand(sublime_plugin.WindowCommand):
-    def run(self, **kwargs):
+    _pending: dict[int, deque[list[sublime.View]]] = {}
+
+    @classmethod
+    def has_pending_changes(cls, window):
+        return window.id() in cls._pending
+
+    def run(self, paths=None):
         window = self.window
-        sheets = window.selected_sheets()
-
-        # Gather current values for the VIEW_TOGGLE_KEY
-        current_values = [sheet.view().settings().get(VIEW_TOGGLE_KEY, False) for sheet in sheets]
-
-        # Check if all current values are True
-        if all(current_values):
-            # If all values are True, set them all to False
-            new_value = False
+        if paths is None:
+            views = [sheet.view() for sheet in window.selected_sheets()]
         else:
-            # If some values are False, set all to True
-            new_value = True
+            views = []
+            for path in dict.fromkeys(paths):
+                view = window.find_open_file(path)
+                if view:
+                    window.promote_sheet(view.sheet())
+                elif isfile(path):
+                    view = window.open_file(path)
+                if view:
+                    views.append(view)
 
-        # Set the new value for each sheet
-        for sheet in sheets:
-            view = sheet.view()
-            if view:
+        window_id = window.id()
+        queue = self._pending.setdefault(window_id, deque())
+        queue.append(views)
+        if len(queue) == 1:
+            self._toggle_when_loaded(window_id)
+
+    def _toggle_when_loaded(self, window_id):
+        queue = self._pending[window_id]
+        while queue:
+            views = []
+            for view in queue[0]:
+                if view and view.is_valid():
+                    window = view.window()
+                    if window and window.id() == window_id:
+                        views.append(view)
+            if any(view.is_loading() for view in views):
+                sublime.set_timeout(lambda: self._toggle_when_loaded(window_id), 25)
+                return
+
+            new_value = not all(view.settings().get(VIEW_TOGGLE_KEY, False) for view in views)
+            for view in views:
                 view.settings().set(VIEW_TOGGLE_KEY, new_value)
 
-        sublime.status_message(f'{len(sheets)} sheets toggled for context')
+            queue.popleft()
+            sublime.status_message(f'{len(views)} sheets toggled for context')
+        del self._pending[window_id]
 
 
 class SelectSheetsWithAiContextIncludedCommand(sublime_plugin.WindowCommand):
